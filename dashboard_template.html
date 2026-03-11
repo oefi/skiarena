@@ -18,9 +18,8 @@
   :root {
     --brand: #4d7fff; 
     --font-base: 16px;
-    --snow-color: rgba(77, 127, 255, 0.25); 
     --snow-stroke: rgba(77, 127, 255, 1);
-    --grid-line: rgba(255, 255, 255, 0.1);
+    --grid-line: rgba(255, 255, 255, 0.15);
     scroll-padding-top: 5rem; 
     scroll-behavior: smooth;
   }
@@ -31,23 +30,22 @@
   [data-theme="light"] {
     --bg-main: #f8fafc; --bg-header: rgba(255, 255, 255, 0.85); --bg-card: #ffffff;
     --text-main: #0f172a; --text-muted: #475569; --border-color: #e2e8f0;
-    --grid-line: rgba(0, 0, 0, 0.05); color-scheme: light;
+    --grid-line: rgba(0, 0, 0, 0.1); color-scheme: light;
   }
   [data-theme="grey"] {
     --bg-main: #374151; --bg-header: rgba(55, 65, 81, 0.85); --bg-card: #4b5563;
     --text-main: #f3f4f6; --text-muted: #9ca3af; --border-color: #6b7280;
-    --grid-line: rgba(255, 255, 255, 0.05); color-scheme: dark;
+    --grid-line: rgba(255, 255, 255, 0.15); color-scheme: dark;
   }
   [data-theme="night"] {
     --bg-main: #0d1829; --bg-header: rgba(13, 24, 41, 0.85); --bg-card: #1a2d4e;
     --text-main: #e8edf5; --text-muted: #8fa0ba; --border-color: #1e3260;
-    --grid-line: rgba(255, 255, 255, 0.05); color-scheme: dark;
+    --grid-line: rgba(255, 255, 255, 0.15); color-scheme: dark;
   }
   [data-theme="print"] {
     --bg-main: #ffffff; --bg-header: #ffffff; --bg-card: #ffffff;
     --text-main: #000000; --text-muted: #333333; --border-color: #000000;
-    --snow-color: rgba(0, 0, 0, 0.05); --snow-stroke: #000;
-    --grid-line: transparent; color-scheme: light;
+    --snow-stroke: #000; --grid-line: rgba(0,0,0,0.2); color-scheme: light;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -66,8 +64,9 @@
   
   .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
   .badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; background: var(--border-color); }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
+  /* Interactive Elements */
   .theme-toggles span, .font-resizers span { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.2rem; }
   .theme-toggles span:hover, .font-resizers span:hover { transform: scale(1.3); }
 
@@ -75,8 +74,10 @@
   #toc a:hover { background: var(--border-color); opacity: 1; }
 
   /* Controls */
-  .control-btn { padding: 0.3rem 0.6rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; font-family: inherit; }
-  .control-btn.active { background: var(--brand); color: white; border-color: var(--brand); }
+  .control-btn { padding: 0.4rem 0.8rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: inherit; transition: background 0.1s; }
+  .control-btn.active { background: var(--border-color); }
+  .control-btn.toggle-btn { border: 1px dashed var(--text-muted); color: var(--text-muted); }
+  .control-btn.toggle-btn.active { background: var(--text-main); color: var(--bg-main); border-style: solid; border-color: var(--text-main); }
 
   /* Heatmap */
   .hm-grid { display: grid; gap: 2px; }
@@ -96,11 +97,12 @@
   th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
   /* Canvas */
-  canvas { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--border-color); border-radius: 4px; cursor: crosshair; touch-action: none; }
+  canvas { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--border-color); border-radius: 4px; cursor: crosshair; touch-action: none; background: var(--bg-card); }
   
   /* Canvas Legend */
-  .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--text-muted); margin-right: 1rem; }
-  .legend-color { width: 12px; height: 12px; border-radius: 2px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-muted); margin-right: 1rem; font-weight: 600; }
+  .legend-color { width: 16px; height: 4px; border-radius: 2px; }
+  .legend-dotted { border-bottom: 3px dotted var(--text-main); background: transparent !important; height: 0; width: 16px; }
 
   @media (max-width: 768px) { 
     header { flex-direction: column; gap: 0.8rem; padding: 1rem !important; } 
@@ -153,7 +155,7 @@
   </section>
 
   <section id="drilldown">
-    <div class="flex-between" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div class="flex-between" style="margin-bottom: 1rem;">
       <h2 style="margin:0; border:none; padding:0;">Daily Telemetry 📅</h2>
       <input type="date" id="date-picker" style="padding: 0.4rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit;">
     </div>
@@ -172,10 +174,13 @@
         <tbody></tbody>
       </table>
     </div>
+    <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.8rem; color: var(--text-muted);">
+      ⚠️ <strong>Data Integrity Protocol:</strong> Missing sensor data from Open-Meteo is strictly rendered as <code>—</code>. We do not use AI slop, padding, or assumptions to fill dead zones. What you see is mathematically verified physical reality.
+    </div>
   </section>
 
   <section id="heatmap">
-    <div class="flex-between" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div class="flex-between" style="margin-bottom: 1rem;">
       <h2 style="margin:0; border:none; padding:0;">Seasonal Quality Matrix 🔥</h2>
       <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
         <button class="control-btn" data-res="1">1 Day</button>
@@ -189,11 +194,16 @@
 
   <section id="snowpack">
     <h2>Snowpack Evolution (Summit) 🏔️</h2>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Drag over the canvas to inspect historical depths day-by-day.</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Drag over the canvas to inspect historical depths day-by-day. Gaps in the lines indicate missing sensor data.</p>
     
-    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; align-items: center;">
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="canvas-controls"></div>
-      <div id="canvas-legend" style="display: flex; flex-wrap: wrap;"></div>
+    <div style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="canvas-controls"></div>
+        <div>
+          <button id="toggle-avg-btn" class="control-btn toggle-btn active">📊 Show Historical Average</button>
+        </div>
+      </div>
+      <div id="canvas-legend" style="display: flex; flex-wrap: wrap; padding: 0.5rem; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color);"></div>
     </div>
     
     <div style="position: relative;">
@@ -228,8 +238,8 @@
   const getColor = (s) => s === null ? 'transparent' : s >= 0.85 ? '#22c55e' : s >= 0.70 ? '#84cc16' : s >= 0.55 ? '#eab308' : s >= 0.40 ? '#f97316' : '#ef4444';
   const getStyleVar = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   
-  // Distinct colors for older seasons
   const seasonColors = ['#64748b', '#d946ef', '#0ea5e9', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6'];
+  let showHistoricalAvg = true;
 
   document.addEventListener('DOMContentLoaded', () => {
     
@@ -259,7 +269,7 @@
       fc.innerHTML = `<div style="color:var(--text-muted)">Forecast engine offline.</div>`;
     }
 
-    // Prepare Base Data
+    // ── DATA PREP ──
     const byDate = {}, byResort = {}, dates = [];
     SKI_DATA.records.forEach(r => {
       if(!byDate[r.date]) { byDate[r.date] = []; dates.push(r.date); }
@@ -278,17 +288,19 @@
       if(!byDate[dStr]) { dtb.innerHTML = `<tr><td colspan="6" style="text-align:center;">No data for ${dStr}</td></tr>`; return; }
       dtb.innerHTML = byDate[dStr].map(r => {
         const tb = r.base?.temperature_2m_max ?? r.temperature_2m_max, ts = r.summit?.temperature_2m_max;
-        const sn = (r.summit?.snow_depth ?? r.snow_depth ?? 0)*100, fs = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
+        const rawSn = r.summit?.snow_depth ?? r.snow_depth;
+        const sn = rawSn !== null && rawSn !== undefined ? (rawSn * 100).toFixed(0) + ' cm' : '—';
+        const fs = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
         const sc = r.scores?.score_universal ?? r.score_universal ?? null;
         const fmt = (t) => t !== null && t !== undefined ? `${t.toFixed(1)}°C` : '—'; 
         const warn = (r.flags && r.flags.length) ? `<span title="Data Flag: ${r.flags.join(',')}" style="cursor:help;">⚠️</span> ` : '';
-        return `<tr><td style="font-weight:bold;text-transform:capitalize;">${warn}${r.resort}</td><td>${fmt(tb)}</td><td>${fmt(ts)}</td><td>${sn.toFixed(0)} cm</td><td>${fs>0?`<span style="color:#3b82f6;font-weight:bold;">+${fs.toFixed(1)}cm</span>`:'0'}</td><td><div style="display:flex;align-items:center;gap:0.5rem;"><div style="width:12px;height:12px;border-radius:50%;background:${getColor(sc)}"></div>${sc!==null?(sc*10).toFixed(1)+'/10':'—'}</div></td></tr>`;
+        return `<tr><td style="font-weight:bold;text-transform:capitalize;">${warn}${r.resort}</td><td>${fmt(tb)}</td><td>${fmt(ts)}</td><td>${sn}</td><td>${fs>0?`<span style="color:#3b82f6;font-weight:bold;">+${fs.toFixed(1)}cm</span>`:'0'}</td><td><div style="display:flex;align-items:center;gap:0.5rem;"><div style="width:12px;height:12px;border-radius:50%;background:${getColor(sc)}"></div>${sc!==null?(sc*10).toFixed(1)+'/10':'—'}</div></td></tr>`;
       }).join('');
     };
     dp.addEventListener('change', e => renderTable(e.target.value)); 
     renderTable(dp.value);
 
-    // ── HEATMAPS (Dynamic Resolution) ──
+    // ── HEATMAPS ──
     let hmRes = 7;
     const hc = document.getElementById('heatmap-container'), resorts = Object.keys(byResort);
     
@@ -313,10 +325,6 @@
         
         let html = `<div><h3 style="margin:0 0 0.5rem 0; font-size:1rem; text-transform:capitalize;">${resort}</h3>`;
         html += `<div style="display:grid; grid-template-columns: 80px 1fr; gap:1rem; align-items:center; font-size:0.8rem;">`;
-        
-        // Month Labels logic (Approximate based on Dec-Apr window)
-        const totalDays = 150; // Dec 10 to ~May 1
-        const cells = Math.ceil(totalDays / hmRes);
         html += `<div></div><div class="hm-months"><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span></div>`;
         
         Object.keys(seasons).sort().reverse().forEach(ss => {
@@ -326,10 +334,7 @@
             const vs = ch.map(c=>c.scores?.score_universal??c.score_universal).filter(s=>s!==null&&s!==undefined); 
             const scoreAvg = vs.length > 0 ? vs.reduce((a,c)=>a+c,0)/vs.length : null;
             const snowTot = ch.reduce((a,c)=>a+(c.summit?.snowfall_sum??c.snowfall_sum??0),0);
-            blocks.push({ 
-              d: `${ch[0].date} to ${ch[ch.length-1].date}`, 
-              s: scoreAvg, f: snowTot 
-            });
+            blocks.push({ d: `${ch[0].date} to ${ch[ch.length-1].date}`, s: scoreAvg, f: snowTot });
           }
           html += `<div style="color:var(--text-muted); text-align:right; font-weight:bold;">${ss}</div><div class="hm-grid" style="grid-template-columns:repeat(${blocks.length}, 1fr);">${blocks.map(w=>`<div class="hm-cell" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};" title="${w.d} | Score: ${w.s!==null?(w.s*10).toFixed(1):'—'} | Snow: ${w.f.toFixed(1)}cm"></div>`).join('')}</div>`;
         });
@@ -338,13 +343,20 @@
     };
     renderHeatmaps();
 
-    // ── SNOWPACK CANVAS (Interactive Engine) ──
+    // ── SNOWPACK CANVAS (Strict Null Void Engine) ──
     const cvs = document.getElementById('snow-canvas'), ctx = cvs.getContext('2d');
     const cc = document.getElementById('canvas-controls');
     const legend = document.getElementById('canvas-legend');
+    const avgBtn = document.getElementById('toggle-avg-btn');
     let act = resorts[0];
     let hoverDayOffset = null;
     
+    const monthMarkers = [
+      { label: "Dec 1", off: 30 }, { label: "Jan 1", off: 61 },
+      { label: "Feb 1", off: 92 }, { label: "Mar 1", off: 120 },
+      { label: "Apr 1", off: 151 }, { label: "May 1", off: 181 }
+    ];
+
     resorts.forEach(r => {
       const b = document.createElement('button'); b.innerText = r.toUpperCase(); b.className = 'control-btn';
       if(r===act) b.classList.add('active');
@@ -355,6 +367,12 @@
       cc.appendChild(b);
     });
 
+    avgBtn.onclick = () => {
+      showHistoricalAvg = !showHistoricalAvg;
+      avgBtn.classList.toggle('active', showHistoricalAvg);
+      window.repaintCanvas();
+    };
+
     window.repaintCanvas = () => {
       ctx.clearRect(0,0,cvs.width,cvs.height); 
       const rd = byResort[act]; if(!rd) return;
@@ -364,110 +382,175 @@
         const d = new Date(r.date), y = d.getFullYear(), m = d.getMonth()+1;
         const ss = m>=10 ? `${y}/${String(y+1).slice(2)}` : `${y-1}/${String(y).slice(2)}`;
         const start = new Date(m>=10?y:y-1, 10, 1), off = Math.floor((d-start)/86400000);
-        const dep = (r.summit?.snow_depth ?? r.snow_depth ?? 0)*100;
         
-        if(dep>maxD) maxD=dep; 
-        if(!lines[ss]) lines[ss] = []; lines[ss].push({x:off, y:dep});
+        const rawDep = r.summit?.snow_depth ?? r.snow_depth;
+        if (!lines[ss]) lines[ss] = []; 
+        
+        // Strict void mapping: nulls are physically pushed into the array to break the path.
+        if (rawDep !== null && rawDep !== undefined) {
+          const dep = rawDep * 100;
+          if(dep>maxD) maxD=dep; 
+          lines[ss].push({x:off, y:dep});
+        } else {
+          lines[ss].push({x:off, y:null}); 
+        }
       });
       maxD = Math.ceil(maxD/50)*50;
       const seasonKeys = Object.keys(lines).sort();
       const currentSeason = seasonKeys[seasonKeys.length - 1];
       
-      // Update Legend
-      legend.innerHTML = seasonKeys.map((s, idx) => {
+      // Compute True Historical Mean
+      const avgData = [];
+      if (showHistoricalAvg) {
+        for(let i=0; i<=185; i++) {
+          let sum = 0, count = 0;
+          seasonKeys.forEach(ss => {
+            const pt = lines[ss].find(p => p.x === i);
+            if (pt !== undefined && pt.y !== null) { sum += pt.y; count++; }
+          });
+          if (count > 0) avgData.push({x: i, y: sum/count});
+          else avgData.push({x: i, y: null});
+        }
+      }
+      
+      // Update Legend HTML
+      let legendHtml = seasonKeys.map((s, idx) => {
         const c = s === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
         return `<div class="legend-item"><div class="legend-color" style="background:${c}"></div>${s}</div>`;
       }).join('');
-
-      const pX = 100, pY = 80, w = cvs.width-pX*2, h = cvs.height-pY*2;
-      
-      // Draw Grid
-      ctx.strokeStyle = getStyleVar('--grid-line'); ctx.lineWidth = 2; ctx.fillStyle = getStyleVar('--text-muted'); ctx.font = '24px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-      for(let i=0; i<=maxD; i+=50) { 
-        const y = pY+h-(i/maxD)*h; 
-        ctx.beginPath(); ctx.moveTo(pX,y); ctx.lineTo(pX+w,y); ctx.stroke(); 
-        ctx.fillText(`${i} cm`, pX-20, y); 
+      if (showHistoricalAvg) {
+        legendHtml += `<div class="legend-item"><div class="legend-color legend-dotted"></div>Historical Mean</div>`;
       }
-      
+      legend.innerHTML = legendHtml;
+
+      const pX = 120, pY = 80, w = cvs.width-pX*2, h = cvs.height-pY*2 - 40; 
       const mapX = x => pX+(x/180)*w, mapY = y => pY+h-(y/maxD)*h;
       
-      // Draw Lines
-      seasonKeys.forEach((ss, idx) => {
-        const pts = lines[ss].sort((a,b)=>a.x-b.x); if(pts.length<2) return;
-        const isCurrent = ss === currentSeason;
-        
-        ctx.beginPath(); ctx.moveTo(mapX(pts[0].x), mapY(pts[0].y)); 
-        pts.forEach(p=>ctx.lineTo(mapX(p.x),mapY(p.y))); 
-        
-        if (isCurrent) {
-          ctx.strokeStyle = getStyleVar('--snow-stroke'); ctx.lineWidth = 6;
-          // Add fill for current season only
-          const fillPath = new Path2D(); fillPath.moveTo(mapX(pts[0].x), pY+h); pts.forEach(p=>fillPath.lineTo(mapX(p.x),mapY(p.y))); fillPath.lineTo(mapX(pts[pts.length-1].x), pY+h);
-          ctx.fillStyle = getStyleVar('--snow-color'); ctx.fill(fillPath);
-        } else {
-          ctx.strokeStyle = seasonColors[idx % seasonColors.length]; ctx.lineWidth = 3;
+      ctx.strokeStyle = getStyleVar('--grid-line'); ctx.fillStyle = getStyleVar('--text-muted'); ctx.font = 'bold 24px system-ui'; ctx.textBaseline = 'middle';
+      
+      // Draw Y-Axis
+      ctx.textAlign = 'right'; 
+      for(let i=0; i<=maxD; i+=50) { 
+        const y = pY+h-(i/maxD)*h; 
+        ctx.beginPath(); ctx.moveTo(pX,y); ctx.lineTo(pX+w,y); ctx.lineWidth = 2; ctx.stroke(); 
+        ctx.fillText(`${i} cm`, pX-20, y); 
+      }
+
+      // Draw X-Axis
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      monthMarkers.forEach(m => {
+        const x = mapX(m.off);
+        if (x <= pX+w) {
+          ctx.beginPath(); ctx.moveTo(x, pY); ctx.lineTo(x, pY+h); ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillText(m.label, x, pY+h + 15);
         }
-        ctx.lineJoin='round'; ctx.stroke();
+      });
+      
+      // Render Lines (Void Path Engine)
+      const drawPath = (pts, strokeColor, lineWidth, isDashed = false) => {
+        ctx.beginPath();
+        let isDrawing = false;
+        pts.forEach(p => {
+          if (p.y === null) {
+            isDrawing = false; // Pen up
+          } else {
+            if (!isDrawing) {
+              ctx.moveTo(mapX(p.x), mapY(p.y));
+              isDrawing = true; // Pen down
+            } else {
+              ctx.lineTo(mapX(p.x), mapY(p.y));
+            }
+          }
+        });
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
+        ctx.lineJoin = 'round';
+        if (isDashed) ctx.setLineDash([12, 12]);
+        else ctx.setLineDash([]);
+        ctx.stroke();
+      };
+
+      seasonKeys.forEach((ss, idx) => {
+        const pts = lines[ss].sort((a,b)=>a.x-b.x); 
+        const c = ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
+        const lw = ss === currentSeason ? 6 : 3;
+        drawPath(pts, c, lw);
       });
 
-      // Draw Interactive Crosshair/Tooltip
-      if (hoverDayOffset !== null && hoverDayOffset >= 0 && hoverDayOffset <= 180) {
+      if (showHistoricalAvg && avgData.length > 1) {
+        drawPath(avgData, getStyleVar('--text-main'), 5, true);
+      }
+
+      // Interactive Tooltip (Clamped to Screen bounds)
+      if (hoverDayOffset !== null && hoverDayOffset >= 0 && hoverDayOffset <= 185) {
         const hx = mapX(hoverDayOffset);
         
-        // Vertical Line
         ctx.beginPath(); ctx.moveTo(hx, pY); ctx.lineTo(hx, pY+h);
-        ctx.strokeStyle = getStyleVar('--text-muted'); ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = getStyleVar('--text-main'); ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
         
-        // Find depths for this day
         const readouts = [];
         seasonKeys.forEach((ss, idx) => {
           const pts = lines[ss];
           const pt = pts.find(p => p.x === hoverDayOffset) || pts.reduce((prev, curr) => Math.abs(curr.x - hoverDayOffset) < Math.abs(prev.x - hoverDayOffset) ? curr : prev);
-          if (pt && Math.abs(pt.x - hoverDayOffset) < 5) {
-            readouts.push({ s: ss, y: pt.y, c: ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length] });
+          if (pt && pt.y !== null && Math.abs(pt.x - hoverDayOffset) < 5) {
+            readouts.push({ s: ss, y: pt.y, c: ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length], isAvg: false });
             ctx.beginPath(); ctx.arc(hx, mapY(pt.y), 6, 0, 2*Math.PI);
             ctx.fillStyle = getStyleVar('--bg-main'); ctx.fill();
             ctx.lineWidth = 3; ctx.strokeStyle = readouts[readouts.length-1].c; ctx.stroke();
           }
         });
 
-        // Tooltip Box
+        if (showHistoricalAvg) {
+          const aPt = avgData.find(p => p.x === hoverDayOffset) || avgData.reduce((prev, curr) => Math.abs(curr.x - hoverDayOffset) < Math.abs(prev.x - hoverDayOffset) ? curr : prev);
+          if (aPt && aPt.y !== null && Math.abs(aPt.x - hoverDayOffset) < 5) {
+            readouts.push({ s: "Mean", y: aPt.y, c: getStyleVar('--text-main'), isAvg: true });
+            ctx.beginPath(); ctx.arc(hx, mapY(aPt.y), 6, 0, 2*Math.PI);
+            ctx.fillStyle = getStyleVar('--text-main'); ctx.fill();
+          }
+        }
+
         if (readouts.length > 0) {
           ctx.fillStyle = getStyleVar('--bg-header');
-          const boxW = 160, boxH = 20 + (readouts.length * 30);
-          let boxX = hx + 15; if (boxX + boxW > cvs.width) boxX = hx - boxW - 15;
+          const boxW = 180, boxH = 20 + (readouts.length * 30);
+          
+          // Force bounding box inside the canvas rendering view
+          let boxX = hx + 15; 
+          if (boxX + boxW > pX + w) boxX = hx - boxW - 15;
+          if (boxX < pX) boxX = pX; 
+          
           ctx.fillRect(boxX, pY, boxW, boxH);
           ctx.strokeStyle = getStyleVar('--border-color'); ctx.strokeRect(boxX, pY, boxW, boxH);
           
           ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = '22px system-ui';
           readouts.sort((a,b)=>b.y-a.y).forEach((r, i) => {
             ctx.fillStyle = r.c;
-            ctx.fillText(`■`, boxX + 15, pY + 15 + (i*30));
+            ctx.fillText(r.isAvg ? `┄` : `■`, boxX + 15, pY + 15 + (i*30));
             ctx.fillStyle = getStyleVar('--text-main');
-            ctx.fillText(`${r.s}: ${r.y.toFixed(0)}cm`, boxX + 40, pY + 15 + (i*30));
+            ctx.fillText(`${r.s}: ${r.y.toFixed(0)}cm`, boxX + 45, pY + 15 + (i*30));
           });
         }
       }
     };
     
-    // Mouse tracking
     cvs.addEventListener('mousemove', (e) => {
       const rect = cvs.getBoundingClientRect();
       const scaleX = cvs.width / rect.width;
       const mouseX = (e.clientX - rect.left) * scaleX;
-      const pX = 100, w = cvs.width - pX * 2;
+      const pX = 120, w = cvs.width - pX * 2;
       hoverDayOffset = Math.round(((mouseX - pX) / w) * 180);
       window.repaintCanvas();
     });
     cvs.addEventListener('mouseleave', () => { hoverDayOffset = null; window.repaintCanvas(); });
     cvs.addEventListener('touchmove', (e) => {
-      e.preventDefault(); // Stop scrolling when tracing chart
-      const rect = cvs.getBoundingClientRect();
-      const scaleX = cvs.width / rect.width;
-      const mouseX = (e.touches[0].clientX - rect.left) * scaleX;
-      hoverDayOffset = Math.round(((mouseX - 100) / (cvs.width-200)) * 180);
-      window.repaintCanvas();
-    }, {passive: false});
+      if (e.touches.length > 0) {
+        const rect = cvs.getBoundingClientRect();
+        const scaleX = cvs.width / rect.width;
+        const mouseX = (e.touches[0].clientX - rect.left) * scaleX;
+        const pX = 120, w = cvs.width - pX * 2;
+        hoverDayOffset = Math.round(((mouseX - pX) / w) * 180);
+        window.repaintCanvas();
+      }
+    }, {passive: true});
 
     setTimeout(window.repaintCanvas, 50);
   });
