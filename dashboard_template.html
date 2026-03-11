@@ -75,7 +75,7 @@
   #toc a { padding: 0.3rem 0.6rem; border-radius: 4px; transition: background 0.2s, color 0.2s; }
   #toc a:hover { background: var(--border-color); opacity: 1; }
 
-  .control-btn { padding: 0.4rem 0.8rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: inherit; transition: background 0.1s; }
+  .control-btn { padding: 0.4rem 0.8rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: inherit; transition: background 0.1s, opacity 0.2s; }
   .control-btn:hover { background: var(--border-color); }
   .control-btn.active { background: var(--brand); color: white; border-color: var(--brand); }
   .control-btn.toggle-btn { border: 1px dashed var(--text-muted); color: var(--text-muted); background: transparent; }
@@ -83,11 +83,11 @@
 
   /* ── FORECAST CARDS ── */
   .fc-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; }
-  .fc-header { background: var(--border-color); padding: 0.75rem 1rem; font-weight: 800; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
+  .fc-header { background: var(--border-color); padding: 0.75rem 1rem; font-weight: 800; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
   .fc-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border-color); }
   .fc-day { background: var(--bg-main); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; }
   .fc-day-title { font-weight: bold; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 0.2rem; border-bottom: 1px dotted var(--grid-line); padding-bottom: 0.2rem; }
-  .fc-stat { display: flex; justify-content: space-between; align-items: center; }
+  .fc-stat { display: flex; justify-content: space-between; align-items: center; font-variant-numeric: tabular-nums; }
   .fc-val.alert { color: #ef4444; font-weight: bold; }
   .fc-val.good { color: var(--brand); font-weight: bold; }
 
@@ -103,7 +103,7 @@
     content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); 
     background: var(--text-main); color: var(--bg-main); padding: 6px 10px; border-radius: 4px; 
     font-size: 0.8rem; white-space: nowrap; z-index: 10; pointer-events: none; margin-bottom: 4px; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-variant-numeric: tabular-nums;
   }
   .hm-cell-future {
     background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px) !important;
@@ -114,13 +114,18 @@
   }
 
   /* ── TABLE ── */
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 700px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 700px; font-variant-numeric: tabular-nums; }
   th, td { padding: 0.85rem 0.5rem; border-bottom: 1px solid var(--border-color); text-align: left; white-space: nowrap; }
   th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
   .diff-badge { font-size: 0.75rem; padding: 0.1rem 0.3rem; border-radius: 3px; margin-left: 0.4rem; font-weight: bold; }
   .diff-pos { background: rgba(77, 127, 255, 0.15); color: var(--brand); }
   .diff-neg { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
   .diff-neu { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
+  
+  .quality-badge { cursor: help; display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0.5rem; border-radius: 4px; transition: background 0.2s; }
+  .quality-badge:hover { background: var(--border-color); }
+  .quality-tooltip { display: none; position: absolute; background: var(--text-main); color: var(--bg-main); padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; z-index: 50; white-space: pre-line; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-top: 25px; }
+  .quality-badge:hover .quality-tooltip { display: block; }
 
   /* ── CANVAS ── */
   canvas { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--border-color); border-radius: 4px; cursor: crosshair; touch-action: none; background: var(--bg-card); }
@@ -188,20 +193,25 @@
 
   <!-- ── DAILY TELEMETRY (CONTEXT AWARE) ── -->
   <section id="drilldown">
-    <div class="flex-between" style="margin-bottom: 1rem;">
+    <div class="flex-between" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
       <h2 style="margin:0; border:none; padding:0;">Daily Telemetry & Historical Context 📅</h2>
-      <input type="date" id="date-picker" style="padding: 0.4rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit;">
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <button id="btn-prev-day" class="control-btn" title="Previous Day">◀ Prev</button>
+        <input type="date" id="date-picker" style="padding: 0.4rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit;">
+        <button id="btn-next-day" class="control-btn" title="Next Day">Next ▶</button>
+        <button id="btn-latest-day" class="control-btn toggle-btn" title="Jump to the most recent data">Jump to Latest</button>
+      </div>
     </div>
     <div style="overflow-x: auto;">
       <table id="daily-table">
         <thead>
           <tr>
-            <th>Resort</th>
+            <th>Resort <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Base - Summit)</span></th>
             <th>Base Temp</th>
             <th>Summit Temp</th>
             <th>Snow Depth <span style="text-transform:none; font-weight:normal; opacity:0.7;">(vs Hist. Avg)</span></th>
             <th>New Snow (24h)</th>
-            <th>Quality</th>
+            <th>Quality <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Hover for breakdown)</span></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -275,9 +285,43 @@
   document.documentElement.dataset.theme = localStorage.getItem('zl_theme') || 'night';
   document.documentElement.dataset.font = localStorage.getItem('zl_font') || 'md';
 
+  const STATIC_METADATA = {
+    'nauders': { base: 1400, summit: 2750 },
+    'schoeneben': { base: 1460, summit: 2390 },
+    'watles': { base: 1500, summit: 2550 },
+    'sulden': { base: 1900, summit: 3250 },
+    'trafoi': { base: 1540, summit: 2800 }
+  };
+
   let SKI_DATA = null, FORECAST_DATA = null;
   try { SKI_DATA = __SKI_DATA_PLACEHOLDER__; } catch(e) {}
   try { FORECAST_DATA = __FORECAST_DATA_PLACEHOLDER__; } catch(e) {}
+
+  // ── THE TRUE PRE-FLIGHT PURGE (Sever API Slop) ──
+  // Open-Meteo pads future dates in archive requests. Sometimes it returns `0.0` instead of `null` for snow,
+  // tricking the drawing engine into creating a flatline through April.
+  // We scan backward through the records until we find an actual physical temperature sensor hit.
+  // Everything after that date is a hallucination and is violently purged.
+  let latestDataDate = "Unknown";
+  if (SKI_DATA && SKI_DATA.records) {
+    let trueLatestDate = null;
+    for (let i = SKI_DATA.records.length - 1; i >= 0; i--) {
+      const r = SKI_DATA.records[i];
+      const t = r.base?.temperature_2m_max ?? r.temperature_2m_max;
+      if (t !== null && t !== undefined) {
+        trueLatestDate = r.date;
+        break;
+      }
+    }
+    
+    if (trueLatestDate) {
+      SKI_DATA.records = SKI_DATA.records.filter(r => r.date <= trueLatestDate);
+      latestDataDate = trueLatestDate;
+    } else {
+      // Fallback if the entire payload is somehow garbage
+      latestDataDate = SKI_DATA.records[SKI_DATA.records.length - 1].date;
+    }
+  }
 
   const getColor = (s) => s === null ? 'transparent' : s >= 0.85 ? '#22c55e' : s >= 0.70 ? '#84cc16' : s >= 0.55 ? '#eab308' : s >= 0.40 ? '#f97316' : '#ef4444';
   const getStyleVar = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -287,13 +331,12 @@
     
     // ── STATUS MOUNT ──
     const sb = document.getElementById('status-badge'), ts = document.getElementById('update-time');
-    if (!SKI_DATA || !SKI_DATA.records) { 
+    if (!SKI_DATA || !SKI_DATA.records || SKI_DATA.records.length === 0) { 
       sb.innerHTML = `<span class="badge" style="background:#ef4444;color:white;">⚠ Data Missing</span>`; 
       return; 
     }
     sb.innerHTML = `<span class="badge" style="background:var(--brand);color:white;">✓ Online</span>`;
-    const latestDataDate = SKI_DATA.records[SKI_DATA.records.length - 1].date;
-    ts.innerText = `Matrix Updated: ${latestDataDate}`;
+    ts.innerText = `Matrix Updated: ${latestDataDate}`; // Now strictly bound to physical reality
 
     // ── DATA ENGINE (Global Prep) ──
     const byDate = {}, byResort = {}, dates = [];
@@ -314,6 +357,24 @@
         .filter(v => v !== null && v !== undefined);
       if (valid.length === 0) return null;
       return (valid.reduce((a,b) => a+b, 0) / valid.length) * 100;
+    };
+
+    // Diagnostic Engine (The Autopsy Tooltip)
+    const generateQualityAutopsy = (r) => {
+      const msgs = [];
+      const gusts = r.summit?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0;
+      const bTemp = r.base?.temperature_2m_max ?? r.temperature_2m_max ?? 0;
+      const bRain = r.base?.precipitation_sum ?? r.precipitation_sum ?? 0;
+      const sSnow = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
+
+      if (gusts > 60) msgs.push(`🚩 Wind Penalty (${gusts.toFixed(0)} km/h)`);
+      if (bRain > 2 && bTemp > 0 && sSnow < 2) msgs.push(`🌧️ Rain Penalty (Base Temp > 0°C)`);
+      if (bTemp > 5) msgs.push(`🔥 Slush Risk (Base > 5°C)`);
+      if (msgs.length === 0) {
+        if (sSnow > 10) msgs.push(`❄️ Powder Day Detected`);
+        else msgs.push(`✓ Stable Conditions`);
+      }
+      return msgs.join('\n');
     };
 
     // ── FORECAST ENGINE (Phase 2 Full Detail) ──
@@ -358,7 +419,15 @@
         if (maxGust > 70) warning = `<span style="color:#ef4444; font-size:0.8rem;">⚠️ High Wind Hold Risk</span>`;
         else if (totSnow > 15) warning = `<span style="color:var(--brand); font-size:0.8rem;">❄️ Dump Alert (${totSnow.toFixed(0)}cm)</span>`;
 
-        fc.innerHTML += `<div class="fc-card"><div class="fc-header"><span>${resort}</span>${warning}</div><div class="fc-body">${cardsHtml}</div></div>`;
+        const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
+
+        fc.innerHTML += `<div class="fc-card">
+          <div class="fc-header">
+            <span>${resort} <span style="opacity:0.6; font-size:0.75rem; font-weight:normal; text-transform:lowercase;">(${meta.base}m - ${meta.summit}m)</span></span>
+            ${warning}
+          </div>
+          <div class="fc-body">${cardsHtml}</div>
+        </div>`;
       });
     } else if (FORECAST_DATA && FORECAST_DATA.error) {
       fc.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
@@ -366,20 +435,40 @@
 
     // ── TELEMETRY DRILLDOWN ──
     const dp = document.getElementById('date-picker'), dtb = document.querySelector('#daily-table tbody');
+    const btnPrev = document.getElementById('btn-prev-day');
+    const btnNext = document.getElementById('btn-next-day');
+    const btnLatest = document.getElementById('btn-latest-day');
+
     dp.min = dates[0]; dp.max = dates[dates.length - 1]; dp.value = dp.max;
     
     const renderTable = (dStr) => {
       if(!dStr) { dStr = dates[dates.length - 1]; dp.value = dStr; } 
-      if(!byDate[dStr]) { dtb.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No matrix data available for ${dStr}</td></tr>`; return; }
+      
+      const currIdx = dates.indexOf(dStr);
+      
+      // Update UI Controls
+      btnPrev.style.opacity = (currIdx <= 0) ? '0.3' : '1';
+      btnPrev.style.pointerEvents = (currIdx <= 0) ? 'none' : 'auto';
+      btnNext.style.opacity = (currIdx >= dates.length - 1 || currIdx === -1) ? '0.3' : '1';
+      btnNext.style.pointerEvents = (currIdx >= dates.length - 1 || currIdx === -1) ? 'none' : 'auto';
+      btnLatest.style.opacity = (dStr === dates[dates.length - 1]) ? '0.3' : '1';
+      btnLatest.style.pointerEvents = (dStr === dates[dates.length - 1]) ? 'none' : 'auto';
+
+      if(!byDate[dStr]) { 
+        dtb.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No matrix data available for ${dStr}</td></tr>`; 
+        return; 
+      }
       
       const mmdd = dStr.slice(5);
       dtb.innerHTML = byDate[dStr].map(r => {
+        const meta = STATIC_METADATA[r.resort.toLowerCase()] || {base:'?', summit:'?'};
         const tb = r.base?.temperature_2m_max ?? r.temperature_2m_max, ts = r.summit?.temperature_2m_max;
         const rawSn = r.summit?.snow_depth ?? r.snow_depth;
         const fs = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
         const sc = r.scores?.score_universal ?? r.score_universal ?? null;
         const fmt = (t) => t !== null && t !== undefined ? `${t.toFixed(1)}°C` : '—'; 
         const warn = (r.flags && r.flags.length) ? `<span title="Data Flag: ${r.flags.join(',')}" style="cursor:help;">⚠️</span> ` : '';
+        const autopsy = generateQualityAutopsy(r);
 
         let snHtml = '—';
         if (rawSn !== null && rawSn !== undefined) {
@@ -395,10 +484,41 @@
           }
         }
 
-        return `<tr><td style="font-weight:bold;text-transform:capitalize;">${warn}${r.resort}</td><td>${fmt(tb)}</td><td>${fmt(ts)}</td><td>${snHtml}</td><td>${fs>0?`<span style="color:#3b82f6;font-weight:bold;">+${fs.toFixed(1)}cm</span>`:'0'}</td><td><div style="display:flex;align-items:center;gap:0.5rem;"><div style="width:12px;height:12px;border-radius:50%;background:${getColor(sc)}"></div>${sc!==null?(sc*10).toFixed(1)+'/10':'—'}</div></td></tr>`;
+        return `<tr>
+          <td>
+            <div style="font-weight:bold;text-transform:capitalize;">${warn}${r.resort}</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">${meta.base}m - ${meta.summit}m</div>
+          </td>
+          <td>${fmt(tb)}</td>
+          <td>${fmt(ts)}</td>
+          <td>${snHtml}</td>
+          <td>${fs>0?`<span style="color:#3b82f6;font-weight:bold;">+${fs.toFixed(1)}cm</span>`:'0'}</td>
+          <td style="position:relative;">
+            <div class="quality-badge">
+              <div style="width:12px;height:12px;border-radius:50%;background:${getColor(sc)}"></div>
+              ${sc!==null?(sc*10).toFixed(1)+'/10':'—'}
+              <div class="quality-tooltip">${autopsy}</div>
+            </div>
+          </td>
+        </tr>`;
       }).join('');
     };
+
     dp.addEventListener('change', e => renderTable(e.target.value)); 
+    
+    // Quick Navigation Triggers
+    btnPrev.onclick = () => {
+      const idx = dates.indexOf(dp.value);
+      if (idx > 0) { dp.value = dates[idx - 1]; renderTable(dp.value); }
+    };
+    btnNext.onclick = () => {
+      const idx = dates.indexOf(dp.value);
+      if (idx !== -1 && idx < dates.length - 1) { dp.value = dates[idx + 1]; renderTable(dp.value); }
+    };
+    btnLatest.onclick = () => {
+      dp.value = dates[dates.length - 1]; renderTable(dp.value);
+    };
+
     renderTable(dp.value);
 
     // ── HEATMAPS (Strict Dec-Apr Architecture) ──
@@ -441,7 +561,6 @@
           
           targetMonths.forEach(mo => {
             const y = mo.m === 12 ? startYear : startYear + 1;
-            // Handle leap years perfectly for Feb
             const daysInMonth = mo.m === 2 ? new Date(y, 2, 0).getDate() : mo.d; 
             
             const blocks = [];
@@ -453,6 +572,7 @@
               }
               
               const startStr = chunkDays[0], endStr = chunkDays[chunkDays.length-1];
+              // Uses our strictly enforced latest physical reality date
               let isFuture = startStr > latestDataDate;
               
               const vs = chunkDays.map(d => dataMap[d]?.scores?.score_universal ?? dataMap[d]?.score_universal).filter(s=>s!==null&&s!==undefined);
@@ -480,11 +600,11 @@
     const cvs = document.getElementById('snow-canvas'), ctx = cvs.getContext('2d');
     const cc = document.getElementById('canvas-controls'), legend = document.getElementById('canvas-legend'), avgBtn = document.getElementById('toggle-avg-btn');
     let act = Object.keys(byResort)[0], hoverDayOffset = null, maWindow = 1, showHistoricalAvg = true;
+    let isTouch = false; 
     
-    // Strict 151/152 day mapping (Dec 1 to May 1)
     const monthMarkers = [
       { label: "Dec 1", off: 0 }, { label: "Jan 1", off: 31 },
-      { label: "Feb 1", off: 62 }, { label: "Mar 1", off: 90 }, // Approx for drawing
+      { label: "Feb 1", off: 62 }, { label: "Mar 1", off: 90 },
       { label: "Apr 1", off: 121 }, { label: "May 1", off: 151 }
     ];
 
@@ -524,19 +644,20 @@
       const linesRaw = {}; let maxD = 100;
       
       rd.forEach(r => {
-        const d = new Date(r.date), y = d.getFullYear(), m = d.getMonth()+1;
-        // Purge summer artifacts from drawing memory entirely just in case
+        const y = parseInt(r.date.slice(0,4));
+        const m = parseInt(r.date.slice(5,7));
+        const day = parseInt(r.date.slice(8,10));
+
         if (m > 5 && m < 12) return; 
         
         const startYear = m === 12 ? y : y - 1;
         const ss = `${startYear}/${String(startYear+1).slice(2)}`;
         
-        // Exact UTC days difference from Dec 1 to handle leap years properly in JS
-        const start = new Date(Date.UTC(startYear, 11, 1));
-        const current = new Date(Date.UTC(y, m-1, d.getDate()));
+        const start = Date.UTC(startYear, 11, 1);
+        const current = Date.UTC(y, m-1, day);
         const off = Math.floor((current - start) / 86400000);
         
-        if (off < 0 || off > 152) return; // Strict clamp
+        if (off < 0 || off > 152) return; 
         
         const rawDep = r.summit?.snow_depth ?? r.snow_depth;
         if (!linesRaw[ss]) linesRaw[ss] = []; 
@@ -548,6 +669,8 @@
       const lines = {};
 
       seasonKeys.forEach(ss => {
+        // Because of the Thermal Purge, future dates won't exist in linesRaw.
+        // They will default to `null` in this dense array, cleanly snapping the line.
         const dense = new Array(153).fill(null).map((_, i) => ({x: i, y: null}));
         linesRaw[ss].forEach(pt => { if(pt.x >= 0 && pt.x <= 152) dense[pt.x].y = pt.y; });
         const smoothed = applyMA(dense, maWindow);
@@ -556,7 +679,6 @@
       });
       maxD = Math.ceil(maxD/50)*50;
       
-      // Historical Average Projects Forward
       const avgData = [];
       if (showHistoricalAvg) {
         for(let i=0; i<=152; i++) {
@@ -574,7 +696,7 @@
         const c = s === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
         return `<div class="legend-item"><div class="legend-color" style="background:${c}"></div>${s}</div>`;
       }).join('');
-      if (showHistoricalAvg) legendHtml += `<div class="legend-item"><div class="legend-color legend-dotted"></div>Hist. Mean Projects Forward</div>`;
+      if (showHistoricalAvg) legendHtml += `<div class="legend-item"><div class="legend-color legend-dotted"></div>Hist. Mean</div>`;
       legend.innerHTML = legendHtml;
 
       const pX = 120, pY = 80, w = cvs.width-pX*2, h = cvs.height-pY*2 - 40; 
@@ -638,19 +760,30 @@
         if (readouts.length > 0) {
           ctx.fillStyle = getStyleVar('--bg-header');
           const boxW = 180, boxH = 20 + (readouts.length * 30);
-          let boxX = hx + 15; if (boxX + boxW > pX + w) boxX = hx - boxW - 15;
+          
+          let boxX = hx + 15; 
+          let boxY = pY;
+
+          if (isTouch) {
+            boxY = pY - 50; 
+            if (boxY < 0) boxY = 0; 
+          }
+
+          if (boxX + boxW > pX + w) boxX = hx - boxW - 15;
           if (boxX < pX) boxX = pX; 
-          ctx.fillRect(boxX, pY, boxW, boxH); ctx.strokeStyle = getStyleVar('--border-color'); ctx.strokeRect(boxX, pY, boxW, boxH);
+          
+          ctx.fillRect(boxX, boxY, boxW, boxH); ctx.strokeStyle = getStyleVar('--border-color'); ctx.strokeRect(boxX, boxY, boxW, boxH);
           ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = '22px system-ui';
           readouts.sort((a,b)=>b.y-a.y).forEach((r, i) => {
-            ctx.fillStyle = r.c; ctx.fillText(r.isAvg ? `┄` : `■`, boxX + 15, pY + 15 + (i*30));
-            ctx.fillStyle = getStyleVar('--text-main'); ctx.fillText(`${r.s}: ${r.y.toFixed(0)}cm`, boxX + 45, pY + 15 + (i*30));
+            ctx.fillStyle = r.c; ctx.fillText(r.isAvg ? `┄` : `■`, boxX + 15, boxY + 15 + (i*30));
+            ctx.fillStyle = getStyleVar('--text-main'); ctx.fillText(`${r.s}: ${r.y.toFixed(0)}cm`, boxX + 45, boxY + 15 + (i*30));
           });
         }
       }
     };
     
     cvs.addEventListener('mousemove', (e) => {
+      isTouch = false;
       const rect = cvs.getBoundingClientRect(), scaleX = cvs.width / rect.width;
       const mouseX = (e.clientX - rect.left) * scaleX, pX = 120, w = cvs.width - pX * 2;
       hoverDayOffset = Math.round(((mouseX - pX) / w) * 152);
@@ -659,6 +792,7 @@
     cvs.addEventListener('mouseleave', () => { hoverDayOffset = null; window.repaintCanvas(); });
     cvs.addEventListener('touchmove', (e) => {
       if (e.touches.length > 0) {
+        isTouch = true;
         const rect = cvs.getBoundingClientRect(), scaleX = cvs.width / rect.width;
         const mouseX = (e.touches[0].clientX - rect.left) * scaleX, pX = 120, w = cvs.width - pX * 2;
         hoverDayOffset = Math.round(((mouseX - pX) / w) * 152);
