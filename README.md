@@ -1,13 +1,13 @@
-# 🎿 Zwei Länder Skiarena — Ski Conditions Dashboard
+### Zwei Länder Skiarena — Ski Conditions Dashboard
 
 Historical ski weather for all 5 resorts of the **Zwei Länder Skiarena** (Austria / South Tyrol).  
 Dec–Apr · Seasons 2019/20–2024/25 · plus live 2025/26 fetched in-browser.
 
-## Demo: https://oefi.github.io/zlsa/
+### Demo: https://oefi.github.io/zlsa/
 
 ---
 
-## Resorts
+### Resorts
 
 | Resort | Country | Base | Summit |
 |---|---|---|---|
@@ -17,7 +17,7 @@ Dec–Apr · Seasons 2019/20–2024/25 · plus live 2025/26 fetched in-browser.
 | Sulden am Ortler | 🇮🇹 South Tyrol | 1,900 m | 3,250 m |
 | Trafoi am Ortler | 🇮🇹 South Tyrol | 1,540 m | 2,800 m |
 
-## What's inside
+### What's inside
 
 - **Best Weeks heatmap** — colour-coded weekly ski quality score, all 6 seasons at a glance
 - **Daily drill-down** — all 5 resorts ranked for any day; powder / sunshine / lift-risk badges
@@ -27,7 +27,7 @@ Dec–Apr · Seasons 2019/20–2024/25 · plus live 2025/26 fetched in-browser.
 - **Plan My Week** — pick any 7–14 night window, get a day-by-day resort recommendation
 - **Live 2025/26 data** — Open-Meteo ERA5-Land fetched on page load, cached 24 h
 
-## Ski Quality Score
+### Ski Quality Score
 
 Daily score 0–1 computed from summit snow depth, fresh snow, summit temperature, sunshine hours, and wind speed. Four persona presets re-weight the components:
 
@@ -38,14 +38,14 @@ Daily score 0–1 computed from summit snow depth, fresh snow, summit temperatur
 | ☀️ Sun | 20% | 20% | 50% | 10% |
 | 👨‍👩‍👧 Family | 25% | 30% | 35% | 10% |
 
-## Data
+### Data
 
 Baked data: Open-Meteo ERA5-Land reanalysis · Dec 10 → Apr 10 · 6 complete seasons.  
 Current season (2025/26): fetched live from `archive-api.open-meteo.com` on page load.
 
 > **Note:** Data in this repo is currently **synthetic** (generated from published climate norms for development). Run `scripts/fetch_openmeteo.py` to replace with real ERA5-Land data, then rebuild.
 
-## Rebuild
+### Rebuild
 
 ```bash
 # Generate synthetic data (development)
