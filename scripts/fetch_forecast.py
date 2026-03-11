@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Zwei Länder Skiarena — High-Resolution Alpine Forecast Fetcher
-Hits the Open-Meteo forecast API using MeteoSwiss (ICON-CH1/CH2) and DWD models.
+Switched to "best_match" to prevent API 400 errors on specific coordinates.
 """
 
 import requests, json, sys, time
@@ -18,7 +18,6 @@ HOURLY_VARS = [
     "snowfall", "weathercode", "windspeed_10m", "windgusts_10m", 
     "visibility", "freezinglevel_height"
 ]
-MODELS = ["meteoswiss_seamless", "icon_seamless"]
 FORECAST_DAYS = 3
 
 RESORTS = [
@@ -40,7 +39,7 @@ def get_session():
 def main():
     session = get_session()
     forecast_payload = {
-        "_meta": {"source": "Open-Meteo MeteoSwiss", "forecast_days": FORECAST_DAYS},
+        "_meta": {"source": "Open-Meteo Best Match", "forecast_days": FORECAST_DAYS},
         "resorts": {}
     }
 
@@ -51,7 +50,7 @@ def main():
                 "longitude": lon, 
                 "elevation": elev,
                 "hourly": ",".join(HOURLY_VARS), 
-                "models": ",".join(MODELS),
+                "models": "best_match", 
                 "forecast_days": FORECAST_DAYS, 
                 "timezone": "Europe/Berlin"
             }
@@ -66,7 +65,7 @@ def main():
     except Exception as e:
         print(f"\n[!] WARNING: High-res forecast fetch failed: {e}")
         with open(OUT_FILE, "w") as f:
-            json.dump({"_meta": {"error": str(e)}, "resorts": {}}, f)
+            json.dump({"error": str(e), "resorts": {}}, f)
 
 if __name__ == "__main__":
     main()
