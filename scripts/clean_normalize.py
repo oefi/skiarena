@@ -158,7 +158,10 @@ def merge_resort(resort):
         base_depth_cm  = round((bd["snow_depth"][i] or 0) * 100, 1)   # m → cm
         precip_mm      = bd["precipitation_sum"][i] or 0
         rain_mm        = max(0.0, round(precip_mm - snowfall_cm * 0.7, 2))  # derived: precip − snow water equiv
-        sunshine_h     = round((bd["sunshine_duration"][i] or 0) / 3600, 2)  # s → h
+        # shortwave_radiation_sum (MJ/m²) → sunshine hours equivalent
+        # ~25 MJ/m² = full alpine sunny day ≈ 8h; divide by 3.1
+        rad_mj         = bd.get("shortwave_radiation_sum", [None] * (i+1))[i] or 0
+        sunshine_h     = round(min(rad_mj / 3.1, 16.0), 2)
         wind_kmh       = bd["windspeed_10m_max"][i] or 0
         weathercode    = bd["weathercode"][i] or 0
         uv_max         = (bd.get("uv_index_max") or [0])[i] or 0

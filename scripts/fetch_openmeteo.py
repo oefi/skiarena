@@ -62,7 +62,8 @@ DAILY_VARS = ",".join([
     "snow_depth",             # m  → we convert to cm
     "precipitation_sum",      # mm (total — rain derived as precip − snowfall in processing)
     # rain_sum removed — not available in ERA5-Land; derived downstream
-    "sunshine_duration",      # seconds → we convert to hours
+    "shortwave_radiation_sum", # MJ/m² — converted to sunshine_h equivalent in processing
+    # sunshine_duration removed — ERA5-Land uses shortwave_radiation_sum instead
     "windspeed_10m_max",      # km/h
     "weathercode",            # WMO weather interpretation code
     # uv_index_max removed — not available in ERA5-Land archive API (forecast-only)
@@ -81,27 +82,46 @@ RESORTS = [
 # ── Fetch function ─────────────────────────────────────────────────────────────
 
 def fetch(resort_name, lat, lon, elevation, label):
-    """One API call for a single resort at a single elevation."""
-    params = {
-        "latitude":    lat,
-        "longitude":   lon,
-        "elevation":   elevation,
-        "start_date":  START_DATE,
-        "end_date":    END_DATE,
-        "daily":       DAILY_VARS,
-        "timezone":    "UTC",
-        "wind_speed_unit": "kmh",
-    }
-    print(f"  Fetching {resort_name} ({label}, {elevation} m) ...", end=" ", flush=True)
-    resp = requests.get(BASE_URL, params=params, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
+    """One API call for a single resort at a single elevation.
+    If the full variable set returns 400, retries with a minimal confirmed-safe set
+    so we can diagnose which variable is at fault without failing everything.
+    """
+    MINIMAL_VARS = ",".join([
+        "temperature_2m_max", "temperature_2m_min",
+        "snowfall_sum", "snow_depth", "precipitation_sum",
+        "windspeed_10m_max", "weathercode",
+    ])
 
-    # Validate
+    def _attempt(vars_str, label_suffix=""):
+        params = {
+            "latitude":        lat,
+            "longitude":       lon,
+            "elevation":       elevation,
+            "start_date":      START_DATE,
+            "end_date":        END_DATE,
+            "daily":           vars_str,
+            "timezone":        "UTC",
+            "wind_speed_unit": "kmh",
+        }
+        tag = f"{resort_name} ({label}, {elevation} m){label_suffix}"
+        print(f"  Fetching {tag} ...", end=" ", flush=True)
+        resp = requests.get(BASE_URL, params=params, timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+    try:
+        data = _attempt(DAILY_VARS)
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 400:
+            print(f"\n  ⚠ 400 on full variable set — retrying with minimal vars")
+            print(f"  API said: {e.response.text[:200]}")
+            data = _attempt(MINIMAL_VARS, " [minimal]")
+        else:
+            raise
+
     n_days = len(data["daily"]["time"])
     print(f"{n_days} days OK")
 
-    # Save raw
     out_path = OUTPUT_DIR / f"{resort_name}_{label}_raw.json"
     with open(out_path, "w") as f:
         json.dump(data, f)
