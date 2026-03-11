@@ -1,0 +1,4 @@
+# Zwei Länder Skiarena Dashboard — Python dependencies
+# Only the data pipeline needs external packages.
+# The dashboard itself is pure HTML/JS — zero runtime deps.
+requests>=2.31.0

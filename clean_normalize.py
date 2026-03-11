@@ -28,18 +28,92 @@ RESORT_META = {
     "trafoi":     {"label": "Trafoi am Ortler",   "country": "IT", "base_m": 1540, "summit_m": 2800, "ski6": True},
 }
 
-# Expected dates: Jan–Apr each year 2020–2026
+# ── Dynamic SEASONS — derived from the raw data files actually present ────────
+# This means adding a new season only requires a new raw fetch, not code changes.
+
+def _raw_date_range():
+    """Scan raw JSON files to find the earliest and latest dates present."""
+    earliest, latest = None, None
+    for f in RAW_DIR.glob("*_raw.json"):
+        try:
+            times = json.loads(f.read_text())["daily"]["time"]
+            if times:
+                if earliest is None or times[0]  < earliest: earliest = times[0]
+                if latest   is None or times[-1] > latest:   latest   = times[-1]
+        except Exception:
+            pass
+    return earliest, latest
+
+def _build_seasons(earliest_str, latest_str):
+    """
+    Build (key, start, end) tuples for every Dec 10 → Apr 10 window
+    that overlaps the [earliest_str, latest_str] date range.
+    A partial current season (e.g. Dec 10 2025 → Mar 11 2026) is included
+    with its actual end date rather than Apr 10.
+    """
+    from datetime import date, timedelta
+    if not earliest_str or not latest_str:
+        return []
+
+    first = date.fromisoformat(earliest_str)
+    last  = date.fromisoformat(latest_str)
+
+    # First season start year: Dec 10 of the year first falls in
+    start_yr = first.year if first.month == 12 else first.year - 1
+    # Last season start year
+    end_yr   = last.year if last.month == 12 else last.year - 1
+
+    seasons = []
+    for y in range(start_yr, end_yr + 1):
+        s_start = date(y,     12, 10)
+        s_end   = date(y + 1,  4, 10)
+        key     = f"{y}/{str(y + 1)[2:]}"
+        # Clip end to actual data end (for in-progress season)
+        actual_end = min(s_end, last)
+        if actual_end >= s_start:
+            seasons.append((key, s_start.isoformat(), actual_end.isoformat()))
+    return seasons
+
+_earliest, _latest = _raw_date_range()
+SEASONS = _build_seasons(_earliest, _latest) if _earliest else [
+    # Fallback for dev without raw files (matches synthetic data)
+    ("2019/20", "2019-12-10", "2020-04-10"),
+    ("2020/21", "2020-12-10", "2021-04-10"),
+    ("2021/22", "2021-12-10", "2022-04-10"),
+    ("2022/23", "2022-12-10", "2023-04-10"),
+    ("2023/24", "2023-12-10", "2024-04-10"),
+    ("2024/25", "2024-12-10", "2025-04-10"),
+]
+
 def expected_dates():
     dates = []
-    for year in range(2020, 2027):
-        d = date(year, 1, 1)
-        while d <= date(year, 4, 30):
+    for _, start, end in SEASONS:
+        d   = date.fromisoformat(start)
+        end = date.fromisoformat(end)
+        while d <= end:
             dates.append(d.isoformat())
             d += timedelta(days=1)
     return dates
 
-EXPECTED = expected_dates()
+EXPECTED     = expected_dates()
 EXPECTED_SET = set(EXPECTED)
+
+# ── Season key helpers ────────────────────────────────────────────────────────
+
+def get_season(date_str):
+    """'2024-12-25' → '2024/25',  '2025-02-10' → '2024/25'"""
+    month = int(date_str[5:7])
+    year  = int(date_str[:4])
+    s     = year if month == 12 else year - 1
+    return f"{s}/{str(s + 1)[2:]}"
+
+def get_season_week(date_str):
+    """Season-relative week: W01 = week containing Dec 10."""
+    from datetime import date
+    d     = date.fromisoformat(date_str)
+    month = d.month
+    dec10 = date(d.year if month == 12 else d.year - 1, 12, 10)
+    return f"W{(d - dec10).days // 7 + 1:02d}"
 
 # ── Load one raw file ─────────────────────────────────────────────────────────
 
@@ -75,7 +149,7 @@ def merge_resort(resort):
 
     for i, dt in enumerate(bd["time"]):
         if dt not in EXPECTED_SET:
-            continue  # skip dates outside Jan–Apr window
+            continue  # skip dates outside Dec 10 → Apr 10 window
 
         # ── Base values (unit conversions) ──
         base_temp_max  = bd["temperature_2m_max"][i]
@@ -133,6 +207,8 @@ def merge_resort(resort):
 
         records.append({
             "date":              dt,
+            "season":            get_season(dt),
+            "season_week":       get_season_week(dt),
             "year":              int(dt[:4]),
             "month":             int(dt[5:7]),
             "day":               int(dt[8:10]),
@@ -155,8 +231,6 @@ def merge_resort(resort):
             "summit_temp_min":   round(summit_temp_min, 1) if summit_temp_min is not None else None,
             "summit_depth_cm":   summit_depth_cm,
             "summit_wind_kmh":   round(summit_wind_kmh, 1),
-            # Flags
-            "is_partial_2026":   int(dt[:4]) == 2026,
         })
 
     return records, issues
@@ -205,7 +279,7 @@ def main():
 
     master = {
         "_meta": {
-            "description":   "Zwei Länder Skiarena — merged daily weather data",
+            "description":   "Zwei Länder Skiarena — merged daily weather data, Dec 10 → Apr 10",
             "resorts":       RESORTS,
             "resort_meta":   RESORT_META,
             "total_records": len(all_records),
@@ -238,7 +312,7 @@ def main():
     size_kb = out_path.stat().st_size / 1024
     print(f"\n  master_data.json  →  {size_kb:.0f} KB  ({len(all_records)} total records)")
     print(f"  data_quality_report.txt  →  written")
-    print("\n  Step 2 complete. Ready for Step 3 → compute_metrics.py")
+    print("\n  Step 2 complete. Seasons 2019/20–2024/25. Ready for Step 3 → compute_metrics.py")
 
 if __name__ == "__main__":
     main()

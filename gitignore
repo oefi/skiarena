@@ -1,0 +1,20 @@
+# Raw and processed data (large, regenerable — not committed)
+data/raw/
+data/processed/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
+
+# Node (if ever used)
+node_modules/

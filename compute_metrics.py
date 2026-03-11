@@ -85,13 +85,24 @@ def score_to_stars(score):
     if score >= 0.40: return 2
     return 1
 
-# ── ISO week helper ───────────────────────────────────────────────────────────
+# ── Season key helpers ────────────────────────────────────────────────────────
 
-def iso_week_key(date_str):
-    """Returns 'YYYY-Www' e.g. '2024-W07'"""
-    d = date.fromisoformat(date_str)
-    iso = d.isocalendar()
-    return f"{iso[0]}-W{iso[1]:02d}"
+def season_week_key(date_str):
+    """Returns season-relative key e.g. '2024/25-W04'"""
+    month  = int(date_str[5:7])
+    year   = int(date_str[:4])
+    s      = year if month == 12 else year - 1
+    season = f"{s}/{str(s+1)[2:]}"
+    d      = date.fromisoformat(date_str)
+    dec10  = date(s, 12, 10)
+    week   = (d - dec10).days // 7 + 1
+    return f"{season}-W{week:02d}"
+
+def get_season(date_str):
+    month = int(date_str[5:7])
+    year  = int(date_str[:4])
+    s     = year if month == 12 else year - 1
+    return f"{s}/{str(s+1)[2:]}"
 
 def month_key(date_str):
     return date_str[:7]  # 'YYYY-MM'
@@ -122,9 +133,10 @@ def enrich(records):
         # Rain at base flag
         e["rain_at_base"] = r["rain_mm"] > 1 and r["base_temp_max"] > 0
 
-        # Week / month keys
-        e["week_key"]  = iso_week_key(r["date"])
-        e["month_key"] = month_key(r["date"])
+        # Week / month / season keys
+        e["week_key"]    = season_week_key(r["date"])
+        e["month_key"]   = month_key(r["date"])
+        e["season"]      = r.get("season") or get_season(r["date"])
 
         enriched.append(e)
 
@@ -168,9 +180,9 @@ def build_aggregations(enriched):
     for r in enriched:
         by_resort[r["resort"]].append(r)
 
-    weekly  = {}   # {resort: {week_key: aggregate}}
-    monthly = {}   # {resort: {month_key: aggregate}}
-    yearly  = {}   # {resort: {year: aggregate}}
+    weekly   = {}   # {resort: {week_key: aggregate}}
+    monthly  = {}   # {resort: {month_key: aggregate}}
+    seasonal = {}   # {resort: {season: aggregate}}
 
     for resort, recs in by_resort.items():
         # Weekly
@@ -185,14 +197,13 @@ def build_aggregations(enriched):
             by_month[r["month_key"]].append(r)
         monthly[resort] = {mk: aggregate_group(v) for mk, v in by_month.items()}
 
-        # Yearly
-        by_year = defaultdict(list)
+        # Seasonal
+        by_season = defaultdict(list)
         for r in recs:
-            by_year[r["year"]].append(r)
-        yearly[resort] = {str(yr): aggregate_group(v) for yr, v in by_year.items()}
+            by_season[r["season"]].append(r)
+        seasonal[resort] = {s: aggregate_group(v) for s, v in by_season.items()}
 
     # ── Daily cross-resort ranking ──────────────────────────────────────────
-    # For each date: which resort ranks highest per persona?
     by_date = defaultdict(list)
     for r in enriched:
         by_date[r["date"]].append(r)
@@ -201,38 +212,37 @@ def build_aggregations(enriched):
     for dt, recs in by_date.items():
         ranking = {}
         for persona in PERSONAS:
-            key = f"score_{persona}"
+            key      = f"score_{persona}"
             sorted_r = sorted(recs, key=lambda x: x[key], reverse=True)
             ranking[persona] = [r["resort"] for r in sorted_r]
         daily_ranking[dt] = ranking
 
     # ── Powder day calendar ─────────────────────────────────────────────────
-    # {resort: {year: [list of powder day dates]}}
+    # {resort: {season: [list of powder day dates]}}
     powder_calendar = {}
     for resort, recs in by_resort.items():
-        powder_calendar[resort] = {}
-        by_year = defaultdict(list)
+        by_season = defaultdict(list)
         for r in recs:
             if r["powder_day"]:
-                by_year[str(r["year"])].append(r["date"])
-        powder_calendar[resort] = dict(by_year)
+                by_season[r["season"]].append(r["date"])
+        powder_calendar[resort] = dict(by_season)
 
-    # ── Season summary stats (all years combined, per resort) ───────────────
+    # ── Season summary stats (per season per resort) ────────────────────────
     season_summary = {}
     for resort, recs in by_resort.items():
-        years = sorted(set(r["year"] for r in recs))
-        per_year = []
-        for yr in years:
-            yr_recs = [r for r in recs if r["year"] == yr]
-            agg = aggregate_group(yr_recs)
-            agg["year"] = yr
-            per_year.append(agg)
-        season_summary[resort] = per_year
+        seasons = sorted(set(r["season"] for r in recs))
+        per_season = []
+        for s in seasons:
+            s_recs = [r for r in recs if r["season"] == s]
+            agg         = aggregate_group(s_recs)
+            agg["season"] = s
+            per_season.append(agg)
+        season_summary[resort] = per_season
 
     return {
         "weekly":          weekly,
         "monthly":         monthly,
-        "yearly":          yearly,
+        "seasonal":        seasonal,
         "daily_ranking":   daily_ranking,
         "powder_calendar": powder_calendar,
         "season_summary":  season_summary,
@@ -262,30 +272,32 @@ def main():
     aggs = build_aggregations(enriched)
 
     # ── Print sanity table ─────────────────────────────────────────────────
-    print("\n  ── Yearly avg universal score per resort ──")
+    # Derive season keys from the data so new seasons appear automatically
+    SEASON_KEYS = sorted(set(r["season"] for r in enriched))
+    print("\n  ── Seasonal avg universal score per resort ──")
     print(f"  {'Resort':<14}", end="")
-    for yr in range(2020, 2027):
-        print(f"  {yr}", end="")
+    for s in SEASON_KEYS:
+        print(f"  {s}", end="")
     print()
-    print("  " + "-" * 62)
+    print("  " + "-" * 74)
     for resort in RESORTS:
         print(f"  {resort:<14}", end="")
-        for yr in range(2020, 2027):
-            val = aggs["yearly"][resort].get(str(yr), {}).get("score_universal")
-            print(f"  {val:.2f}" if val else "   — ", end="")
+        for s in SEASON_KEYS:
+            val = aggs["seasonal"][resort].get(s, {}).get("score_universal")
+            print(f"  {val:.2f} " if val else "    —  ", end="")
         print()
 
-    print("\n  ── Powder days per resort per year ──")
+    print("\n  ── Powder days per resort per season ──")
     print(f"  {'Resort':<14}", end="")
-    for yr in range(2020, 2027):
-        print(f"  {yr}", end="")
+    for s in SEASON_KEYS:
+        print(f"  {s}", end="")
     print()
-    print("  " + "-" * 62)
+    print("  " + "-" * 74)
     for resort in RESORTS:
         print(f"  {resort:<14}", end="")
-        for yr in range(2020, 2027):
-            val = aggs["yearly"][resort].get(str(yr), {}).get("powder_days", 0)
-            print(f"  {val:>4}", end="")
+        for s in SEASON_KEYS:
+            val = aggs["seasonal"][resort].get(s, {}).get("powder_days", 0)
+            print(f"  {val:>6}", end="")
         print()
 
     # ── Assemble output ────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Zwei Länder Skiarena — Open-Meteo Historical Weather Fetcher
-Fetches daily weather data for all 5 resorts × 2 elevations, Jan–Apr 2020–2026.
+Fetches daily weather for all 5 resorts × 2 elevations.
+Season range: Dec 10 → Apr 10, seasons 2019/20 – 2024/25.
+Season 2025/26 is handled by the live browser fetch layer.
 
 Requirements: pip install requests
 Run:          python fetch_openmeteo.py
@@ -11,8 +13,10 @@ Output:       ../data/raw/{resort}_{base|summit}_raw.json  (10 files)
 import requests
 import json
 import time
-import os
+import sys
+import argparse
 from pathlib import Path
+from datetime import date
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -21,8 +25,35 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
-START_DATE = "2020-01-01"
-END_DATE   = "2026-04-30"   # Open-Meteo returns up to today if this is in the future
+START_DATE = "2019-12-10"   # first day of first baked season — never changes
+
+def default_end_date():
+    """
+    Dynamic end date:
+    - If today is in-season (Dec 10 ≤ date ≤ Apr 10): use yesterday
+      (ERA5-Land typically has ~5-day lag; yesterday is safe)
+    - If off-season: use the last Apr 10 that has passed
+    """
+    today = date.today()
+    m, d  = today.month, today.day
+    in_season = (m == 12 and d >= 10) or (1 <= m <= 3) or (m == 4 and d <= 10)
+    if in_season:
+        from datetime import timedelta
+        return str(today - timedelta(days=2))  # 2-day ERA5 lag buffer
+    # Off-season: last completed Apr 10
+    last_apr10_year = today.year if today > date(today.year, 4, 10) else today.year - 1
+    return f"{last_apr10_year}-04-10"
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Fetch Open-Meteo ERA5-Land data for Zwei Länder Skiarena")
+    parser.add_argument(
+        "--end-date", default=None,
+        help="Last date to fetch (ISO 8601). Defaults to dynamic season-aware value.")
+    return parser.parse_args()
+
+args     = parse_args()
+END_DATE = args.end_date or default_end_date()
 
 DAILY_VARS = ",".join([
     "temperature_2m_max",
