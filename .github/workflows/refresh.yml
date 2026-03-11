@@ -2,7 +2,7 @@ name: Refresh Ski Dashboard
 
 on:
   schedule:
-    - cron: "0 5 * * 1"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       end_date:
