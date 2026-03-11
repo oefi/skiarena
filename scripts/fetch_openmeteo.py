@@ -39,7 +39,7 @@ def default_end_date():
     in_season = (m == 12 and d >= 10) or (1 <= m <= 3) or (m == 4 and d <= 10)
     if in_season:
         from datetime import timedelta
-        return str(today - timedelta(days=2))  # 2-day ERA5 lag buffer
+        return str(today - timedelta(days=7))  # ERA5-Land has ~5-7 day processing lag
     # Off-season: last completed Apr 10
     last_apr10_year = today.year if today > date(today.year, 4, 10) else today.year - 1
     return f"{last_apr10_year}-04-10"
