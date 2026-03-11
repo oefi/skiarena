@@ -10,7 +10,7 @@ import requests, json, time, sys, argparse
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 OUTPUT_DIR = Path(__file__).parent.parent / "data" / "raw"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -57,25 +57,28 @@ def fetch_one(session, name, lat, lon, elevation_label, vars_to_use, start_d, en
         response.raise_for_status()
         data = response.json()
         
-        # ERA5-Land API returns 400 with a JSON reason if we ask for data from the future/lag period
+        # Catch 200 OKs that carry API error payloads
         if "error" in data and data.get("reason", "").startswith("Data only available until"):
-            print(f"  [!] ERA5 lag detected: {data['reason']}. Adjusting end date and retrying...")
-            raise ValueError(data['reason'])
+            print(f"  [!] ERA5 lag detected: {data['reason']}")
+            print("      Run orchestrator with an earlier --end-date.")
+            sys.exit(1)
 
-        out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"
-        with open(out_file, "w") as f:
-            json.dump(data, f)
+        # Skip polluting the raw folder if this is just a probe
+        if name != "probe":
+            out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"
+            with open(out_file, "w") as f:
+                json.dump(data, f)
             
         return len(data.get("daily", {}).get("time", []))
         
     except requests.exceptions.HTTPError as e:
-        # Gracefully handle the ERA5 lag error if the API threw a 400 Bad Request
+        # Gracefully handle 400 Bad Requests specific to ERA5 future-date limitations
         if e.response is not None and e.response.status_code == 400:
             try:
                 err_data = e.response.json()
                 if err_data.get("error") and "Data only available until" in err_data.get("reason", ""):
                     print(f"  [!] ERA5 lag detected: {err_data['reason']}")
-                    print(f"      Run orchestrator with earlier --end-date.")
+                    print(f"      Run orchestrator with an earlier --end-date.")
                     sys.exit(1)
             except ValueError:
                 pass
@@ -104,13 +107,26 @@ def main():
     parser.add_argument("--probe", action="store_true", help="Run connection probe before full fetch")
     args = parser.parse_args()
 
+    # 1. User Input Validation: Strict Date Formatting
+    if args.end_date:
+        try:
+            datetime.strptime(args.end_date, "%Y-%m-%d")
+        except ValueError:
+            sys.exit(f"[!] ERROR: Invalid --end-date format '{args.end_date}'. Expected YYYY-MM-DD.")
+            
     end_date = args.end_date if args.end_date else default_end_date()
+
+    # 2. User Input Validation: Chronological integrity
+    if end_date < START_DATE:
+        sys.exit(f"[!] ERROR: --end-date ({end_date}) cannot be before START_DATE ({START_DATE}).")
+
     vars_to_use = DAILY_VARS
 
     print("=" * 60)
     print("Zwei Länder Skiarena — Open-Meteo Data Fetch (Hardened)")
     print(f"Period:  {START_DATE} → {end_date}")
     print(f"Resorts: {len(RESORTS)} × 2 = {len(RESORTS)*2} calls")
+    print(f"Vars ({len(vars_to_use)}): {', '.join(vars_to_use)}")
     print("=" * 60)
 
     session = get_session()
