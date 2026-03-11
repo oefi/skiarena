@@ -3,7 +3,7 @@
 Historical ski weather for all 5 resorts of the **Zwei Länder Skiarena** (Austria / South Tyrol).  
 Dec–Apr · Seasons 2019/20–2024/25 · plus live 2025/26 fetched in-browser.
 
-**[→ Open Dashboard](https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/)**
+## Demo: https://oefi.github.io/zlsa/
 
 ---
 
@@ -63,33 +63,6 @@ python3 scripts/compute_metrics.py
 python3 build_dashboard.py
 # → nauders_dashboard.html  (~2.9 MB)
 ```
-
-Rename `nauders_dashboard.html` → `index.html` and commit to the `main` branch.  
-GitHub Pages serves it automatically at `https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/`.
-
-## Repo structure
-
-```
-index.html           ← dashboard (rename from nauders_dashboard.html)
-og-image.png         ← 1200×630 social preview image
-favicon.svg          ← optional dedicated favicon
-README.md
-.gitignore
-scripts/
-  generate_synthetic.py
-  fetch_openmeteo.py
-  clean_normalize.py
-  compute_metrics.py
-dashboard_template.html
-build_dashboard.py
-```
-
-`data/raw/` and `data/processed/` are excluded from git (large, regenerable).
-
-## Themes
-
-Light ☀️ · Grey 🌥 · Night 🌙 · Print 🖨 — toggle via the nav bar.
-
 ## Caveats
 
 - ERA5-Land is model reanalysis, not station observations. Micro-valley effects may be missed.
