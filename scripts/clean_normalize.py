@@ -161,7 +161,7 @@ def merge_resort(resort):
         sunshine_h     = round((bd["sunshine_duration"][i] or 0) / 3600, 2)  # s → h
         wind_kmh       = bd["windspeed_10m_max"][i] or 0
         weathercode    = bd["weathercode"][i] or 0
-        uv_max         = bd["uv_index_max"][i] or 0
+        uv_max         = (bd.get("uv_index_max") or [0])[i] or 0
 
         # ── Summit values ──
         if dt in summit_idx:

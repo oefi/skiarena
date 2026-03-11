@@ -65,7 +65,7 @@ DAILY_VARS = ",".join([
     "sunshine_duration",      # seconds → we convert to hours
     "windspeed_10m_max",      # km/h
     "weathercode",            # WMO weather interpretation code
-    "uv_index_max",
+    # uv_index_max removed — not available in ERA5-Land archive API (forecast-only)
 ])
 
 # ── Resorts: (name, lat, lon, base_m, summit_m) ───────────────────────────────
