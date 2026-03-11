@@ -19,6 +19,7 @@
   :root {
     --font-base: 16px;
     --snow-stroke: rgba(77, 127, 255, 1);
+    --sun-yield: rgba(234, 179, 8, 0.4);
     scroll-padding-top: 5rem; 
     scroll-behavior: smooth;
   }
@@ -75,7 +76,7 @@
   .theme-toggles span, .font-resizers span { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
   .theme-toggles span:hover, .font-resizers span:hover { transform: scale(1.2); background: var(--border-color); }
 
-  #toc a { padding: 0.3rem 0.6rem; border-radius: 4px; transition: background 0.2s, color 0.2s; }
+  #toc a { padding: 0.3rem 0.6rem; border-radius: 4px; transition: background 0.2s, color 0.2s; text-decoration: none; color: inherit; opacity: 0.8; font-weight: 600; font-size: 0.85rem; }
   #toc a:hover { background: var(--border-color); opacity: 1; }
 
   .control-btn { 
@@ -135,7 +136,7 @@
     content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); 
     background: var(--text-main); color: var(--bg-main); padding: 6px 10px; border-radius: 4px; 
     font-size: 0.8rem; white-space: pre-line; z-index: 10; pointer-events: none; margin-bottom: 4px; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-variant-numeric: tabular-nums;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); font-variant-numeric: tabular-nums; min-width: max-content;
   }
   .hm-cell-future {
     background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px) !important;
@@ -188,11 +189,12 @@
 <!-- ── HEADER ── -->
 <header style="position: sticky; top: 0; z-index: 999; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: var(--bg-header); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-color);">
   <h1 style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.05em;">🎿 ZL Skiarena</h1>
-  <nav id="toc" style="display: flex; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
-    <a href="#powder-alarm" style="text-decoration: none; color: inherit; opacity: 0.8;">Forecast</a>
-    <a href="#heatmap" style="text-decoration: none; color: inherit; opacity: 0.8;">Matrix</a>
-    <a href="#drilldown" style="text-decoration: none; color: inherit; opacity: 0.8;">Telemetry</a>
-    <a href="#snowpack" style="text-decoration: none; color: inherit; opacity: 0.8;">Evolution</a>
+  <nav id="toc" style="display: flex; gap: 0.5rem;">
+    <a href="#powder-alarm">Forecast</a>
+    <a href="#heatmap">Matrix</a>
+    <a href="#drilldown">Telemetry</a>
+    <a href="#snowpack">Snowpack</a>
+    <a href="#atmosphere">Atmosphere</a>
   </nav>
   <div style="display: flex; gap: 1.5rem; align-items: center;">
     <span class="font-resizers">
@@ -257,7 +259,7 @@
       </div>
     </div>
 
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Strict Dec 1 to Apr 30 rendering. Matrix dynamically updates based on your algorithm weights.</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Strict Dec 1 to Apr 30 rendering. Future dates are explicitly purged. Matrix updates instantly.</p>
     <div id="heatmap-container" style="display: flex; flex-direction: column; gap: 2rem;"></div>
   </section>
 
@@ -320,16 +322,43 @@
     </div>
   </section>
 
+  <!-- ── ATMOSPHERIC CONDITIONS CANVAS ── -->
+  <section id="atmosphere">
+    <h2>Atmospheric Conditions (Base) 🌡️</h2>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Current active season analysis. Visualizes freeze/thaw cycles, solar yield, and severe wind events.</p>
+    
+    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.5rem; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color);">
+        <div class="legend-item"><div class="legend-color" style="background:linear-gradient(to right, #ef4444, #3b82f6)"></div>Thermal Band (Min/Max °C)</div>
+        <div class="legend-item"><div class="legend-color" style="background:var(--sun-yield);"></div>Solar Yield (Hours)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#ef4444; height:2px;"></div>Wind Gusts (km/h)</div>
+      </div>
+      <div style="font-size: 0.85rem; font-weight: bold; color: var(--brand);" id="atmos-season-label">Season: Loading...</div>
+    </div>
+
+    <div style="position: relative;">
+      <canvas id="atmos-canvas" width="2000" height="600"></canvas>
+    </div>
+  </section>
+
 </main>
 
 <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 2rem;">
-  Zwei Länder Skiarena Dashboard &middot; Dynamic Algorithmic Engine
+  Zwei Länder Skiarena Dashboard &middot; Dynamic Algorithmic Engine &middot; Temporal Guillotine Active
 </footer>
 
 <script>
   // ── CORE SYSTEM ──
-  function setLocalTheme(t) { document.documentElement.dataset.theme = t; localStorage.setItem('zl_theme', t); if(window.repaintCanvas) window.repaintCanvas(); }
-  function setLocalFont(f) { document.documentElement.dataset.font = f; localStorage.setItem('zl_font', f); }
+  function setLocalTheme(t) { 
+    document.documentElement.dataset.theme = t; 
+    localStorage.setItem('zl_theme', t); 
+    if(window.repaintCanvas) window.repaintCanvas(); 
+    if(window.repaintAtmosCanvas) window.repaintAtmosCanvas();
+  }
+  function setLocalFont(f) { 
+    document.documentElement.dataset.font = f; 
+    localStorage.setItem('zl_font', f); 
+  }
   document.documentElement.dataset.theme = localStorage.getItem('zl_theme') || 'night';
   document.documentElement.dataset.font = localStorage.getItem('zl_font') || 'md';
 
@@ -345,19 +374,33 @@
   try { SKI_DATA = __SKI_DATA_PLACEHOLDER__; } catch(e) {}
   try { FORECAST_DATA = __FORECAST_DATA_PLACEHOLDER__; } catch(e) {}
 
-  // ── THE TRUE PRE-FLIGHT PURGE (Sever API Slop) ──
+  // ── TEMPORAL GUILLOTINE (Annihilate API Slop) ──
+  // Open-Meteo pads requests with zeroes out to the horizon.
+  // We determine absolute local today. Anything strictly greater than today is physically impossible and must be purged.
   let latestDataDate = "Unknown";
   if (SKI_DATA && SKI_DATA.records) {
+    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+    const localTodayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+
+    // 1. Hard cutoff: Sever the future.
+    SKI_DATA.records = SKI_DATA.records.filter(r => r.date <= localTodayStr);
+
+    // 2. Scan backwards to verify the API didn't pad today/yesterday with empty shells.
     let trueLatestDate = null;
     for (let i = SKI_DATA.records.length - 1; i >= 0; i--) {
       const r = SKI_DATA.records[i];
       const t = r.base?.temperature_2m_max ?? r.temperature_2m_max;
-      if (t !== null && t !== undefined) { trueLatestDate = r.date; break; }
+      // If we find a physical temperature reading, reality holds. Stop here.
+      if (t !== null && t !== undefined) { 
+        trueLatestDate = r.date; 
+        break; 
+      }
     }
+    
     if (trueLatestDate) {
       SKI_DATA.records = SKI_DATA.records.filter(r => r.date <= trueLatestDate);
       latestDataDate = trueLatestDate;
-    } else {
+    } else if (SKI_DATA.records.length > 0) {
       latestDataDate = SKI_DATA.records[SKI_DATA.records.length - 1].date;
     }
   }
@@ -403,13 +446,14 @@
     const uiSun = document.getElementById('w-sun'), lblSun = document.getElementById('lbl-sun');
     const uiComf = document.getElementById('w-comf'), lblComf = document.getElementById('lbl-comf');
     
-    const getWeights = () => ({
-      pow: parseInt(uiPow.value) / 100,
-      sun: parseInt(uiSun.value) / 100,
-      comf: parseInt(uiComf.value) / 100
-    });
+    const getWeights = () => ({ pow: parseInt(uiPow.value) / 100, sun: parseInt(uiSun.value) / 100, comf: parseInt(uiComf.value) / 100 });
 
     const computeDynamicScore = (r, weights) => {
+      // Hard fail-safe: If the day is an empty shell padded by the API, return null entirely to break the algorithms.
+      if ((r.base?.temperature_2m_max ?? r.temperature_2m_max) === null && (r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0) === 0) {
+        return { score: null, metrics: { fPowder:0, fSun:0, fComfort:0, fatal:[] } };
+      }
+
       const sSnow = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
       const bRain = r.base?.precipitation_sum ?? r.precipitation_sum ?? 0;
       const bTemp = r.base?.temperature_2m_max ?? r.temperature_2m_max ?? null;
@@ -417,13 +461,9 @@
       const sunSecs = r.sunshine_duration ?? 0;
       const sunHours = sunSecs / 3600;
 
-      // 1. Powder Factor (Max 20cm fresh)
       const fPowder = Math.min(sSnow / 20.0, 1.0);
-      
-      // 2. Sun Factor (Max 8hrs sun)
       const fSun = Math.min(sunHours / 8.0, 1.0);
 
-      // 3. Comfort Factor (Decays on slush, frostbite, or wind)
       let fComfort = 1.0;
       if (sGust > 30) fComfort -= (sGust - 30) / 50; 
       if (bTemp !== null && bTemp > 2) fComfort -= (bTemp - 2) / 10; 
@@ -524,16 +564,17 @@
         const fmt = (t) => t !== null && t !== undefined ? `${t.toFixed(1)}°C` : '—'; 
         const warn = (r.flags && r.flags.length) ? `<span title="Data Flag: ${r.flags.join(',')}" style="cursor:help;">⚠️</span> ` : '';
         
-        // Execute Dynamic Engine
         const dScore = computeDynamicScore(r, weights);
         const finalSc = dScore.score;
 
         let tooltipHTML = `<div style="margin-bottom:4px; font-weight:bold; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:4px;">Diagnostic Matrix</div>`;
-        tooltipHTML += `<div>❄️ Pow Factor: ${(dScore.metrics.fPowder*10).toFixed(1)}/10</div>`;
-        tooltipHTML += `<div>☀️ Sun Factor: ${(dScore.metrics.fSun*10).toFixed(1)}/10</div>`;
-        tooltipHTML += `<div>🛡️ Comf Factor: ${(dScore.metrics.fComfort*10).toFixed(1)}/10</div>`;
-        if (dScore.metrics.fatal.length > 0) {
-          tooltipHTML += `<div style="color:#ef4444; font-weight:bold; margin-top:4px;">🚨 ${dScore.metrics.fatal.join(' + ')}</div>`;
+        if (finalSc === null) {
+          tooltipHTML += `<div>Data unavailable</div>`;
+        } else {
+          tooltipHTML += `<div>❄️ Pow Factor: ${(dScore.metrics.fPowder*10).toFixed(1)}/10</div>`;
+          tooltipHTML += `<div>☀️ Sun Factor: ${(dScore.metrics.fSun*10).toFixed(1)}/10</div>`;
+          tooltipHTML += `<div>🛡️ Comf Factor: ${(dScore.metrics.fComfort*10).toFixed(1)}/10</div>`;
+          if (dScore.metrics.fatal.length > 0) tooltipHTML += `<div style="color:#ef4444; font-weight:bold; margin-top:4px;">🚨 ${dScore.metrics.fatal.join(' + ')}</div>`;
         }
 
         let snHtml = '—';
@@ -559,7 +600,7 @@
           <td style="position:relative; text-align:right;">
             <div class="quality-badge" style="margin-left: auto;">
               <div style="width:12px;height:12px;border-radius:50%;background:${getColor(finalSc)}"></div>
-              ${(finalSc*10).toFixed(1)}/10
+              ${finalSc!==null?(finalSc*10).toFixed(1)+'/10':'—'}
               <div class="quality-tooltip">${tooltipHTML}</div>
             </div>
           </td>
@@ -587,11 +628,14 @@
     });
 
     const getSeasonYears = (resortData) => {
-      const years = new Set(resortData.map(r => { const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7)); return m >= 10 ? y : y - 1; }));
+      const years = new Set(resortData.map(r => { 
+        const y = parseInt(r.date.slice(0,4)); 
+        const m = parseInt(r.date.slice(5,7)); 
+        return m >= 10 ? y : y - 1; 
+      }));
       return Array.from(years).sort().reverse();
     };
 
-    // Make renderHeatmaps global so the sliders can trigger it
     window.renderHeatmaps = () => {
       const weights = getWeights();
       hc.innerHTML = '';
@@ -619,9 +663,9 @@
               }
               
               const startStr = chunkDays[0], endStr = chunkDays[chunkDays.length-1];
+              // Because we enforced the temporal guillotine, anything > latestDataDate is truly future.
               let isFuture = startStr > latestDataDate;
               
-              // Dynamic Calculation instead of static universal_score
               const vs = chunkDays.map(d => {
                 if(!dataMap[d]) return null;
                 return computeDynamicScore(dataMap[d], weights).score;
@@ -645,23 +689,29 @@
         hc.innerHTML += html + `</div>`;
       });
     };
-    renderHeatmaps(); // Initial render
+    renderHeatmaps(); 
 
-    // ── SNOWPACK CANVAS ──
-    const cvs = document.getElementById('snow-canvas'), ctx = cvs.getContext('2d');
-    const cc = document.getElementById('canvas-controls'), legend = document.getElementById('canvas-legend'), avgBtn = document.getElementById('toggle-avg-btn');
-    let act = Object.keys(byResort)[0], hoverDayOffset = null, maWindow = 1, showHistoricalAvg = true;
-    let isTouch = false; 
-    
+    // ── GLOBAL CANVAS SYSTEM & CONTROLS ──
     const monthMarkers = [ { label: "Dec 1", off: 0 }, { label: "Jan 1", off: 31 }, { label: "Feb 1", off: 62 }, { label: "Mar 1", off: 90 }, { label: "Apr 1", off: 121 }, { label: "May 1", off: 151 } ];
+    const cc = document.getElementById('canvas-controls');
+    let act = Object.keys(byResort)[0];
 
     Object.keys(byResort).forEach(r => {
       const b = document.createElement('button'); b.innerText = r.toUpperCase(); b.className = 'control-btn';
       if(r===act) b.classList.add('active');
-      b.onclick = () => { Array.from(cc.children).forEach(c=>c.classList.remove('active')); b.classList.add('active'); act=r; window.repaintCanvas(); };
+      b.onclick = () => { 
+        Array.from(cc.children).forEach(c=>c.classList.remove('active')); b.classList.add('active'); act=r; 
+        window.repaintCanvas(); window.repaintAtmosCanvas();
+      };
       cc.appendChild(b);
     });
 
+    // ── SNOWPACK CANVAS ──
+    const cvs = document.getElementById('snow-canvas'), ctx = cvs.getContext('2d');
+    const legend = document.getElementById('canvas-legend'), avgBtn = document.getElementById('toggle-avg-btn');
+    let hoverDayOffset = null, maWindow = 1, showHistoricalAvg = true;
+    let isTouch = false; 
+    
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.onclick = (e) => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -800,6 +850,164 @@
     cvs.addEventListener('touchmove', (e) => { if (e.touches.length > 0) { e.preventDefault(); isTouch = true; const rect = cvs.getBoundingClientRect(); hoverDayOffset = Math.round((((e.touches[0].clientX - rect.left) * (cvs.width / rect.width)) - 120) / (cvs.width - 240) * 152); window.repaintCanvas(); } }, {passive: false});
 
     setTimeout(window.repaintCanvas, 50);
+
+    // ── ATMOSPHERIC CONDITIONS CANVAS ──
+    const cvsA = document.getElementById('atmos-canvas'), ctxA = cvsA.getContext('2d');
+    const lblSeason = document.getElementById('atmos-season-label');
+    let atmosHoverDay = null;
+
+    window.repaintAtmosCanvas = () => {
+      ctxA.clearRect(0,0,cvsA.width,cvsA.height); 
+      const rd = byResort[act]; if(!rd) return;
+
+      const seasons = getSeasonYears(rd);
+      if (seasons.length === 0) return;
+      const curYear = seasons[0]; // Latest active season
+      const ssStr = `${curYear}/${String(curYear+1).slice(2)}`;
+      lblSeason.innerText = `Season: ${ssStr}`;
+
+      const atmosData = new Array(153).fill(null);
+      
+      rd.forEach(r => {
+        const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7)), day = parseInt(r.date.slice(8,10));
+        if (m > 5 && m < 12) return; 
+        const startYear = m === 12 ? y : y - 1;
+        if (startYear !== curYear) return; // Isolate current season
+
+        const start = Date.UTC(startYear, 11, 1), current = Date.UTC(y, m-1, day);
+        const off = Math.floor((current - start) / 86400000);
+        if (off < 0 || off > 152) return; 
+
+        atmosData[off] = {
+          date: r.date,
+          tMax: r.base?.temperature_2m_max ?? r.temperature_2m_max ?? null,
+          tMin: r.base?.temperature_2m_min ?? r.temperature_2m_min ?? null,
+          sun: (r.sunshine_duration ?? 0) / 3600,
+          gust: r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0
+        };
+      });
+
+      const pX = 120, pY = 40, w = cvsA.width-pX*2, h = cvsA.height-pY*2 - 40; 
+      const mapX = x => pX+(x/152)*w;
+      
+      // Y-Scales
+      const tMaxLimit = 15, tMinLimit = -25, tRange = tMaxLimit - tMinLimit;
+      const mapTempY = t => pY + h - ((t - tMinLimit) / tRange) * h;
+      
+      const sunMax = 12; // Hours
+      const mapSunY = s => pY + h - (s / sunMax) * (h/2); // Sun takes up bottom half
+      
+      const gustMax = 120; // km/h
+      const mapGustY = g => pY + h - (g / gustMax) * h;
+
+      // 1. Draw Grid & Axes
+      ctxA.strokeStyle = getStyleVar('--grid-line'); ctxA.fillStyle = getStyleVar('--text-muted'); ctxA.font = 'bold 24px system-ui'; ctxA.textBaseline = 'middle';
+      ctxA.textAlign = 'right'; 
+      for(let t=tMinLimit; t<=tMaxLimit; t+=10) { 
+        const y = mapTempY(t); ctxA.beginPath(); ctxA.moveTo(pX,y); ctxA.lineTo(pX+w,y); ctxA.lineWidth = 1; ctxA.stroke(); 
+        ctxA.fillText(`${t}°C`, pX-20, y); 
+      }
+      // Zero degree line (Freeze line)
+      const zeroY = mapTempY(0);
+      ctxA.beginPath(); ctxA.moveTo(pX, zeroY); ctxA.lineTo(pX+w, zeroY); ctxA.lineWidth = 2; ctxA.strokeStyle = getStyleVar('--text-muted'); ctxA.stroke();
+      ctxA.strokeStyle = getStyleVar('--grid-line');
+
+      ctxA.textAlign = 'left';
+      ctxA.fillText(`12h Sun`, pX+w+20, mapSunY(12));
+      ctxA.fillText(`120 km/h`, pX+w+20, mapGustY(120));
+
+      ctxA.textAlign = 'center'; ctxA.textBaseline = 'top';
+      monthMarkers.forEach(m => { const x = mapX(m.off); if (x <= pX+w) { ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, pY+h); ctxA.lineWidth = 2; ctxA.stroke(); ctxA.fillText(m.label, x, pY+h + 15); }});
+
+      // 2. Plot Solar Yield (Bars)
+      ctxA.fillStyle = getStyleVar('--sun-yield');
+      const barW = (w / 152) * 0.8;
+      for(let i=0; i<=152; i++) {
+        if(atmosData[i] && atmosData[i].sun !== null) {
+          const sy = mapSunY(atmosData[i].sun);
+          ctxA.fillRect(mapX(i) - barW/2, sy, barW, pY+h - sy);
+        }
+      }
+
+      // 3. Plot Thermal Band (Fill)
+      ctxA.beginPath();
+      let hasStart = false;
+      for(let i=0; i<=152; i++) {
+        if(atmosData[i] && atmosData[i].tMax !== null) {
+          if(!hasStart) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i].tMax)); hasStart = true; } 
+          else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMax)); }
+        }
+      }
+      for(let i=152; i>=0; i--) {
+        if(atmosData[i] && atmosData[i].tMin !== null) {
+          ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMin));
+        }
+      }
+      ctxA.closePath();
+      const gradient = ctxA.createLinearGradient(0, pY, 0, pY+h);
+      gradient.addColorStop(0, 'rgba(239, 68, 68, 0.2)'); // Red top
+      gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)'); // Blue bottom
+      ctxA.fillStyle = gradient;
+      ctxA.fill();
+
+      // Thermal Borders
+      const drawTLine = (key, color) => {
+        ctxA.beginPath(); let drawing = false;
+        for(let i=0; i<=152; i++) {
+          if(atmosData[i] && atmosData[i][key] !== null) {
+            if(!drawing) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i][key])); drawing = true; }
+            else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i][key])); }
+          } else { drawing = false; }
+        }
+        ctxA.strokeStyle = color; ctxA.lineWidth = 3; ctxA.stroke();
+      };
+      drawTLine('tMax', '#ef4444');
+      drawTLine('tMin', '#3b82f6');
+
+      // 4. Plot Wind Gusts (Line)
+      ctxA.beginPath(); let drawingG = false;
+      for(let i=0; i<=152; i++) {
+        if(atmosData[i] && atmosData[i].gust !== null) {
+          if(!drawingG) { ctxA.moveTo(mapX(i), mapGustY(atmosData[i].gust)); drawingG = true; }
+          else { ctxA.lineTo(mapX(i), mapGustY(atmosData[i].gust)); }
+        } else { drawingG = false; }
+      }
+      ctxA.strokeStyle = 'rgba(239, 68, 68, 0.6)'; ctxA.lineWidth = 2; ctxA.setLineDash([5, 5]); ctxA.stroke(); ctxA.setLineDash([]);
+
+      // 5. Interactive Tooltip
+      if (atmosHoverDay !== null && atmosData[atmosHoverDay]) {
+        const d = atmosData[atmosHoverDay];
+        const hx = mapX(atmosHoverDay);
+        ctxA.beginPath(); ctxA.moveTo(hx, pY); ctxA.lineTo(hx, pY+h);
+        ctxA.strokeStyle = getStyleVar('--text-main'); ctxA.lineWidth = 2; ctxA.setLineDash([5, 5]); ctxA.stroke(); ctxA.setLineDash([]);
+
+        ctxA.fillStyle = getStyleVar('--bg-header');
+        const boxW = 200, boxH = 140;
+        let boxX = hx + 15, boxY = pY;
+        if (isTouch) { boxY = pY - 50; if (boxY < 0) boxY = 0; }
+        if (boxX + boxW > pX + w) boxX = hx - boxW - 15;
+        
+        ctxA.fillRect(boxX, boxY, boxW, boxH); ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.strokeRect(boxX, boxY, boxW, boxH);
+        ctxA.textAlign = 'left'; ctxA.textBaseline = 'top'; ctxA.font = '22px system-ui';
+        
+        ctxA.fillStyle = getStyleVar('--text-muted'); ctxA.fillText(d.date, boxX + 15, boxY + 15);
+        ctxA.fillStyle = getStyleVar('--text-main'); 
+        ctxA.fillText(`Max: ${d.tMax !== null ? d.tMax.toFixed(1) : '—'}°C`, boxX + 15, boxY + 45);
+        ctxA.fillText(`Min: ${d.tMin !== null ? d.tMin.toFixed(1) : '—'}°C`, boxX + 15, boxY + 70);
+        ctxA.fillText(`Sun: ${d.sun.toFixed(1)} hrs`, boxX + 15, boxY + 95);
+        ctxA.fillStyle = '#ef4444'; ctxA.fillText(`Gust: ${d.gust.toFixed(0)} km/h`, boxX + 115, boxY + 95);
+        
+        // Dots
+        if(d.tMax !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(d.tMax), 6, 0, 2*Math.PI); ctxA.fillStyle='#ef4444'; ctxA.fill(); }
+        if(d.tMin !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(d.tMin), 6, 0, 2*Math.PI); ctxA.fillStyle='#3b82f6'; ctxA.fill(); }
+      }
+    };
+
+    cvsA.addEventListener('mousemove', (e) => { isTouch = false; const rect = cvsA.getBoundingClientRect(); atmosHoverDay = Math.round((((e.clientX - rect.left) * (cvsA.width / rect.width)) - 120) / (cvsA.width - 240) * 152); window.repaintAtmosCanvas(); });
+    cvsA.addEventListener('mouseleave', () => { atmosHoverDay = null; window.repaintAtmosCanvas(); });
+    cvsA.addEventListener('touchmove', (e) => { if (e.touches.length > 0) { e.preventDefault(); isTouch = true; const rect = cvsA.getBoundingClientRect(); atmosHoverDay = Math.round((((e.touches[0].clientX - rect.left) * (cvsA.width / rect.width)) - 120) / (cvsA.width - 240) * 152); window.repaintAtmosCanvas(); } }, {passive: false});
+
+    setTimeout(window.repaintAtmosCanvas, 100);
   });
 </script>
 </body>
