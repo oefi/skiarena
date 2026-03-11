@@ -1,0 +1,104 @@
+name: Refresh Ski Dashboard
+
+# ── Triggers ──────────────────────────────────────────────────────────────────
+on:
+  # Weekly during ski season (Mon 05:00 UTC = ~06:00 CET / 07:00 CEST)
+  # Off-season runs are harmless no-ops — action_refresh.py detects them
+  # and exits 0 without committing, so the run stays green.
+  schedule:
+    - cron: "0 5 * * 1"   # every Monday at 05:00 UTC
+
+  # Manual trigger (with optional end-date override and force flag)
+  workflow_dispatch:
+    inputs:
+      end_date:
+        description: "Override fetch end date (YYYY-MM-DD, leave blank for auto)"
+        required: false
+        default: ""
+      force:
+        description: "Force rebuild even if data appears current"
+        required: false
+        default: "false"
+        type: boolean
+
+  # Also run on push to main when template or scripts change
+  push:
+    branches: [main]
+    paths:
+      - "dashboard_template.html"
+      - "scripts/**.py"
+      - "build_dashboard.py"
+      - ".github/workflows/refresh.yml"
+
+# ── Permissions ───────────────────────────────────────────────────────────────
+permissions:
+  contents: write   # needed to push the rebuilt index.html
+
+# Only one run at a time — cancel older runs on the same branch
+concurrency:
+  group: refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Job ───────────────────────────────────────────────────────────────────────
+jobs:
+  refresh:
+    name: Fetch → Build → Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # 2. Python setup with pip cache
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # 3. Install dependencies
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # 4. Run orchestrator
+      - name: Refresh dashboard data + build HTML
+        id: refresh
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.end_date }}" ]; then
+            ARGS="$ARGS --end-date ${{ github.event.inputs.end_date }}"
+          fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+          python3 scripts/action_refresh.py $ARGS
+
+      # 5. Rename to index.html for GitHub Pages
+      - name: Rename output for GitHub Pages
+        if: steps.refresh.outputs.DASHBOARD_CHANGED == 'true'
+        run: |
+          mv nauders_dashboard.html index.html
+          echo "Dashboard built through: ${{ steps.refresh.outputs.BAKED_THROUGH }}"
+
+      # 6. Commit + push (only if something actually changed)
+      - name: Commit and push updated dashboard
+        if: steps.refresh.outputs.DASHBOARD_CHANGED == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          # Also stage any changes to processed data if you want to track them
+          # git add data/processed/  # uncomment to commit processed data too
+          git diff --staged --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "chore: refresh dashboard through ${{ steps.refresh.outputs.BAKED_THROUGH }} [skip ci]"
+          git push
+
+      # 7. Log no-op
+      - name: Log no-op (off-season or data current)
+        if: steps.refresh.outputs.DASHBOARD_CHANGED != 'true'
+        run: echo "✓ No rebuild needed — data current or off-season."
