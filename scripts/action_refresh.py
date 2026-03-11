@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 action_refresh.py — GitHub Actions orchestrator
+Handles graceful degradation if the APIs are down but cached data exists.
 """
 
 import subprocess
@@ -8,7 +9,6 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from datetime import date
 
 BASE    = Path(__file__).parent.parent
 SCRIPTS = BASE / "scripts"
@@ -50,28 +50,29 @@ def main():
     p.add_argument("--force", action="store_true")
     args = p.parse_args()
 
-    # ── FIX 3: Graceful Failures ──
-    # If fetch fails (API down/rate limited), we allow it ONLY if we have cached data to build with.
+    # 1. Fetch History
     fetch_cmd = [sys.executable, str(SCRIPTS / "fetch_openmeteo.py")]
     if args.end_date:
         fetch_cmd.extend(["--end-date", args.end_date])
         
     has_cache = DATA.exists()
-    
     fetch_success = run(fetch_cmd, "Fetch Open-Meteo", allow_fail=has_cache)
     
     if not fetch_success and has_cache:
-        print("\n[!] WARNING: Fetch failed, but cached data exists. Proceeding with stale data to keep dashboard alive.")
-        # Skip clean/compute because no new raw data exists, jump straight to build.
+        print("\n[!] WARNING: Fetch failed, but cached data exists. Proceeding with stale data.")
     else:
         run([sys.executable, str(SCRIPTS / "clean_normalize.py")], "Clean & Normalize")
         run([sys.executable, str(SCRIPTS / "compute_metrics.py")], "Compute scores")
 
+    # 2. Fetch Forecast (Phase 2)
+    run([sys.executable, str(SCRIPTS / "fetch_forecast.py")], "Fetch High-Res Forecast", allow_fail=True)
+
+    # 3. Build & Wrap
     run([sys.executable, str(BASE / "build_dashboard.py")], "Build HTML")
 
     og_script = SCRIPTS / "gen_og_image.py"
     if og_script.exists():
-        run([sys.executable, str(og_script)], "Regenerate og-image.png")
+        run([sys.executable, str(og_script)], "Regenerate og-image.png", allow_fail=True)
 
     if not OUT.exists():
         sys.exit(1)
