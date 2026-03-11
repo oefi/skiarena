@@ -23,11 +23,19 @@ DAILY_VARS = [
     "windspeed_10m_max", "weathercode"
 ]
 
-# ── FIX 2: Hardened Requests Session with Exponential Backoff ──
+RESORTS = [
+    ("nauders",    46.88, 10.50, 1400, 2750),
+    ("schoeneben", 46.80, 10.48, 1460, 2390),
+    ("watles",     46.70, 10.50, 1500, 2550),
+    ("sulden",     46.52, 10.58, 1900, 3250),
+    ("trafoi",     46.55, 10.50, 1540, 2800)
+]
+
 def get_session():
+    """Builds a hardened requests session with exponential backoff for the Open-Meteo API."""
     session = requests.Session()
-    # Retry on 429 (Rate Limit), 500, 502, 503, 504.
-    # Backoff factor 1 means sleeps will be [1s, 2s, 4s, 8s, 16s]
+    # Retries on Rate Limit (429) and Server Errors (5xx)
+    # Sleeps: 1s, 2s, 4s, 8s, 16s before giving up
     retry = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
@@ -49,11 +57,9 @@ def fetch_one(session, name, lat, lon, elevation_label, vars_to_use, start_d, en
         response.raise_for_status()
         data = response.json()
         
-        # ERA5-Land latency fallback check
+        # ERA5-Land API returns 400 with a JSON reason if we ask for data from the future/lag period
         if "error" in data and data.get("reason", "").startswith("Data only available until"):
             print(f"  [!] ERA5 lag detected: {data['reason']}. Adjusting end date and retrying...")
-            # Ideally parse the date from the string, but a simple manual fallback works
-            # Or exit and let the orchestrator handle it. For now, raise.
             raise ValueError(data['reason'])
 
         out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"
@@ -62,18 +68,71 @@ def fetch_one(session, name, lat, lon, elevation_label, vars_to_use, start_d, en
             
         return len(data.get("daily", {}).get("time", []))
         
+    except requests.exceptions.HTTPError as e:
+        # Gracefully handle the ERA5 lag error if the API threw a 400 Bad Request
+        if e.response is not None and e.response.status_code == 400:
+            try:
+                err_data = e.response.json()
+                if err_data.get("error") and "Data only available until" in err_data.get("reason", ""):
+                    print(f"  [!] ERA5 lag detected: {err_data['reason']}")
+                    print(f"      Run orchestrator with earlier --end-date.")
+                    sys.exit(1)
+            except ValueError:
+                pass
+        print(f"  [!] HTTP failure fetching {name} ({elevation_label}): {e}")
+        raise
     except requests.exceptions.RequestException as e:
         print(f"  [!] Network failure fetching {name} ({elevation_label}): {e}")
         raise
 
 def default_end_date():
-    """ERA5-Land is usually 5 days behind. Return today - 6 days to be safe."""
+    """ERA5-Land is usually 5-6 days behind. Safely target 6 days ago."""
     return (date.today() - timedelta(days=6)).strftime("%Y-%m-%d")
 
-# ... (Keep your existing PROBE and MAIN logic, just swap `requests.get` to `session.get`) ...
+def probe_variables(session, lat, lon, base_m):
+    """Simple connection test."""
+    try:
+        fetch_one(session, "probe", lat, lon, "test", DAILY_VARS, "2024-01-01", "2024-01-02")
+        return DAILY_VARS
+    except Exception as e:
+        print(f"Probe failed: {e}")
+        return None
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--end-date", default=None, help="YYYY-MM-DD override")
+    parser.add_argument("--probe", action="store_true", help="Run connection probe before full fetch")
+    args = parser.parse_args()
+
+    end_date = args.end_date if args.end_date else default_end_date()
+    vars_to_use = DAILY_VARS
+
+    print("=" * 60)
+    print("Zwei Länder Skiarena — Open-Meteo Data Fetch (Hardened)")
+    print(f"Period:  {START_DATE} → {end_date}")
+    print(f"Resorts: {len(RESORTS)} × 2 = {len(RESORTS)*2} calls")
+    print("=" * 60)
+
+    session = get_session()
+
+    if args.probe:
+        name, lat, lon, base_m, _ = RESORTS[0]
+        print(f"\n[PROBE on {name} base {base_m}m]")
+        vars_to_use = probe_variables(session, lat, lon, base_m)
+        if not vars_to_use:
+            sys.exit("No variables worked — check network/API status.")
+        print(f"Proceeding with {len(vars_to_use)} confirmed variables.")
+
+    for name, lat, lon, base_m, summit_m in RESORTS:
+        print(f"\n[{name.upper()}]")
+        
+        n_base = fetch_one(session, name, lat, lon, "base", vars_to_use, START_DATE, end_date)
+        print(f"  ✓ Base   ({base_m}m): {n_base} days")
+        time.sleep(0.6)  # Be gentle to the free API
+        
+        n_summit = fetch_one(session, name, lat, lon, "summit", vars_to_use, START_DATE, end_date)
+        print(f"  ✓ Summit ({summit_m}m): {n_summit} days")
+        time.sleep(0.6)
 
 if __name__ == "__main__":
-    # Example execution wrap
-    session = get_session()
-    # Replace your standard request loop with `session` being passed into fetch_one
-    print("Session hardened. Fetch logic goes here.")
+    main()
