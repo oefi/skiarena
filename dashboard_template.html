@@ -3,8 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Zwei Länder Skiarena — Historical ski conditions dashboard. Jan–Apr 2020–2026.">
-<title>Zwei Länder Skiarena · Ski Conditions 2020–2026</title>
+<meta name="description" content="Zwei Länder Skiarena — Historical ski conditions dashboard. Dec–Apr 2019/20–2024/25.">
+<title>Zwei Länder Skiarena · Ski Conditions 2019/20–2024/25</title>
+
+<!-- ── SEO ── -->
+<meta name="author"   content="Zwei Länder Skiarena Dashboard">
+<meta name="keywords" content="Nauders, Sulden, Watles, Schöneben, Haideralm, Trafoi, ski, snow, Austria, South Tyrol, powder, Reschenpass, Ortler, Vinschgau, skiing">
+<link rel="canonical" href="https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/">
+
+<!-- ── Open Graph (Facebook · WhatsApp · LinkedIn) ── -->
+<meta property="og:type"         content="website">
+<meta property="og:url"          content="https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/">
+<meta property="og:title"        content="Zwei Länder Skiarena · Ski Conditions 2019/20–2024/25">
+<meta property="og:description"  content="Historical ski weather for 5 resorts across Austria &amp; South Tyrol. Every powder day, every sunny terrace, every storm — Dec–Apr across 6 full seasons.">
+<meta property="og:image"        content="https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/og-image.png">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt"    content="Ski conditions heatmap — Zwei Länder Skiarena, Dec–Apr, 6 seasons">
+<meta property="og:locale"       content="en_US">
+<meta property="og:site_name"    content="Zwei Länder Skiarena Dashboard">
+
+<!-- ── Twitter / X Card ── -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Zwei Länder Skiarena · Ski Conditions 2019/20–2024/25">
+<meta name="twitter:description" content="5 resorts · Dec–Apr · 6 seasons. Powder days, snowpack, sunshine — all in one chart.">
+<meta name="twitter:image"       content="https://YOURUSERNAME.github.io/zweilaender-ski-dashboard/og-image.png">
+
+<!-- ── Favicon (ski emoji SVG inline) ── -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎿</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎿</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -1091,10 +1118,10 @@ input[type="date"].date-input {
 }
 .hm-year-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: var(--f-xs); font-weight: 600;
+  font-size: .58rem; font-weight: 600;
   color: var(--text-muted);
   display: flex; align-items: center; justify-content: flex-end;
-  padding-right: .5rem; white-space: nowrap;
+  padding-right: .4rem; white-space: nowrap;
   grid-column: 1;
 }
 .hm-cell {
@@ -1302,7 +1329,7 @@ input:focus-visible, select:focus-visible {
     <button class="toc-hamburger" id="toc-toggle" aria-label="Toggle navigation">☰</button>
     <div>
       <div class="brand-logo">🎿 <span>Zwei Länder</span> Skiarena</div>
-      <div class="brand-sub">Jan–Apr · 2020–2026</div>
+      <div class="brand-sub">Dec–Apr · 2019/20–2024/25</div>
     </div>
   </div>
 
@@ -1375,7 +1402,7 @@ input:focus-visible, select:focus-visible {
       <div class="hero-title">Alpine <em>Conditions</em></div>
       <div class="hero-desc">Historical ski weather across the Zwei Länder Skiarena — 5 resorts, 2 countries, 7 seasons. Every powder day, every sunny terrace, every lift-closure storm. All in one place.</div>
       <div class="hero-meta">
-        <span class="hero-chip" id="chip-dates">Jan–Apr 2020–2026</span>
+        <span class="hero-chip" id="chip-dates">Dec–Apr 2019/20–2024/25</span>
         <span class="hero-chip" id="chip-records">Loading…</span>
         <span class="hero-chip">🇦🇹 Nauders · 🇮🇹 South Tyrol</span>
         <span class="hero-chip" id="chip-synthetic">⚠ Synthetic data — replace with Open-Meteo fetch</span>
@@ -1415,7 +1442,7 @@ input:focus-visible, select:focus-visible {
     <div class="section-header" style="margin-bottom:1rem">
       <div>
         <div class="section-title" style="font-size:1.2rem">Resort Profiles</div>
-        <div class="section-sub">Jan–Apr 2020–2026 · All years combined</div>
+        <div class="section-sub">Dec–Apr 2019/20–2024/25 · All seasons combined</div>
       </div>
     </div>
 
@@ -1427,9 +1454,7 @@ input:focus-visible, select:focus-visible {
     <div class="factoid-strip" id="factoid-strip"></div>
 
     <div class="data-banner mt2">
-      ⚠️ <strong>Data note:</strong> Currently using synthetic data grounded in published climate norms.
-      Run <code>fetch_openmeteo.py</code> and rebuild to use real ERA5-Land data.
-      <strong>2026 is a partial season</strong> — data covers Jan–Mar only.
+      ⚠ All data is currently <strong>SYNTHETIC</strong> for development. Run <code>fetch_openmeteo.py</code> to replace with real ERA5-Land data. Season 2025/26 will be fetched live by the browser.
     </div>
 
   </section>
@@ -1440,7 +1465,7 @@ input:focus-visible, select:focus-visible {
       <div class="section-icon">📅</div>
       <div>
         <div class="section-title">Best Weeks</div>
-        <div class="section-sub">Weekly Ski Quality Score heatmap · All resorts · 2020–2026</div>
+        <div class="section-sub">Weekly Ski Quality Score heatmap · All resorts · 2019/20–2024/25</div>
       </div>
     </div>
     <!-- Controls -->
@@ -1505,7 +1530,7 @@ input:focus-visible, select:focus-visible {
       <div class="date-nav">
         <button class="date-nav-btn" id="daily-prev" title="Previous day">◀</button>
         <input type="date" class="date-input" id="daily-date-input"
-               min="2020-01-01" max="2026-04-30" value="2024-02-14">
+               min="2019-12-10" max="2025-04-10" value="2024-02-14">
         <button class="date-nav-btn" id="daily-next" title="Next day">▶</button>
       </div>
       <div class="daily-persona-row">
@@ -1539,7 +1564,7 @@ input:focus-visible, select:focus-visible {
       <div class="section-icon">❄️</div>
       <div>
         <div class="section-title">Snow Depth</div>
-        <div class="section-sub">Year-over-year summit snowpack ribbon charts · Jan–Apr</div>
+        <div class="section-sub">Season-over-season summit snowpack ribbon charts · Dec–Apr</div>
       </div>
     </div>
     <!-- Controls -->
@@ -1573,7 +1598,7 @@ input:focus-visible, select:focus-visible {
     <!-- Chart -->
     <div class="chart-wrap">
       <div class="chart-title" id="sd-chart-title">Nauders · Summit Snow Depth</div>
-      <div class="chart-sub" id="sd-chart-sub">cm · Jan–Apr 2020–2026 · 5-day smoothed · Click legend items to show/hide years</div>
+      <div class="chart-sub" id="sd-chart-sub">cm · Dec–Apr 2019/20–2024/25 · 5-day smoothed · Click legend items to show/hide seasons</div>
       <div class="chart-canvas-wrap">
         <canvas id="sd-canvas"></canvas>
       </div>
@@ -1588,7 +1613,7 @@ input:focus-visible, select:focus-visible {
       <div class="section-icon">🌨</div>
       <div>
         <div class="section-title">Powder Days</div>
-        <div class="section-sub">Days with ≥10 cm fresh snow · by resort · by year</div>
+        <div class="section-sub">Days with ≥10 cm fresh snow · by resort · by season</div>
       </div>
     </div>
     <!-- Filters -->
@@ -1597,6 +1622,7 @@ input:focus-visible, select:focus-visible {
         <span class="heatmap-label">Month</span>
         <div class="ctrl-group" id="pw-month-ctrl">
           <button class="ctrl-btn active" data-pw-month="all">All</button>
+          <button class="ctrl-btn" data-pw-month="12">Dec</button>
           <button class="ctrl-btn" data-pw-month="1">Jan</button>
           <button class="ctrl-btn" data-pw-month="2">Feb</button>
           <button class="ctrl-btn" data-pw-month="3">Mar</button>
@@ -1689,7 +1715,7 @@ input:focus-visible, select:focus-visible {
           <div class="planner-ctrl-label">Start date</div>
           <div class="planner-date-row">
             <input type="date" class="planner-date-input" id="plan-start-date"
-                   min="2020-01-01" max="2026-04-23" value="2024-02-10">
+                   min="2019-12-10" max="2025-04-10" value="2024-02-10">
           </div>
         </div>
 
@@ -1790,7 +1816,7 @@ input:focus-visible, select:focus-visible {
         <div style="flex:1;min-width:220px">
           <div style="font-family:'Cormorant Garamond',serif;font-size:var(--f-lg);font-weight:600;margin-bottom:.6rem">Caveats</div>
           <p style="font-size:var(--f-sm);color:var(--text-muted);line-height:1.6">
-            ERA5-Land is model reanalysis, not station observations. Micro-valley effects may be missed. 7 years is recent history, not climatology. 2026 is a partial season. Snowmaking coverage (30 km at Nauders) is not reflected in model data — poor-snow days may still be skiable on groomed pistes.
+            ERA5-Land is model reanalysis, not station observations. Micro-valley effects may be missed. 6 full seasons (2019/20–2024/25) is recent history, not climatology. Season 2025/26 is fetched live from Open-Meteo on page load. Snowmaking coverage (30 km at Nauders) is not reflected in model data — poor-snow days may still be skiable on groomed pistes.
           </p>
         </div>
       </div>
@@ -1804,7 +1830,7 @@ input:focus-visible, select:focus-visible {
 ═══════════════════════════════════════════════ -->
 <footer>
   <div class="footer-inner">
-    <span>🎿 <strong>Zwei Länder Skiarena</strong> Ski Conditions Dashboard · Jan–Apr 2020–2026</span>
+    <span>🎿 <strong>Zwei Länder Skiarena</strong> Ski Conditions Dashboard · Dec–Apr 2019/20–2024/25</span>
     <span>📡 Data: Open-Meteo ERA5-Land reanalysis · ZAMG climate normals · Snow-Forecast.com · Bergfex · Skiresort.info</span>
     <span>⚙️ Built with Chart.js · Single-file HTML · No server · No tracking · No ads</span>
     <span>🗂 <a href="https://github.com" target="_blank" rel="noopener" style="color:var(--accent)">GitHub repo</a> · Deploy free via GitHub Pages · Works fully offline</span>
@@ -1907,14 +1933,14 @@ function stars(score) {
   const bestResort = Object.entries(resortAvg).sort((a,b) => b[1]-a[1])[0];
   document.getElementById('stat-best-resort').textContent = bestResort[0].charAt(0).toUpperCase() + bestResort[0].slice(1);
 
-  // Best year (all resorts combined)
-  const yearAvg = {};
-  [2020,2021,2022,2023,2024,2025,2026].forEach(yr => {
-    const sub = recs.filter(r => r.year === yr);
-    yearAvg[yr] = sub.reduce((s, r) => s + r.score_universal, 0) / sub.length;
+  // Best season (all resorts combined)
+  const seasonAvg = {};
+  ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'].forEach(s => {
+    const sub = recs.filter(r => r.season === s);
+    seasonAvg[s] = sub.length ? sub.reduce((acc, r) => acc + r.score_universal, 0) / sub.length : 0;
   });
-  const bestYear = Object.entries(yearAvg).sort((a,b) => b[1]-a[1])[0];
-  document.getElementById('stat-best-year').textContent = bestYear[0];
+  const bestSeason = Object.entries(seasonAvg).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('stat-best-year').textContent = bestSeason[0];
 
   // Max summit depth
   const maxDepth = Math.max(...recs.map(r => r.summit_depth_cm));
@@ -1985,9 +2011,8 @@ function stars(score) {
     return `rgb(${r},${g},${b})`;
   }
 
-  /* ── Build week list for Jan–Apr ── */
+  /* ── Build week list (season-relative keys like "2019/20-W01") ── */
   function buildWeekList() {
-    // Collect all week_keys that fall in Jan–Apr from our data
     const wkSet = new Set();
     const weekFirstDate = {};  // week_key → earliest date
     SKI_DATA.records.forEach(r => {
@@ -1996,22 +2021,21 @@ function stars(score) {
         weekFirstDate[r.week_key] = r.date;
       }
     });
-    // Group by year, sort
-    const byYear = {};
+    // Group by season (7-char prefix "2019/20")
+    const bySeason = {};
     [...wkSet].forEach(wk => {
-      const yr = wk.slice(0, 4);
-      if (!byYear[yr]) byYear[yr] = [];
-      byYear[yr].push(wk);
+      const season = wk.slice(0, 7);   // "2019/20"
+      if (!bySeason[season]) bySeason[season] = [];
+      bySeason[season].push(wk);
     });
-    Object.values(byYear).forEach(arr => arr.sort());
-    return { byYear, weekFirstDate };
+    Object.values(bySeason).forEach(arr => arr.sort());
+    return { bySeason, weekFirstDate };
   }
 
   /* ── Aggregate scores for a resort+persona+weekKey ── */
   function getWeekScore(resort, persona, weekKey) {
     const scoreKey = `score_${persona}`;
     if (resort === 'best') {
-      // Best score across all resorts that week
       let best = null;
       RESORT_ORDER.forEach(res => {
         const wkData = SKI_DATA.aggregations.weekly[res]?.[weekKey];
@@ -2039,75 +2063,48 @@ function stars(score) {
     return bestResort;
   }
 
-  /* ── Week label (short) ── */
-  function weekLabel(weekKey, weekFirstDate) {
-    const d = new Date(weekFirstDate[weekKey]);
-    if (!d) return '';
-    const day = d.getDate();
-    const mon = ['Jan','Feb','Mar','Apr','May'][d.getMonth()];
-    // Show month name only at month transitions
-    return day <= 7 ? mon : (day <= 14 ? '' : '');
-  }
-
-  /* ── Month of a week_key (for header labels) ── */
-  function weekMonth(weekKey, weekFirstDate) {
-    const fd = weekFirstDate[weekKey];
-    if (!fd) return null;
-    return new Date(fd).getMonth(); // 0=Jan
-  }
-
   let selectedWeekKey = null;
-  let selectedYear    = null;
+  let selectedSeason  = null;
 
   /* ── Render the grid ── */
   function renderHeatmap(resort, persona) {
-    const { byYear, weekFirstDate } = buildWeekList();
-    const years = ['2020','2021','2022','2023','2024','2025','2026'];
+    const { bySeason, weekFirstDate } = buildWeekList();
+    const SEASONS_HM = ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'];
 
-    // Collect all unique week keys across years, sorted
-    const allWeeks = [];
-    const weekSet  = new Set();
-    years.forEach(yr => {
-      (byYear[yr] || []).forEach(wk => {
-        // strip year so we can align by week-of-season index
-        if (!weekSet.has(wk)) { weekSet.add(wk); }
-      });
-    });
-
-    // Build a unified week column list by year-stripped index
-    // Strategy: map each week to (year, weekNum) and build a column per weekNum (1..18)
+    // Build a unified week column list by season-week index (W01–W18)
     const weekNums = new Set();
-    Object.values(byYear).forEach(arr => arr.forEach(wk => {
-      const wn = parseInt(wk.slice(6)); // e.g. "2020-W05" → 5
+    Object.values(bySeason).forEach(arr => arr.forEach(wk => {
+      const wn = parseInt(wk.slice(8));  // "2019/20-W01" → 1
       weekNums.add(wn);
     }));
     const sortedWeekNums = [...weekNums].sort((a,b) => a-b);
     const nCols = sortedWeekNums.length;
-    const nRows = years.length;
 
-    // grid-template-columns: year-label col + nCols week cols
     const container = document.getElementById('heatmap-grid-container');
     container.innerHTML = '';
 
     const grid = document.createElement('div');
     grid.className = 'heatmap-grid';
-    grid.style.gridTemplateColumns = `38px repeat(${nCols}, minmax(28px, 1fr))`;
+    grid.style.gridTemplateColumns = `52px repeat(${nCols}, minmax(28px, 1fr))`;
 
-    // ── Header row: week labels ──
+    // ── Header row: month labels at transitions ──
     const headerSpacer = document.createElement('div');
     grid.appendChild(headerSpacer);
 
-    // Track month boundaries for header labels
     let lastMonth = null;
     sortedWeekNums.forEach(wn => {
-      const sampleWk = `2024-W${String(wn).padStart(2,'0')}`;
-      const fd = weekFirstDate[sampleWk] || weekFirstDate[`2023-W${String(wn).padStart(2,'0')}`];
+      // Try to find a first-date for this week number across any season
+      let fd = null;
+      for (const season of SEASONS_HM) {
+        const candidate = `${season}-W${String(wn).padStart(2,'0')}`;
+        if (weekFirstDate[candidate]) { fd = weekFirstDate[candidate]; break; }
+      }
       const cell = document.createElement('div');
       cell.className = 'hm-week-header';
       if (fd) {
-        const m = new Date(fd).getMonth();
+        const m = new Date(fd + 'T00:00:00').getMonth();  // 0=Jan, 11=Dec
         if (m !== lastMonth) {
-          cell.textContent = ['Jan','Feb','Mar','Apr'][m] || '';
+          cell.textContent = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] || '';
           cell.classList.add('hm-month-marker');
           lastMonth = m;
         }
@@ -2115,52 +2112,43 @@ function stars(score) {
       grid.appendChild(cell);
     });
 
-    // ── Data rows: one per year ──
-    years.forEach(yr => {
-      // Year label
+    // ── Data rows: one per season ──
+    SEASONS_HM.forEach(season => {
       const ylabel = document.createElement('div');
       ylabel.className = 'hm-year-label';
-      ylabel.textContent = yr;
+      ylabel.textContent = season;
       grid.appendChild(ylabel);
 
       sortedWeekNums.forEach(wn => {
-        const weekKey = `${yr}-W${String(wn).padStart(2,'0')}`;
+        const weekKey = `${season}-W${String(wn).padStart(2,'0')}`;
         const score   = getWeekScore(resort, persona, weekKey);
         const cell    = document.createElement('div');
         cell.className = 'hm-cell';
         cell.style.background = score !== null ? scoreColor(score) : 'var(--surface3)';
         cell.style.opacity = score !== null ? '1' : '0.35';
 
-        // 2026 partial — subtle stripe
-        if (yr === '2026') cell.style.opacity = (score !== null ? '0.85' : '0.2');
-
-        if (selectedWeekKey === weekKey && selectedYear === yr) {
+        if (selectedWeekKey === weekKey && selectedSeason === season) {
           cell.classList.add('selected');
         }
 
         if (score !== null) {
-          cell.dataset.weekKey  = weekKey;
-          cell.dataset.year     = yr;
-          cell.dataset.score    = score.toFixed(3);
-          cell.dataset.resort   = resort === 'best' ? getBestResortForWeek(persona, weekKey) : resort;
-          cell.dataset.persona  = persona;
+          cell.dataset.weekKey = weekKey;
+          cell.dataset.season  = season;
+          cell.dataset.score   = score.toFixed(3);
+          cell.dataset.resort  = resort === 'best' ? getBestResortForWeek(persona, weekKey) : resort;
+          cell.dataset.persona = persona;
 
-          // Hover tooltip
           cell.addEventListener('mouseenter', showTooltip);
           cell.addEventListener('mousemove',  moveTooltip);
           cell.addEventListener('mouseleave', hideTooltip);
 
-          // Click → drill-down
           cell.addEventListener('click', () => {
             selectedWeekKey = weekKey;
-            selectedYear    = yr;
-            // Re-render to update selection highlight
+            selectedSeason  = season;
             renderHeatmap(resort, persona);
-            // Fire event for daily panel (Step 6)
             document.dispatchEvent(new CustomEvent('heatmap:weekSelected', {
-              detail: { weekKey, year: yr, resort: cell.dataset.resort, persona }
+              detail: { weekKey, season, resort: cell.dataset.resort, persona }
             }));
-            // Scroll to daily section
             document.getElementById('daily').scrollIntoView({ behavior: 'smooth', block: 'start' });
           });
         }
@@ -2178,7 +2166,7 @@ function stars(score) {
   function showTooltip(e) {
     const cell    = e.currentTarget;
     const weekKey = cell.dataset.weekKey;
-    const yr      = cell.dataset.year;
+    const season  = cell.dataset.season;
     const score   = parseFloat(cell.dataset.score);
     const res     = cell.dataset.resort;
     const persona = cell.dataset.persona;
@@ -2186,11 +2174,10 @@ function stars(score) {
 
     const starsHtml = '⭐'.repeat(score >= 0.85 ? 5 : score >= 0.70 ? 4 : score >= 0.55 ? 3 : score >= 0.40 ? 2 : 1);
     const resLabel  = RESORT_LABELS[res] || res;
-    const wn        = weekKey.slice(6);
-    const partial   = yr === '2026' ? ' <span style="font-size:.65rem;opacity:.7">(partial)</span>' : '';
+    const wn        = weekKey.slice(8);   // "2019/20-W03" → "W03"
 
     tooltip.innerHTML = `
-      <div class="hm-tooltip-title">${yr} · Week ${parseInt(wn)}${partial}</div>
+      <div class="hm-tooltip-title">${season} · Week ${parseInt(wn.slice(1))}</div>
       <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.3rem">${resLabel}</div>
       <div class="hm-tooltip-row">
         <span class="hm-tooltip-key">Score</span>
@@ -2259,6 +2246,10 @@ function stars(score) {
 
   /* ── Initial render ── */
   renderHeatmap('best', 'universal');
+
+  // Register for live-data re-render
+  window._skiCharts = window._skiCharts || {};
+  window._skiCharts.heatmap = () => renderHeatmap(currentResort, currentPersona);
 
 })();
 
@@ -2343,7 +2334,6 @@ function stars(score) {
 
     const lift = r.lift_risk ? ' ⚠️ Lift closure risk at summit.' : '';
     const ski6 = RESORT_META[top.resort]?.ski6 ? ' (Ski 6 surcharge applies)' : '';
-    const partial = date.startsWith('2026') ? ' <em>2026 data is synthetic.</em>' : '';
 
     // Second choice context
     let second = '';
@@ -2355,25 +2345,32 @@ function stars(score) {
       second = ` Alternatively, <strong>${RESORT_LABELS[r2.resort]}</strong> (${persona2reason}).`;
     }
 
-    return `Head to <strong>${RESORT_LABELS[top.resort]}</strong>${ski6} — ${reason}.${lift}${second}${partial}`;
+    return `Head to <strong>${RESORT_LABELS[top.resort]}</strong>${ski6} — ${reason}.${lift}${second}`;
   }
 
-  /* ── Render year strip ── */
+  /* ── Render season strip ── */
   function renderYearStrip(baseDate) {
     const strip = document.getElementById('daily-year-strip');
     const mmdd  = baseDate.slice(5); // 'MM-DD'
+    const month = parseInt(baseDate.slice(5,7));
     strip.innerHTML = '<span style="font-size:var(--f-xs);color:var(--text-faint);font-family:\'JetBrains Mono\',monospace;letter-spacing:.05em;margin-right:.3rem">Same day:</span>';
-    [2020,2021,2022,2023,2024,2025,2026].forEach(yr => {
-      const d = `${yr}-${mmdd}`;
+    // Dec dates: go across seasons 2019/20–2024/25 using the Dec year
+    // Jan-Apr dates: same
+    const testYears = [2019,2020,2021,2022,2023,2024];
+    testYears.forEach(startYr => {
+      const calYear = month === 12 ? startYr : startYr + 1;
+      const d = `${calYear}-${mmdd}`;
+      const season = `${startYr}/${String(startYr+1).slice(2)}`;
       const exists = !!byDate[d];
       const btn = document.createElement('button');
-      btn.className = 'year-btn' + (yr === 2026 ? ' partial' : '') + (String(yr) === currentYear ? ' active' : '');
-      btn.textContent = yr;
+      btn.className = 'year-btn' + (d === currentDate ? ' active' : '');
+      btn.textContent = season;
+      btn.style.fontSize = 'var(--f-xs)';
       btn.disabled = !exists;
       if (!exists) { btn.style.opacity = '.3'; btn.style.cursor = 'default'; }
       btn.addEventListener('click', () => {
         if (!exists) return;
-        currentYear = String(yr);
+        currentYear = String(calYear);
         currentDate = d;
         document.getElementById('daily-date-input').value = d;
         renderDailyPanel(d, currentPersona);
@@ -2394,7 +2391,6 @@ function stars(score) {
     if (rec.lift_risk)     badges.push('<span class="badge badge-risk">⚠ Lift risk</span>');
     if (rec.rain_at_base)  badges.push('<span class="badge badge-warn">🌧 Rain</span>');
     if (meta?.ski6)        badges.push('<span class="badge badge-ski6">SKI 6</span>');
-    if (rec.is_partial_2026) badges.push('<span class="badge badge-partial">2026</span>');
 
     const stars = '⭐'.repeat(score >= 0.85 ? 5 : score >= 0.70 ? 4 : score >= 0.55 ? 3 : score >= 0.40 ? 2 : 1);
     const flag  = meta?.country === 'AT' ? '🇦🇹' : '🇮🇹';
@@ -2472,7 +2468,7 @@ function stars(score) {
     const recText = document.getElementById('daily-rec-text');
 
     if (!dayRecs) {
-      grid.innerHTML = `<div class="daily-empty"><div class="big">📭</div>No data for ${fmtDate(date)}.<br>Choose a date in Jan–Apr 2020–2026.</div>`;
+      grid.innerHTML = `<div class="daily-empty"><div class="big">📭</div>No data for ${fmtDate(date)}.<br>Choose a date in Dec–Apr 2019/20–2024/25.</div>`;
       banner.style.display = 'none';
       renderYearStrip(date);
       return;
@@ -2556,6 +2552,22 @@ function stars(score) {
   /* ── Initial render ── */
   renderDailyPanel('2024-02-14', 'universal');
 
+  /* ── Refresh when live data arrives ── */
+  document.addEventListener('livedata:merged', () => {
+    // Rebuild byDate index with new records
+    SKI_DATA.records.forEach(r => {
+      if (!byDate[r.date]) byDate[r.date] = {};
+      byDate[r.date][r.resort] = r;
+    });
+    // Update allDates + date input range
+    const updatedDates = Object.keys(byDate).sort();
+    const newMax = updatedDates[updatedDates.length - 1];
+    const inp = document.getElementById('daily-date-input');
+    if (inp && newMax > inp.max) inp.max = newMax;
+    // Re-render current view to pick up any changes
+    renderDailyPanel(currentDate, currentPersona);
+  });
+
 })();
 
 /* ── SNOW DEPTH RIBBON CHART ──────────────────────────────────── */
@@ -2564,34 +2576,35 @@ function stars(score) {
   /* Chart.js loaded from CDN in head — we add the script tag here */
   const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
 
-  /* Year palette — 7 distinct colours */
-  const YEAR_COLORS = {
-    2020: '#6366f1',  // indigo
-    2021: '#0ea5e9',  // sky
-    2022: '#f97316',  // orange
-    2023: '#10b981',  // emerald
-    2024: '#f43f5e',  // rose
-    2025: '#a855f7',  // purple
-    2026: '#facc15',  // yellow (partial — dashed)
+  /* Season palette — 6 distinct colours */
+  const SEASON_COLORS = {
+    '2019/20': '#6366f1',  // indigo
+    '2020/21': '#0ea5e9',  // sky
+    '2021/22': '#f97316',  // orange
+    '2022/23': '#10b981',  // emerald
+    '2023/24': '#f43f5e',  // rose
+    '2024/25': '#a855f7',  // purple
   };
-  const YEARS = [2020,2021,2022,2023,2024,2025,2026];
+  const SEASONS_SD = ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'];
 
   let sdResort   = 'nauders';
   let sdElev     = 'summit';
   let sdSmooth   = 5;
   let sdChart    = null;
-  let hiddenYears = new Set();
+  let hiddenSeasons = new Set();
 
-  /* ── Gather day-of-season index (1 = Jan 1) ── */
+  /* ── Season day index: day 1 = Dec 10 ── */
   function dayOfSeason(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    const start = new Date(d.getFullYear(), 0, 1);
-    return Math.floor((d - start) / 86400000) + 1;
+    const d      = new Date(dateStr + 'T00:00:00');
+    const month  = d.getMonth() + 1;
+    const year   = d.getFullYear();
+    const dec10  = new Date((month === 12 ? year : year - 1), 11, 10);
+    return Math.floor((d - dec10) / 86400000) + 1;
   }
 
-  /* ── Month tick positions (day-of-season) ── */
-  const MONTH_TICKS = [1, 32, 60, 91];  // Jan1, Feb1, Mar1, Apr1
-  const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr'];
+  /* ── Season-day tick positions: Dec10=1, Jan1≈22, Feb1≈53, Mar1≈81, Apr1≈112 ── */
+  const MONTH_TICKS  = [1, 22, 53, 82, 113];
+  const MONTH_LABELS = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
 
   /* ── Moving average smoother ── */
   function smooth(arr, w) {
@@ -2608,49 +2621,49 @@ function stars(score) {
   function buildDatasets(resort, elev) {
     const depthKey = elev === 'summit' ? 'summit_depth_cm' : 'base_depth_cm';
 
-    // Collect records per year, indexed by day-of-season
-    const byYearDos = {};
-    YEARS.forEach(yr => { byYearDos[yr] = {}; });
+    // Collect records per season, indexed by day-of-season
+    const bySeasonDos = {};
+    SEASONS_SD.forEach(s => { bySeasonDos[s] = {}; });
 
     SKI_DATA.records
       .filter(r => r.resort === resort)
       .forEach(r => {
         const dos = dayOfSeason(r.date);
-        byYearDos[r.year][dos] = r[depthKey];
+        if (bySeasonDos[r.season]) bySeasonDos[r.season][dos] = r[depthKey];
       });
 
-    // Build sorted DOS axis from year 2024 (fullest dataset)
-    const dosAxis = Object.keys(byYearDos[2024]).map(Number).sort((a,b) => a-b);
+    // Build sorted DOS axis from a full mid-dataset season
+    const refSeason = '2023/24';
+    const dosAxis = Object.keys(bySeasonDos[refSeason]).map(Number).sort((a,b) => a-b);
 
-    // Build per-year value arrays (smoothed)
     const datasets = [];
 
-    YEARS.forEach(yr => {
-      const raw = dosAxis.map(dos => byYearDos[yr][dos] ?? null);
+    SEASONS_SD.forEach(season => {
+      const raw    = dosAxis.map(dos => bySeasonDos[season][dos] ?? null);
       const values = smooth(raw, sdSmooth);
 
-      const is2026 = yr === 2026;
       datasets.push({
-        label: String(yr),
+        label: season,
         data: values,
-        borderColor: YEAR_COLORS[yr],
-        backgroundColor: YEAR_COLORS[yr] + '18',
-        borderWidth: is2026 ? 2 : 1.5,
-        borderDash: is2026 ? [6, 4] : [],
+        borderColor: SEASON_COLORS[season],
+        backgroundColor: SEASON_COLORS[season] + '18',
+        borderWidth: 1.5,
+        borderDash: [],
         pointRadius: 0,
         pointHoverRadius: 4,
         tension: 0.35,
         fill: false,
-        hidden: hiddenYears.has(yr),
+        hidden: hiddenSeasons.has(season),
         spanGaps: true,
       });
     });
 
-    // Multi-year average line
+    // Multi-season average line
     const avgValues = dosAxis.map(dos => {
-      const vals = YEARS.filter(yr => !hiddenYears.has(yr) && byYearDos[yr][dos] !== undefined)
-                        .map(yr => byYearDos[yr][dos])
-                        .filter(v => v !== null);
+      const vals = SEASONS_SD
+        .filter(s => !hiddenSeasons.has(s) && bySeasonDos[s][dos] !== undefined)
+        .map(s => bySeasonDos[s][dos])
+        .filter(v => v !== null);
       return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
     });
     datasets.push({
@@ -2664,7 +2677,7 @@ function stars(score) {
       tension: 0.35,
       fill: false,
       spanGaps: true,
-      order: -1,  // draw on top
+      order: -1,
     });
 
     return { datasets, dosAxis };
@@ -2682,7 +2695,7 @@ function stars(score) {
     document.getElementById('sd-chart-title').textContent =
       `${RESORT_LABELS[sdResort]} · ${elevLabel} Snow Depth`;
     document.getElementById('sd-chart-sub').textContent =
-      `cm · Jan–Apr 2020–2026 · ${sdSmooth > 1 ? sdSmooth+'-day smoothed · ' : ''}Click legend items to show/hide years`;
+      `cm · Dec–Apr 2019/20–2024/25 · ${sdSmooth > 1 ? sdSmooth+'-day smoothed · ' : ''}Click legend items to show/hide seasons`;
 
     // Tick labels from MONTH_TICKS mapped to dosAxis indices
     const tickIndices = MONTH_TICKS.map(mt => dosAxis.findIndex(d => d >= mt));
@@ -2762,28 +2775,26 @@ function stars(score) {
     renderLegend();
   }
 
-  /* ── Custom year-toggle legend ── */
+  /* ── Custom season-toggle legend ── */
   function renderLegend() {
     const legend = document.getElementById('sd-year-legend');
     legend.innerHTML = '';
 
-    YEARS.forEach(yr => {
+    SEASONS_SD.forEach(season => {
       const item = document.createElement('div');
-      item.className = 'year-legend-item' + (hiddenYears.has(yr) ? ' hidden' : '');
+      item.className = 'year-legend-item' + (hiddenSeasons.has(season) ? ' hidden' : '');
       item.innerHTML = `
-        <div class="year-legend-dot" style="background:${YEAR_COLORS[yr]}"></div>
-        <span>${yr}${yr === 2026 ? ' ·' : ''}</span>
-        ${yr === 2026 ? '<span style="opacity:.6;font-size:.65rem">partial</span>' : ''}
+        <div class="year-legend-dot" style="background:${SEASON_COLORS[season]}"></div>
+        <span>${season}</span>
       `;
       item.addEventListener('click', () => {
-        if (hiddenYears.has(yr)) hiddenYears.delete(yr);
-        else if (YEARS.filter(y => !hiddenYears.has(y)).length > 1) hiddenYears.add(yr);
+        if (hiddenSeasons.has(season)) hiddenSeasons.delete(season);
+        else if (SEASONS_SD.filter(s => !hiddenSeasons.has(s)).length > 1) hiddenSeasons.add(season);
         renderChart();
       });
       legend.appendChild(item);
     });
 
-    // Avg marker
     const avgItem = document.createElement('div');
     avgItem.className = 'year-legend-item';
     avgItem.style.marginLeft = 'auto';
@@ -2810,7 +2821,7 @@ function stars(score) {
     sdResort = tab.dataset.rtab;
     document.querySelectorAll('.resort-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    hiddenYears.clear();
+    hiddenSeasons.clear();
     renderChart();
   });
 
@@ -2838,7 +2849,11 @@ function stars(score) {
   });
 
   /* ── Kick off ── */
-  loadChartJS(() => renderChart());
+  loadChartJS(() => {
+    renderChart();
+    window._skiCharts = window._skiCharts || {};
+    window._skiCharts.snowDepth = renderChart;
+  });
 
 })();
 
@@ -2852,17 +2867,17 @@ function stars(score) {
     sulden:     '#a855f7',
     trafoi:     '#f97316',
   };
-  const YEARS = [2020,2021,2022,2023,2024,2025,2026];
+  const SEASONS_PW = ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'];
 
   let pwMonth  = 'all';
   let pwThresh = 10;
   let pwChart  = null;
 
-  /* ── Count powder days ── */
-  function countPowder(resort, year, month, thresh) {
+  /* ── Count powder days per season ── */
+  function countPowder(resort, season, month, thresh) {
     return SKI_DATA.records.filter(r =>
       r.resort === resort &&
-      r.year   === year   &&
+      r.season === season &&
       r.fresh_snow_cm >= thresh &&
       (month === 'all' || r.month === month)
     ).length;
@@ -2871,34 +2886,34 @@ function stars(score) {
   /* ── Callout stats ── */
   function renderCallout(thresh, month) {
     const el = document.getElementById('pw-callout');
-    // Best year (all resorts combined)
-    const yearTotals = YEARS.map(yr => ({
-      yr,
-      total: RESORT_ORDER.reduce((s, res) => s + countPowder(res, yr, month, thresh), 0)
+    // Best season (all resorts combined)
+    const seasonTotals = SEASONS_PW.map(s => ({
+      s,
+      total: RESORT_ORDER.reduce((acc, res) => acc + countPowder(res, s, month, thresh), 0)
     }));
-    const bestYear = yearTotals.sort((a,b) => b.total - a.total)[0];
+    const bestSeason = seasonTotals.sort((a,b) => b.total - a.total)[0];
 
-    // Best resort (all years combined)
+    // Best resort (all seasons combined)
     const resortTotals = RESORT_ORDER.map(res => ({
       res,
-      total: YEARS.reduce((s, yr) => s + countPowder(res, yr, month, thresh), 0)
+      total: SEASONS_PW.reduce((acc, s) => acc + countPowder(res, s, month, thresh), 0)
     }));
     const bestResort = resortTotals.sort((a,b) => b.total - a.total)[0];
 
     // All-time total
-    const grandTotal = YEARS.reduce((s, yr) =>
-      s + RESORT_ORDER.reduce((s2, res) => s2 + countPowder(res, yr, month, thresh), 0), 0);
+    const grandTotal = SEASONS_PW.reduce((acc, s) =>
+      acc + RESORT_ORDER.reduce((acc2, res) => acc2 + countPowder(res, s, month, thresh), 0), 0);
 
-    // Best single resort+year
+    // Best single resort+season
     let bestSingle = { count: 0, label: '' };
-    RESORT_ORDER.forEach(res => YEARS.forEach(yr => {
-      const c = countPowder(res, yr, month, thresh);
-      if (c > bestSingle.count) bestSingle = { count: c, label: `${RESORT_LABELS[res]} ${yr}` };
+    RESORT_ORDER.forEach(res => SEASONS_PW.forEach(s => {
+      const c = countPowder(res, s, month, thresh);
+      if (c > bestSingle.count) bestSingle = { count: c, label: `${RESORT_LABELS[res]} ${s}` };
     }));
 
     el.innerHTML = [
-      { val: grandTotal, label: 'Total arena-wide powder days' },
-      { val: bestYear.total, label: `Best year: ${bestYear.yr}` },
+      { val: grandTotal,       label: 'Total arena-wide powder days' },
+      { val: bestSeason.total, label: `Best season: ${bestSeason.s}` },
       { val: bestResort.total, label: `Best resort: ${RESORT_LABELS[bestResort.res]}` },
       { val: bestSingle.count, label: `Record: ${bestSingle.label}` },
     ].map(({ val, label }) => `
@@ -2917,7 +2932,7 @@ function stars(score) {
 
     const datasets = RESORT_ORDER.map(res => ({
       label: RESORT_LABELS[res],
-      data: YEARS.map(yr => countPowder(res, yr, pwMonth, pwThresh)),
+      data: SEASONS_PW.map(s => countPowder(res, s, pwMonth, pwThresh)),
       backgroundColor: RESORT_COLORS_BAR[res] + 'cc',
       borderColor: RESORT_COLORS_BAR[res],
       borderWidth: 1,
@@ -2925,13 +2940,13 @@ function stars(score) {
     }));
 
     const monthLabel = pwMonth === 'all' ? 'All months'
-      : ['','Jan','Feb','Mar','Apr'][pwMonth];
+      : {12:'Dec',1:'Jan',2:'Feb',3:'Mar',4:'Apr'}[pwMonth] || pwMonth;
     document.getElementById('pw-chart-title').textContent =
-      `Powder Days per Year · ≥${pwThresh} cm fresh snow · ${monthLabel}`;
+      `Powder Days per Season · ≥${pwThresh} cm fresh snow · ${monthLabel}`;
 
     const config = {
       type: 'bar',
-      data: { labels: YEARS, datasets },
+      data: { labels: SEASONS_PW, datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
         animation: { duration: 300 },
@@ -2996,8 +3011,11 @@ function stars(score) {
 
   /* ── Kick off (Chart.js already loaded by snow depth) ── */
   function tryRender() {
-    if (window.Chart) renderPowder();
-    else setTimeout(tryRender, 80);
+    if (window.Chart) {
+      renderPowder();
+      window._skiCharts = window._skiCharts || {};
+      window._skiCharts.powder = renderPowder;
+    } else setTimeout(tryRender, 80);
   }
   tryRender();
 
@@ -3006,23 +3024,23 @@ function stars(score) {
 /* ── MONTHLY TRENDS ──────────────────────────────────────────── */
 (function initTrends() {
 
-  const YEAR_COLORS_TR = {
-    2020: '#6366f1', 2021: '#0ea5e9', 2022: '#f97316',
-    2023: '#10b981', 2024: '#f43f5e', 2025: '#a855f7', 2026: '#facc15',
+  const SEASON_COLORS_TR = {
+    '2019/20': '#6366f1', '2020/21': '#0ea5e9', '2021/22': '#f97316',
+    '2022/23': '#10b981', '2023/24': '#f43f5e', '2024/25': '#a855f7',
   };
-  const YEARS   = [2020,2021,2022,2023,2024,2025,2026];
-  const MONTHS  = [1,2,3,4];
-  const MLABELS = ['Jan','Feb','Mar','Apr'];
+  const SEASONS_TR = ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'];
+  const MONTHS     = [12,1,2,3,4];
+  const MLABELS    = ['Dec','Jan','Feb','Mar','Apr'];
 
   let trResort   = 'nauders';
   let trPersona  = 'universal';
   let trChart    = null;
   let trHidden   = new Set();
 
-  /* ── Monthly avg score ── */
-  function monthAvg(resort, year, month, persona) {
+  /* ── Monthly avg score per season ── */
+  function monthAvg(resort, season, month, persona) {
     const recs = SKI_DATA.records.filter(r =>
-      r.resort === resort && r.year === year && r.month === month);
+      r.resort === resort && r.season === season && r.month === month);
     if (!recs.length) return null;
     const key = `score_${persona}`;
     return recs.reduce((s, r) => s + r[key], 0) / recs.length;
@@ -3034,18 +3052,18 @@ function stars(score) {
     const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
     const textColor = isDark ? '#8fa0ba' : '#5a6a87';
 
-    const datasets = YEARS.map(yr => ({
-      label: String(yr),
-      data: MONTHS.map(m => monthAvg(trResort, yr, m, trPersona)),
-      borderColor: YEAR_COLORS_TR[yr],
-      backgroundColor: YEAR_COLORS_TR[yr] + '22',
-      borderWidth: yr === 2026 ? 2 : 2,
-      borderDash: yr === 2026 ? [6,4] : [],
+    const datasets = SEASONS_TR.map(season => ({
+      label: season,
+      data: MONTHS.map(m => monthAvg(trResort, season, m, trPersona)),
+      borderColor: SEASON_COLORS_TR[season],
+      backgroundColor: SEASON_COLORS_TR[season] + '22',
+      borderWidth: 2,
+      borderDash: [],
       pointRadius: 4,
       pointHoverRadius: 6,
       tension: 0.3,
       fill: false,
-      hidden: trHidden.has(yr),
+      hidden: trHidden.has(season),
       spanGaps: true,
     }));
 
@@ -3107,17 +3125,16 @@ function stars(score) {
   function renderTrLegend() {
     const legend = document.getElementById('tr-year-legend');
     legend.innerHTML = '';
-    YEARS.forEach(yr => {
+    SEASONS_TR.forEach(season => {
       const item = document.createElement('div');
-      item.className = 'year-legend-item' + (trHidden.has(yr) ? ' hidden' : '');
+      item.className = 'year-legend-item' + (trHidden.has(season) ? ' hidden' : '');
       item.innerHTML = `
-        <div class="year-legend-dot" style="background:${YEAR_COLORS_TR[yr]}"></div>
-        <span>${yr}${yr === 2026 ? ' ·' : ''}</span>
-        ${yr === 2026 ? '<span style="opacity:.6;font-size:.65rem">partial</span>' : ''}
+        <div class="year-legend-dot" style="background:${SEASON_COLORS_TR[season]}"></div>
+        <span>${season}</span>
       `;
       item.addEventListener('click', () => {
-        if (trHidden.has(yr)) trHidden.delete(yr);
-        else if (YEARS.filter(y => !trHidden.has(y)).length > 1) trHidden.add(yr);
+        if (trHidden.has(season)) trHidden.delete(season);
+        else if (SEASONS_TR.filter(s => !trHidden.has(s)).length > 1) trHidden.add(season);
         renderTrends();
       });
       legend.appendChild(item);
@@ -3147,8 +3164,11 @@ function stars(score) {
     btn.addEventListener('click', () => { if (trChart) renderTrends(); }));
 
   function tryRender() {
-    if (window.Chart) renderTrends();
-    else setTimeout(tryRender, 80);
+    if (window.Chart) {
+      renderTrends();
+      window._skiCharts = window._skiCharts || {};
+      window._skiCharts.trends = renderTrends;
+    } else setTimeout(tryRender, 80);
   }
   tryRender();
 
@@ -3160,7 +3180,7 @@ function stars(score) {
   const WEEKDAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const WEEKDAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const MONTHS_SHORT   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const YEARS = [2020,2021,2022,2023,2024,2025,2026];
+  const SEASONS_PL = ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'];
 
   /* ── Index records by date+resort ── */
   const byDateResort = {};
@@ -3247,11 +3267,15 @@ function stars(score) {
   }
 
   /* ── Build the date list for a window ── */
-  function buildDateRange(startDate, nights, targetYear) {
-    // If targetYear given, transpose the start date to that year
+  function buildDateRange(startDate, nights, targetSeason) {
     let start = startDate;
-    if (targetYear) {
-      start = `${targetYear}${startDate.slice(4)}`;
+    if (targetSeason) {
+      // Transpose the start date into the target season
+      // Dec dates: use the first year of the season. Jan-Apr: use the second year.
+      const month   = parseInt(startDate.slice(5, 7));
+      const startYr = parseInt(targetSeason.slice(0, 4));
+      const calYear = month === 12 ? startYr : startYr + 1;
+      start = `${calYear}${startDate.slice(4)}`;
     }
     const dates = [];
     for (let i = 0; i < nights; i++) {
@@ -3372,32 +3396,38 @@ function stars(score) {
         </div>
         ${buildSummary(dates, planPersona)}
         ${buildTable(dates, planPersona)}
-        ${dates.some(d => d.startsWith('2026'))
-          ? '<div class="data-banner">⚠️ 2026 uses synthetic data.</div>' : ''}
       `;
 
     } else {
-      /* ── Compare mode: same window across all years ── */
+      /* ── Compare mode: same window across all seasons ── */
       const mmdd = startDate.slice(5);
       activeYear = activeYear || startDate.slice(0, 4);
 
-      // Year tabs
-      const tabsHtml = YEARS.map(yr => {
-        const d = `${yr}-${mmdd}`;
+      // Season tabs
+      const tabsHtml = SEASONS_PL.map(season => {
+        const startYr = parseInt(season.slice(0, 4));
+        const month   = parseInt(mmdd.slice(0, 2));
+        const calYear = month === 12 ? startYr : startYr + 1;
+        const d = `${calYear}-${mmdd}`;
         const exists = validDates.has(d);
-        const active = String(yr) === String(activeYear);
+        const active = season === String(activeYear);
         return `<button class="compare-year-tab${active?' active':''}"
-          data-cyr="${yr}" ${!exists?'disabled style="opacity:.35;cursor:default"':''}>
-          ${yr}${yr===2026?' ·':''}</button>`;
+          data-cyr="${season}" ${!exists?'disabled style="opacity:.35;cursor:default"':''}>
+          ${season}</button>`;
       }).join('');
 
       const dates = buildDateRange(startDate, planNights, activeYear);
-      const endD  = dates.length ? dates[dates.length-1] : addDays(`${activeYear}-${mmdd}`, planNights-1);
+      const baseD  = (() => {
+        const startYr = parseInt(String(activeYear).slice(0, 4));
+        const month   = parseInt(mmdd.slice(0, 2));
+        return `${month === 12 ? startYr : startYr + 1}-${mmdd}`;
+      })();
+      const endD  = dates.length ? dates[dates.length-1] : addDays(baseD, planNights-1);
 
       results.innerHTML = `
         <div style="font-family:'Cormorant Garamond',serif;font-size:var(--f-xl);font-weight:600;color:var(--text)">
-          ${fmtShort(`${activeYear}-${mmdd}`)} – ${fmtShort(endD)}, ${activeYear}
-          <span style="font-size:var(--f-sm);font-family:'Barlow',sans-serif;font-weight:400;color:var(--text-muted);margin-left:.5rem">compare across years</span>
+          ${fmtShort(baseD)} – ${fmtShort(endD)}, ${activeYear}
+          <span style="font-size:var(--f-sm);font-family:'Barlow',sans-serif;font-weight:400;color:var(--text-muted);margin-left:.5rem">compare across seasons</span>
         </div>
         <div class="compare-year-tabs" id="compare-year-tabs">${tabsHtml}</div>
         ${buildSummary(dates, planPersona)}
@@ -3438,7 +3468,7 @@ function stars(score) {
 
   document.getElementById('plan-compare-toggle').addEventListener('change', e => {
     compareMode = e.target.checked;
-    activeYear  = document.getElementById('plan-start-date').value.slice(0, 4);
+    activeYear  = null;  // will be set from start date season on next run
   });
 
   document.getElementById('plan-run-btn').addEventListener('click', runPlanner);
@@ -3446,6 +3476,18 @@ function stars(score) {
   // Also fire on Enter in date input
   document.getElementById('plan-start-date').addEventListener('keydown', e => {
     if (e.key === 'Enter') runPlanner();
+  });
+
+  // Refresh index when live data arrives
+  document.addEventListener('livedata:merged', () => {
+    SKI_DATA.records.forEach(r => {
+      if (!byDateResort[r.date]) byDateResort[r.date] = {};
+      byDateResort[r.date][r.resort] = r;
+      validDates.add(r.date);
+    });
+    const newMax = [...validDates].sort().pop();
+    const inp = document.getElementById('plan-start-date');
+    if (inp && newMax > inp.max) inp.max = newMax;
   });
 
 })();
@@ -3485,16 +3527,16 @@ function stars(score) {
       desc: `Deepest summit snow on record: ${RESORT_LABELS[deepest.resort]}, ${deepest.date}.`
     });
 
-    // 4. Best powder year all resorts combined
-    const powderByYear = {};
-    [2020,2021,2022,2023,2024,2025,2026].forEach(yr => {
-      powderByYear[yr] = recs.filter(r => r.year === yr && r.powder_day).length;
+    // 4. Best powder season all resorts combined
+    const powderBySeason = {};
+    ['2019/20','2020/21','2021/22','2022/23','2023/24','2024/25'].forEach(s => {
+      powderBySeason[s] = recs.filter(r => r.season === s && r.powder_day).length;
     });
-    const bestPowderYear = Object.entries(powderByYear).sort((a,b) => b[1]-a[1])[0];
+    const bestPowderSeason = Object.entries(powderBySeason).sort((a,b) => b[1]-a[1])[0];
     facts.push({
       icon: '🎿',
-      title: `${bestPowderYear[1]} powder days in ${bestPowderYear[0]}`,
-      desc: `${bestPowderYear[0]} was the best powder season across the whole arena in the dataset.`
+      title: `${bestPowderSeason[1]} powder days in ${bestPowderSeason[0]}`,
+      desc: `${bestPowderSeason[0]} was the best powder season across the whole arena in the dataset.`
     });
 
     // 5. Watles vs Sulden sunshine contrast
@@ -3576,7 +3618,510 @@ function stars(score) {
     SKI_DATA.records.length
   );
 
+/* ── STREAM C: LIVE FETCH LAYER ──────────────────────────────
+   Fetches current-season data (2025/26) from Open-Meteo ERA5-Land
+   in the browser, merges with baked data, re-enriches, updates
+   all charts. Caches 24 h in localStorage. Non-blocking.
+─────────────────────────────────────────────────────────────── */
+(function initLiveFetch() {
+
+  /* ── Resort coordinates ── */
+  const RESORT_COORDS = {
+    nauders:    { lat: 46.8897, lon: 10.5042, base: 1400, summit: 2750 },
+    schoeneben: { lat: 46.8067, lon: 10.5233, base: 1460, summit: 2390 },
+    watles:     { lat: 46.6869, lon: 10.5517, base: 1500, summit: 2550 },
+    sulden:     { lat: 46.5260, lon: 10.5752, base: 1900, summit: 3250 },
+    trafoi:     { lat: 46.5581, lon: 10.6008, base: 1540, summit: 2800 },
+  };
+
+  const DAILY_VARS = [
+    'temperature_2m_max','temperature_2m_min','snowfall_sum',
+    'snow_depth','precipitation_sum','rain_sum',
+    'sunshine_duration','windspeed_10m_max','weathercode','uv_index_max',
+  ].join(',');
+
+  /* ── localStorage cache ── */
+  const CACHE_KEY = 'ski_live_v2';
+  const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+  function getCached() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const { timestamp, records } = JSON.parse(raw);
+      if (Date.now() - timestamp > CACHE_TTL) return null;
+      return records;
+    } catch { return null; }
+  }
+
+  function setCache(records) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), records }));
+    } catch {} // quota exceeded — degrade silently
+  }
+
+  /* ── Season helpers ── */
+  function getSeasonKey(dateStr) {
+    const month = parseInt(dateStr.slice(5, 7));
+    const year  = parseInt(dateStr.slice(0, 4));
+    const s     = month === 12 ? year : year - 1;
+    return `${s}/${String(s + 1).slice(2)}`;
+  }
+
+  function getSeasonWeek(dateStr) {
+    const d     = new Date(dateStr + 'T00:00:00');
+    const month = d.getMonth() + 1;
+    const year  = d.getFullYear();
+    const dec10 = new Date(month === 12 ? year : year - 1, 11, 10);
+    const week  = Math.floor((d - dec10) / 86400000 / 7) + 1;
+    return `W${String(week).padStart(2, '0')}`;
+  }
+
+  function getSeasonWeekKey(dateStr) {
+    return `${getSeasonKey(dateStr)}-${getSeasonWeek(dateStr)}`;
+  }
+
+  /* ── Season status ── */
+  function getSeasonStatus() {
+    const now   = new Date();
+    const month = now.getMonth() + 1;  // 1-12
+    const day   = now.getDate();
+    const today = now.toISOString().slice(0, 10);
+
+    const inSeason = (month === 12 && day >= 10) ||
+                     (month >= 1  && month <= 3)  ||
+                     (month === 4 && day <= 10);
+
+    if (!inSeason) {
+      // Next Dec 10
+      const nextOpenYear = (month > 4 || (month === 4 && day > 10))
+        ? now.getFullYear() : now.getFullYear() - 1;
+      const nextOpen = new Date(nextOpenYear + 1, 11, 10);
+      const daysUntil = Math.ceil((nextOpen - now) / 86400000);
+      return { inSeason: false, nextOpen: nextOpen.toISOString().slice(0, 10), daysUntil };
+    }
+
+    // Current season start: Dec 10 of the season's start year
+    const seasonStartYear = month === 12 ? now.getFullYear() : now.getFullYear() - 1;
+    const seasonStart = `${seasonStartYear}-12-10`;
+    return { inSeason: true, seasonStart, today };
+  }
+
+  /* ── Determine fetch range ── */
+  function getFetchRange() {
+    const status = getSeasonStatus();
+    if (!status.inSeason) return null;
+
+    const lastBaked = SKI_DATA.records[SKI_DATA.records.length - 1].date;
+    const today     = status.today;
+
+    // Season 2025/26 starts Dec 10 2025
+    const liveSeasonStart = '2025-12-10';
+    const start = lastBaked >= liveSeasonStart
+      ? addDay(lastBaked)
+      : liveSeasonStart;
+
+    if (start > today) return null;  // nothing to fetch
+    return { start, end: today };
+  }
+
+  function addDay(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  /* ── Status badge ── */
+  const badge = document.getElementById('chip-synthetic');
+
+  function setBadge(state, text) {
+    if (!badge) return;
+    badge.textContent = text;
+    badge.style.background = {
+      fetching:  'var(--accent-light)',
+      success:   '#dcfce7',
+      offline:   'var(--surface3)',
+      offseason: 'var(--surface3)',
+      cached:    '#dcfce7',
+    }[state] || '';
+    badge.style.color = {
+      fetching:  'var(--accent)',
+      success:   '#166534',
+      offline:   'var(--text-faint)',
+      offseason: 'var(--text-muted)',
+      cached:    '#166534',
+    }[state] || '';
+  }
+
+  /* ── Score component functions (mirrors compute_metrics.py) ── */
+  function snowScore(depthCm, freshCm) {
+    const base   = Math.min(depthCm / 80, 1.0);
+    const bonus  = freshCm >= 10 ? 0.20 : freshCm >= 5 ? 0.10 : 0.0;
+    return Math.min(1.0, base + bonus);
+  }
+  function tempScore(summitTempMax) {
+    if (summitTempMax === null) return 0.5;
+    const t = summitTempMax;
+    if (t >= -15 && t <= -5) return 1.0;
+    if (t > -5) return Math.max(0, 1.0 - (t + 5) / 10);
+    return Math.max(0, 1.0 - (-15 - t) / 15);
+  }
+  function sunScore(sunH)     { return Math.min(sunH / 8.0, 1.0); }
+  function windPenalty(km)    { return km <= 40 ? 0 : Math.max(-1.0, -((km - 40) / 40)); }
+  function rainPenalty(mm, t) {
+    if (mm > 5 && t > 0) return -0.25;
+    if (mm > 1 && t > 0) return -0.10;
+    return 0;
+  }
+
+  const PERSONA_WEIGHTS = {
+    universal: [0.35, 0.25, 0.25, 0.15],
+    powder:    [0.55, 0.25, 0.10, 0.10],
+    sun:       [0.20, 0.20, 0.50, 0.10],
+    family:    [0.25, 0.30, 0.35, 0.10],
+  };
+
+  function skiScore(rec, persona) {
+    const [sw, tw, sunw, ww] = PERSONA_WEIGHTS[persona];
+    const ss  = snowScore(rec.summit_depth_cm, rec.fresh_snow_cm);
+    const ts  = tempScore(rec.summit_temp_max);
+    const sus = sunScore(rec.sunshine_h);
+    const wp  = windPenalty(rec.summit_wind_kmh);
+    const rp  = rainPenalty(rec.rain_mm, rec.base_temp_max);
+    return Math.max(0, Math.min(1, sw*ss + tw*ts + sunw*sus + ww*wp + rp));
+  }
+
+  function starsFor(score) {
+    return score >= 0.85 ? 5 : score >= 0.70 ? 4 : score >= 0.55 ? 3 : score >= 0.40 ? 2 : 1;
+  }
+
+  /* ── Enrich one merged record ── */
+  function enrichRecord(base, summit, resort, date) {
+    const meta       = { nauders:{base_m:1400,summit_m:2750}, schoeneben:{base_m:1460,summit_m:2390},
+                         watles:{base_m:1500,summit_m:2550},  sulden:{base_m:1900,summit_m:3250},
+                         trafoi:{base_m:1540,summit_m:2800} }[resort];
+
+    const baseTempMax  = base.temperature_2m_max;
+    const baseTempMin  = base.temperature_2m_min;
+    const freshSnowCm  = base.snowfall_sum;
+    const baseDepthCm  = Math.round((base.snow_depth || 0) * 1000) / 10;
+    const precipMm     = base.precipitation_sum || 0;
+    const rainMm       = base.rain_sum || 0;
+    const sunshineH    = Math.round(((base.sunshine_duration || 0) / 3600) * 100) / 100;
+    const windKmh      = base.windspeed_10m_max || 0;
+    const weathercode  = base.weathercode || 0;
+    const uvMax        = base.uv_index_max || 0;
+
+    const summitTempMax = summit ? summit.temperature_2m_max :
+      (baseTempMax !== null ? Math.round((baseTempMax - (meta.summit_m - meta.base_m) / 100 * 0.6) * 10) / 10 : null);
+    const summitTempMin = summit ? summit.temperature_2m_min :
+      (baseTempMin !== null ? Math.round((baseTempMin - (meta.summit_m - meta.base_m) / 100 * 0.6) * 10) / 10 : null);
+    const summitDepthCm = summit ? Math.round((summit.snow_depth || 0) * 1000) / 10 : Math.round(baseDepthCm * 1.4 * 10) / 10;
+    const summitWindKmh = summit ? summit.windspeed_10m_max || 0 : Math.round(windKmh * 1.3 * 10) / 10;
+
+    // Precipitation type
+    let precipType = 'none';
+    if (rainMm > 1 && baseTempMax > 0)  precipType = 'rain';
+    else if (freshSnowCm > 0)           precipType = 'snow';
+    else if (precipMm > 0)              precipType = 'mixed';
+
+    // Freezing level
+    const freezingLevelM = (baseTempMax !== null && baseTempMax > 0)
+      ? Math.round(meta.base_m + (baseTempMax / 0.6) * 100)
+      : meta.base_m;
+
+    const rec = {
+      date, resort,
+      season:       getSeasonKey(date),
+      season_week:  getSeasonWeek(date),
+      year:         parseInt(date.slice(0, 4)),
+      month:        parseInt(date.slice(5, 7)),
+      day:          parseInt(date.slice(8, 10)),
+      base_temp_max:    Math.round(baseTempMax * 10) / 10,
+      base_temp_min:    Math.round(baseTempMin * 10) / 10,
+      base_depth_cm:    baseDepthCm,
+      fresh_snow_cm:    Math.round(freshSnowCm * 10) / 10,
+      rain_mm:          Math.round(rainMm * 10) / 10,
+      precip_mm:        Math.round(precipMm * 10) / 10,
+      precip_type:      precipType,
+      sunshine_h:       sunshineH,
+      wind_kmh:         Math.round(windKmh * 10) / 10,
+      weathercode,
+      uv_max:           uvMax,
+      freezing_level_m: freezingLevelM,
+      summit_temp_max:  summitTempMax,
+      summit_temp_min:  summitTempMin,
+      summit_depth_cm:  summitDepthCm,
+      summit_wind_kmh:  summitWindKmh,
+    };
+
+    // Scores + flags
+    for (const p of ['universal','powder','sun','family']) {
+      rec[`score_${p}`] = Math.round(skiScore(rec, p) * 10000) / 10000;
+    }
+    rec.stars        = starsFor(rec.score_universal);
+    rec.powder_day   = freshSnowCm >= 10;
+    rec.lift_risk    = summitWindKmh >= 60 || (rainMm > 2 && baseTempMax > 0);
+    rec.rain_at_base = rainMm > 1 && baseTempMax > 0;
+    rec.week_key     = getSeasonWeekKey(date);
+    rec.month_key    = date.slice(0, 7);
+
+    return rec;
+  }
+
+  /* ── Fetch one resort+elevation from Open-Meteo ── */
+  async function fetchOne(resort, elevLabel, lat, lon, elevation, startDate, endDate) {
+    const url = new URL('https://archive-api.open-meteo.com/v1/archive');
+    url.searchParams.set('latitude',   lat);
+    url.searchParams.set('longitude',  lon);
+    url.searchParams.set('elevation',  elevation);
+    url.searchParams.set('start_date', startDate);
+    url.searchParams.set('end_date',   endDate);
+    url.searchParams.set('daily',      DAILY_VARS);
+    url.searchParams.set('timezone',   'UTC');
+    const res  = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return { resort, elevLabel, data };
+  }
+
+  /* ── Fetch all 10 endpoints in parallel ── */
+  async function fetchAllResorts(startDate, endDate) {
+    const calls = [];
+    for (const [resort, coords] of Object.entries(RESORT_COORDS)) {
+      calls.push(fetchOne(resort, 'base',   coords.lat, coords.lon, coords.base,   startDate, endDate));
+      calls.push(fetchOne(resort, 'summit', coords.lat, coords.lon, coords.summit, startDate, endDate));
+    }
+    return Promise.all(calls);
+  }
+
+  /* ── Parse API results into per-resort/date raw rows ── */
+  function parseResults(results) {
+    const idx = {};
+    for (const { resort, elevLabel, data } of results) {
+      if (!idx[resort]) idx[resort] = { base: {}, summit: {} };
+      const daily = data.daily;
+      if (!daily || !daily.time) continue;
+      daily.time.forEach((date, i) => {
+        idx[resort][elevLabel][date] = {
+          temperature_2m_max:  daily.temperature_2m_max?.[i]  ?? null,
+          temperature_2m_min:  daily.temperature_2m_min?.[i]  ?? null,
+          snowfall_sum:        daily.snowfall_sum?.[i]         ?? 0,
+          snow_depth:          daily.snow_depth?.[i]           ?? 0,
+          precipitation_sum:   daily.precipitation_sum?.[i]    ?? 0,
+          rain_sum:            daily.rain_sum?.[i]             ?? 0,
+          sunshine_duration:   daily.sunshine_duration?.[i]    ?? 0,
+          windspeed_10m_max:   daily.windspeed_10m_max?.[i]    ?? 0,
+          weathercode:         daily.weathercode?.[i]          ?? 0,
+          uv_index_max:        daily.uv_index_max?.[i]         ?? 0,
+        };
+      });
+    }
+    return idx;
+  }
+
+  /* ── Convert API results → enriched records ── */
+  function buildLiveRecords(results) {
+    const idx     = parseResults(results);
+    const records = [];
+    for (const [resort, elevs] of Object.entries(idx)) {
+      const allDates = new Set([...Object.keys(elevs.base), ...Object.keys(elevs.summit)]);
+      for (const date of [...allDates].sort()) {
+        const base   = elevs.base[date];
+        const summit = elevs.summit[date];
+        if (!base) continue;  // base is mandatory
+        records.push(enrichRecord(base, summit, resort, date));
+      }
+    }
+    return records;
+  }
+
+  /* ── Update aggregations (delta — only affected week/month keys) ── */
+  function updateAggregations(newRecords) {
+    const agg = SKI_DATA.aggregations;
+
+    // Helper
+    function avg(arr) {
+      const v = arr.filter(x => x !== null && x !== undefined);
+      return v.length ? Math.round(v.reduce((s,x) => s+x, 0) / v.length * 10000) / 10000 : null;
+    }
+    function aggGroup(recs) {
+      return {
+        n:                   recs.length,
+        score_universal:     avg(recs.map(r => r.score_universal)),
+        score_powder:        avg(recs.map(r => r.score_powder)),
+        score_sun:           avg(recs.map(r => r.score_sun)),
+        score_family:        avg(recs.map(r => r.score_family)),
+        stars:               avg(recs.map(r => r.stars)),
+        avg_base_depth_cm:   avg(recs.map(r => r.base_depth_cm)),
+        avg_summit_depth_cm: avg(recs.map(r => r.summit_depth_cm)),
+        avg_fresh_snow_cm:   avg(recs.map(r => r.fresh_snow_cm)),
+        avg_sunshine_h:      avg(recs.map(r => r.sunshine_h)),
+        avg_wind_kmh:        avg(recs.map(r => r.wind_kmh)),
+        avg_base_temp_max:   avg(recs.map(r => r.base_temp_max)),
+        avg_summit_temp_max: avg(recs.map(r => r.summit_temp_max)),
+        powder_days:         recs.filter(r => r.powder_day).length,
+        lift_risk_days:      recs.filter(r => r.lift_risk).length,
+        rain_days:           recs.filter(r => r.rain_at_base).length,
+        max_summit_depth_cm: Math.max(...recs.map(r => r.summit_depth_cm).filter(v => v != null), 0) || null,
+      };
+    }
+
+    // Collect all records (baked + new) per resort
+    const allRecs = [...SKI_DATA.records];
+
+    for (const resort of Object.keys(RESORT_COORDS)) {
+      const resortNewRecs = newRecords.filter(r => r.resort === resort);
+      if (!resortNewRecs.length) continue;
+
+      // Collect affected week/month/season keys
+      const affectedWeeks   = new Set(resortNewRecs.map(r => r.week_key));
+      const affectedMonths  = new Set(resortNewRecs.map(r => r.month_key));
+      const affectedSeasons = new Set(resortNewRecs.map(r => r.season));
+
+      const allResortRecs = allRecs.filter(r => r.resort === resort);
+
+      // Recompute affected weeks
+      if (!agg.weekly[resort]) agg.weekly[resort] = {};
+      affectedWeeks.forEach(wk => {
+        const wkRecs = allResortRecs.filter(r => r.week_key === wk);
+        if (wkRecs.length) agg.weekly[resort][wk] = aggGroup(wkRecs);
+      });
+
+      // Recompute affected months
+      if (!agg.monthly[resort]) agg.monthly[resort] = {};
+      affectedMonths.forEach(mk => {
+        const mkRecs = allResortRecs.filter(r => r.month_key === mk);
+        if (mkRecs.length) agg.monthly[resort][mk] = aggGroup(mkRecs);
+      });
+
+      // Recompute affected seasons
+      if (!agg.seasonal[resort]) agg.seasonal[resort] = {};
+      affectedSeasons.forEach(s => {
+        const sRecs = allResortRecs.filter(r => r.season === s);
+        if (sRecs.length) agg.seasonal[resort][s] = aggGroup(sRecs);
+      });
+
+      // Update powder calendar
+      if (!agg.powder_calendar[resort]) agg.powder_calendar[resort] = {};
+      affectedSeasons.forEach(s => {
+        agg.powder_calendar[resort][s] = allResortRecs
+          .filter(r => r.season === s && r.powder_day)
+          .map(r => r.date);
+      });
+    }
+
+    // Update daily ranking for new dates
+    const allByDate = {};
+    allRecs.forEach(r => {
+      if (!allByDate[r.date]) allByDate[r.date] = [];
+      allByDate[r.date].push(r);
+    });
+    const newDates = new Set(newRecords.map(r => r.date));
+    newDates.forEach(date => {
+      if (!allByDate[date]) return;
+      const ranking = {};
+      for (const persona of ['universal','powder','sun','family']) {
+        const key = `score_${persona}`;
+        ranking[persona] = [...allByDate[date]]
+          .sort((a, b) => b[key] - a[key])
+          .map(r => r.resort);
+      }
+      agg.daily_ranking[date] = ranking;
+    });
+  }
+
+  /* ── Merge live records into SKI_DATA and re-trigger charts ── */
+  function mergeLiveData(liveRecords) {
+    if (!liveRecords.length) return;
+
+    // Deduplicate: skip records already in baked data
+    const bakedDates = new Set(SKI_DATA.records.map(r => r.date + '|' + r.resort));
+    const newRecords = liveRecords.filter(r => !bakedDates.has(r.date + '|' + r.resort));
+    if (!newRecords.length) return;
+
+    // Append to records array (in-place, so chart IIFEs reading SKI_DATA see them)
+    SKI_DATA.records.push(...newRecords);
+    SKI_DATA.records.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+    // Update aggregations
+    updateAggregations(newRecords);
+
+    // Update meta
+    SKI_DATA._meta.total_records = SKI_DATA.records.length;
+    SKI_DATA._meta.date_range    = `${SKI_DATA.records[0].date} → ${SKI_DATA.records[SKI_DATA.records.length-1].date}`;
+
+    // Update chip-records count
+    const chipRec = document.getElementById('chip-records');
+    if (chipRec) chipRec.textContent = `${SKI_DATA.records.length.toLocaleString()} records`;
+
+    // Re-render charts that are already mounted
+    // Each chart IIFE re-reads SKI_DATA on next render call — just trigger them.
+    document.dispatchEvent(new CustomEvent('livedata:merged', {
+      detail: { count: newRecords.length, lastDate: newRecords[newRecords.length-1]?.date }
+    }));
+
+    // Re-render all registered charts (snow depth, powder, trends, heatmap)
+    requestAnimationFrame(() => {
+      const charts = window._skiCharts || {};
+      if (charts.snowDepth) charts.snowDepth();
+      if (charts.powder)    charts.powder();
+      if (charts.trends)    charts.trends();
+      if (charts.heatmap)   charts.heatmap();
+    });
+  }
+
+  /* ── Main entry point ── */
+  async function run() {
+    const status = getSeasonStatus();
+
+    // Off-season — show countdown
+    if (!status.inSeason) {
+      setBadge('offseason', `⛷ Season opens Dec 10 · ${status.daysUntil} days`);
+      return;
+    }
+
+    // Check cache first
+    const cached = getCached();
+    if (cached) {
+      mergeLiveData(cached);
+      const lastDate = cached[cached.length - 1]?.date || '?';
+      setBadge('cached', `✓ Live data to ${lastDate}`);
+      return;
+    }
+
+    // Determine what to fetch
+    const range = getFetchRange();
+    if (!range) {
+      setBadge('success', `✓ Data current to ${SKI_DATA.records[SKI_DATA.records.length-1].date}`);
+      return;
+    }
+
+    setBadge('fetching', `↻ Fetching 2025/26 season…`);
+
+    try {
+      const results    = await fetchAllResorts(range.start, range.end);
+      const liveRecords = buildLiveRecords(results);
+
+      setCache(liveRecords);
+      mergeLiveData(liveRecords);
+
+      const lastDate = liveRecords[liveRecords.length - 1]?.date || range.end;
+      setBadge('success', `✓ Live data to ${lastDate}`);
+
+      console.log(`[live fetch] merged ${liveRecords.length} records (${range.start} → ${lastDate})`);
+    } catch (err) {
+      // Silent degrade — baked data continues to serve
+      console.warn('[live fetch] failed, serving baked data:', err.message);
+      setBadge('offline', `⚠ Offline — baked data to Apr 2025`);
+    }
+  }
+
+  // Run after page paint so baked charts render first
+  requestAnimationFrame(() => setTimeout(run, 100));
+
 })();
-</script>
+
+
 </body>
 </html>
