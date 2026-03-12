@@ -18,7 +18,7 @@ HOURLY_VARS = [
     "snowfall", "weathercode", "windspeed_10m", "windgusts_10m", 
     "visibility", "freezinglevel_height"
 ]
-FORECAST_DAYS = 3
+FORECAST_DAYS = 16
 
 RESORTS = [
     ("nauders",    46.88, 10.50, 2750), 
@@ -68,4 +68,5 @@ def main():
             json.dump({"error": str(e), "resorts": {}}, f)
 
 if __name__ == "__main__":
+
     main()
