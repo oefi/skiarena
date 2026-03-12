@@ -240,17 +240,20 @@
   <div style="text-align: center;">
     <h1 style="margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.05em; color: var(--text-main);">🎿 ZL Skiarena</h1>
   </div>
-  <div class="flex-between" style="font-size: 0.85rem; color: var(--text-muted); background: var(--bg-card); padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 6px;">
-    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-      <span id="status-badge">Checking data matrix...</span>
-      <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border-color); font-weight: 600;">
-        <span style="color: var(--brand);">⏱ Next Sync:</span>
-        <span id="cd-timer" style="font-variant-numeric: tabular-nums; letter-spacing: 0.05em;">--:--</span>
-      </span>
-    </div>
-    <span id="update-time"></span>
-  </div>
 
+  <!-- Right: Telemetry & Status -->
+  <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; flex-wrap: wrap; color: var(--text-muted);">
+    <span id="status-badge" style="display: flex; align-items: center; font-weight: 600; font-size: 0.8rem;">Checking...</span>
+    <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border-color); font-weight: 600; font-size: 0.75rem;">
+      <span style="color: var(--brand);">⏱</span>
+      <span id="cd-timer" style="font-variant-numeric: tabular-nums; letter-spacing: 0.05em;">--:--</span>
+    </span>
+    <span id="update-time" style="font-size: 0.75rem; border-left: 1px solid var(--border-color); padding-left: 0.75rem; white-space: nowrap;"></span>
+  </div>
+</header>
+
+<main class="container">
+  
   <!-- ── FORECAST (TACTICAL & EXTENDED) ── -->
   <section id="powder-alarm">
     <div class="flex-between" style="margin-bottom: 1.5rem;">
@@ -556,14 +559,276 @@
     });
 
     const sb = document.getElementById('status-badge'), ts = document.getElementById('update-time');
+
+    // =========================================================
+    // MODULE 1: FORECAST ENGINE (Decoupled & Null-Guarded)
+    // =========================================================
+    const fcBoard = document.getElementById('tactical-summary-board');
+    const fCc = document.getElementById('fc-canvas-controls');
+    let activeFcResort = FORECAST_DATA && FORECAST_DATA.resorts ? Object.keys(FORECAST_DATA.resorts)[0] : null;
+
+    const renderTacticalSummary = (resort) => {
+      if (!FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[resort]) return;
+      const hourly = FORECAST_DATA.resorts[resort];
+      const limit = Math.min(168, hourly.temperature_2m?.length || 0); // 7 days
+      if (limit === 0) return;
+
+      const snow = hourly.snowfall ? hourly.snowfall.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
+      const rain = hourly.rain ? hourly.rain.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
+      
+      const gusts = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).filter(v=>v!==null) : [];
+      const maxGust = gusts.length ? Math.max(...gusts) : 0;
+      const gustDayIdx = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).indexOf(maxGust) : 0;
+      const gustDate = hourly.time ? new Date(hourly.time[gustDayIdx]) : new Date(localNow.getTime() + (gustDayIdx * 3600 * 1000));
+      const gustDayStr = gustDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+
+      const fz = hourly.freezinglevel_height ? hourly.freezinglevel_height.slice(0, limit).filter(v => v !== null) : [];
+      const maxFz = fz.length ? Math.max(...fz) : 0;
+      const minFz = fz.length ? Math.min(...fz) : 0;
+
+      const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
+
+      fcBoard.innerHTML = `
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Snow Yield ❄️</div>
+              <div style="font-size:2.5rem; font-weight:800; color:var(--snow-yield); line-height:1;">${snow.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">cm</span></div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Rain Hazard 🌧️</div>
+              <div style="font-size:2.5rem; font-weight:800; color:${rain > 5 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${rain.toFixed(1)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">mm</span></div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Peak Wind Hold Risk 💨</div>
+              <div style="font-size:2.5rem; font-weight:800; color:${maxGust > 65 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${maxGust.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">km/h</span></div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Expected on ${gustDayStr}</div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Freezing Line (0°C) 🏔️</div>
+              <div style="font-size:1.2rem; font-weight:800; color:var(--text-main); line-height:1.4;">Max: <span style="color:${maxFz > meta.base ? '#ef4444' : 'var(--brand)'};">${maxFz}m</span><br>Min: ${minFz}m</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Base elevation is ${meta.base}m</div>
+          </div>
+      `;
+    };
+
+    if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
+      Object.keys(FORECAST_DATA.resorts).forEach(resort => {
+        const b = document.createElement('button'); b.innerText = resort.toUpperCase(); b.className = 'control-btn';
+        if(resort === activeFcResort) b.classList.add('active');
+        b.onclick = () => { 
+          Array.from(fCc.children).forEach(c=>c.classList.remove('active')); 
+          b.classList.add('active'); 
+          activeFcResort = resort; 
+          renderTacticalSummary(activeFcResort);
+          window.repaintForecastCanvas(); 
+        };
+        fCc.appendChild(b);
+      });
+      renderTacticalSummary(activeFcResort);
+    } else if (FORECAST_DATA && FORECAST_DATA.error) {
+      fcBoard.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
+    } else {
+      fcBoard.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">Forecast Payload Missing</div>`;
+    }
+
+    const cvsFc = document.getElementById('forecast-canvas');
+    const ctxFc = cvsFc ? cvsFc.getContext('2d') : null;
+    let fcHoverIdx = null; let fcTouch = false;
+
+    window.repaintForecastCanvas = () => {
+      if (!ctxFc || !activeFcResort || !FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[activeFcResort]) return;
+      ctxFc.clearRect(0,0,cvsFc.width,cvsFc.height);
+
+      const hourly = FORECAST_DATA.resorts[activeFcResort];
+      if (!hourly.temperature_2m) return;
+      const numDays = Math.floor(hourly.temperature_2m.length / 24);
+      if (numDays === 0) return;
+
+      const daily = [];
+      for (let i = 0; i < numDays; i++) {
+        const start = i * 24, end = start + 24;
+        const t = hourly.temperature_2m.slice(start, end).filter(v => v !== null);
+        const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
+        const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
+        const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end).filter(v => v !== null) : [];
+        const cc = ccArr.length ? ccArr.reduce((a,b)=>a+b,0)/ccArr.length : 0; 
+        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.12;
+        const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
+        const gust = gustArr.length ? Math.max(...gustArr) : 0;
+
+        let exactDate;
+        if (hourly.time && hourly.time[start]) exactDate = new Date(hourly.time[start]);
+        else exactDate = new Date(localNow.getTime() + i*86400000);
+
+        const dateStr = exactDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+        
+        daily.push({ tMax: t.length ? Math.max(...t) : 0, tMin: t.length ? Math.min(...t) : 0, snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: dateStr });
+      }
+
+      const pX = 60, pY = 20, pRight = 60, pBot = 50;
+      const w = cvsFc.width - pX - pRight;
+      const h = cvsFc.height - pY - pBot; 
+      
+      const hP1 = h * 0.45, hP2 = h * 0.25, hP3 = h * 0.20, gap = h * 0.05;
+      const yP1 = pY, yP2 = yP1 + hP1 + gap, yP3 = yP2 + hP2 + gap;
+      
+      const colW = w / numDays;
+      const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
+
+      const maxT = Math.max(5, ...daily.map(d=>d.tMax)) + 5;
+      const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 5;
+      const tRange = maxT - minT;
+      const mapYTemp = t => yP1 + hP1 - ((t - minT) / tRange) * hP1;
+
+      const maxPrecip = Math.max(10, ...daily.map(d => d.snow + d.rain));
+      const mapYPrecip = val => yP2 + hP2 - (val / maxPrecip) * hP2;
+      
+      const maxSun = 14; 
+      const mapYSun = val => yP3 + hP3 - (val / maxSun) * hP3;
+
+      const maxGust = Math.max(60, ...daily.map(d=>d.gust));
+      const mapYGust = g => yP3 + hP3 - (Math.min(g, maxGust) / maxGust) * hP3;
+
+      ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.font = fonts.axis;
+
+      ctxFc.save(); ctxFc.translate(20, yP1 + hP1/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, yP2 + hP2/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Precip (mm/cm)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, yP3 + hP3/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Sun (h)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, yP3 + hP3/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
+
+      ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
+      for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
+        const y = mapYTemp(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
+        ctxFc.fillText(`${t}°`, pX-10, y);
+      }
+      const zeroY = mapYTemp(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+      ctxFc.strokeStyle = getStyleVar('--grid-line');
+      
+      for(let p=0; p<=maxPrecip; p+=Math.ceil(maxPrecip/4)) {
+        if(p===0) continue; const y = mapYPrecip(p);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${p}`, pX-10, y);
+      }
+      ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke(); ctxFc.strokeStyle = getStyleVar('--grid-line');
+
+      for(let s=0; s<=maxSun; s+=7) {
+        if(s===0) continue; const y = mapYSun(s);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX-10, y);
+      }
+      ctxFc.textAlign = 'left';
+      for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
+        const y = mapYGust(g); ctxFc.fillText(`${g}`, pX+w+10, y);
+      }
+      ctxFc.beginPath(); ctxFc.moveTo(pX,yP3+hP3); ctxFc.lineTo(pX+w,yP3+hP3); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+
+      daily.forEach((d, i) => {
+        ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
+        ctxFc.fillRect(pX + i*colW + 1, yP1, colW - 2, hP1 + gap + hP2); ctxFc.globalAlpha = 1.0;
+        
+        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
+        const cx = pX + i*colW + colW/2;
+        const parts = d.label.split(', ');
+        if(parts.length === 2) {
+          ctxFc.fillText(parts[0], cx, yP3 + hP3 + 10); ctxFc.fillText(parts[1], cx, yP3 + hP3 + 24);
+        } else {
+          ctxFc.fillText(d.label, cx, yP3 + hP3 + 10);
+        }
+      });
+
+      ctxFc.beginPath();
+      daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
+      for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
+      ctxFc.closePath();
+      const grad = ctxFc.createLinearGradient(0, yP1, 0, yP1+hP1);
+      grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)'); grad.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
+      ctxFc.fillStyle = grad; ctxFc.fill();
+      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
+      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
+
+      daily.forEach((d, i) => {
+        const cx = pX + i*colW + colW/2;
+        const bW = Math.max(4, Math.min(colW * 0.5, 20));
+        const rH = hP2 - (mapYPrecip(d.rain) - yP2), sH = hP2 - (mapYPrecip(d.snow) - yP2); 
+        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH, bW, rH); }
+        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH - sH, bW, sH); }
+        const sunH = hP3 - (mapYSun(d.sun) - yP3);
+        if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP3+hP3 - sunH, bW, sunH); }
+      });
+
+      ctxFc.beginPath(); let drawingG = false;
+      daily.forEach((d, i) => {
+        const cx = pX + i*colW + colW/2; const y = mapYGust(d.gust);
+        if(!drawingG) { ctxFc.moveTo(cx, y); drawingG = true; } else { ctxFc.lineTo(cx, y); }
+      });
+      ctxFc.strokeStyle = '#ef4444'; ctxFc.lineWidth = 2; ctxFc.setLineDash([5, 5]); ctxFc.stroke(); ctxFc.setLineDash([]);
+
+      if (fcHoverIdx !== null && fcHoverIdx >= 0 && fcHoverIdx < numDays) {
+        const d = daily[fcHoverIdx];
+        const hx = pX + fcHoverIdx*colW + colW/2;
+        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, yP3+hP3); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
+        ctxFc.fillStyle = getStyleVar('--bg-header');
+        
+        const scale = cvsFc.width / (cvsFc.clientWidth || 800);
+        const boxW = 190 * scale, boxH = 175 * scale, padding = 15 * scale;
+        let boxX = hx + padding, boxY = pY;
+        if (fcTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
+        if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
+        
+        ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = getStyleVar('--border-color'); ctxFc.strokeRect(boxX, boxY, boxW, boxH);
+        ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
+        
+        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, boxY + (10*scale));
+        ctxFc.fillStyle = getStyleVar('--text-main'); 
+        ctxFc.fillText(`Max: ${d.tMax.toFixed(1)}°C`, boxX + padding, boxY + (35*scale));
+        ctxFc.fillText(`Min: ${d.tMin.toFixed(1)}°C`, boxX + padding, boxY + (55*scale));
+        ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, boxY + (80*scale));
+        ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, boxY + (105*scale));
+        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, boxY + (125*scale));
+        ctxFc.fillStyle = '#ef4444'; ctxFc.fillText(`Gust: ${d.gust.toFixed(0)}km/h`, boxX + padding, boxY + (145*scale));
+      }
+    };
+
+    if (cvsFc) {
+      cvsFc.addEventListener('mousemove', (e) => {
+        if (!FORECAST_DATA || !FORECAST_DATA.resorts || !activeFcResort || !FORECAST_DATA.resorts[activeFcResort]) return;
+        fcTouch = false; const rect = cvsFc.getBoundingClientRect(); 
+        const mouseX = (e.clientX - rect.left) * (cvsFc.width / rect.width);
+        const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight;
+        const numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
+        if (numDays === 0) return;
+        fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
+        if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
+        window.repaintForecastCanvas();
+      });
+      cvsFc.addEventListener('mouseleave', () => { fcHoverIdx = null; window.repaintForecastCanvas(); });
+      cvsFc.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          e.preventDefault(); 
+          if (!FORECAST_DATA || !FORECAST_DATA.resorts || !activeFcResort || !FORECAST_DATA.resorts[activeFcResort]) return;
+          fcTouch = true; const rect = cvsFc.getBoundingClientRect();
+          const mouseX = (e.touches[0].clientX - rect.left) * (cvsFc.width / rect.width);
+          const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight;
+          const numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
+          if (numDays === 0) return;
+          fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
+          if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
+          window.repaintForecastCanvas();
+        }
+      }, {passive: false});
+      
+      window.addEventListener('resize', () => { window.repaintForecastCanvas(); });
+      setTimeout(window.repaintForecastCanvas, 100);
+    }
+
+    // =========================================================
+    // MODULE 2: HISTORICAL MATRIX (Dependent)
+    // =========================================================
     if (!SKI_DATA || !SKI_DATA.records || SKI_DATA.records.length === 0) { 
-      sb.innerHTML = `<span class="badge" style="background:#ef4444;color:white;">⚠ No Data</span>`; 
+      sb.innerHTML = `⚠ Historical Data Offline`; 
+      ts.innerText = `Forecast engine isolated.`;
       return; 
     }
-    sb.innerHTML = `<span class="badge" style="background:var(--brand);color:white;">✓ Online</span>`;
+    sb.innerHTML = `✓ Matrix Online`;
     ts.innerText = `Baked: ${latestDataDate}`;
 
-    // ── DATA ENGINE ──
     const byDate = {}, byResort = {}, dates = [];
     SKI_DATA.records.forEach(r => {
       if(!byDate[r.date]) { byDate[r.date] = []; dates.push(r.date); }
@@ -587,7 +852,6 @@
       return (valid.reduce((a,b) => a+b, 0) / valid.length) * 100;
     };
 
-    // ── ALGORITHMIC SCORING ENGINE (WITH ARCHETYPES) ──
     const uiPow = document.getElementById('w-pow'), lblPow = document.getElementById('lbl-pow');
     const uiSun = document.getElementById('w-sun'), lblSun = document.getElementById('lbl-sun');
     const uiCov = document.getElementById('w-cov'), lblCov = document.getElementById('lbl-cov'); 
@@ -595,11 +859,9 @@
     const getWeights = () => ({ pow: parseInt(uiPow.value) / 100, sun: parseInt(uiSun.value) / 100, cov: parseInt(uiCov.value) / 100 });
 
     const triggerVisualFlash = () => {
-      // Flash Labels
       [lblPow, lblSun, lblCov].forEach(el => {
         el.classList.remove('flash-update'); void el.offsetWidth; el.classList.add('flash-update');
       });
-      // Flash Matrix & Table Badges
       document.querySelectorAll('.hm-cell, .quality-badge').forEach(el => {
         el.classList.remove('flash-cell'); void el.offsetWidth; el.classList.add('flash-cell');
       });
@@ -611,7 +873,6 @@
       if(flash) triggerVisualFlash();
     };
 
-    // Slider Listeners
     [uiPow, uiSun, uiCov].forEach(el => {
       el.addEventListener('input', () => {
         document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
@@ -619,7 +880,6 @@
       });
     });
 
-    // Archetype Quick Selector Logic
     document.querySelectorAll('.archetype-btn').forEach(btn => {
       btn.onclick = (e) => {
         document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
@@ -659,7 +919,6 @@
       return { score: rawScore, metrics: { fPowder, fSun, fCoverage, fatal } };
     };
 
-    // ── ADVANCED TOOLTIP BUILDER ──
     const generateRichTooltipHTML = (title, dScore, finalSc, extras = '') => {
       if (finalSc === null) return `<div class="tt-data-node"><div>Data unavailable for ${title}</div></div>`;
       
@@ -686,286 +945,6 @@
       return html;
     };
 
-
-    // ── FORECAST ENGINE (Tactical 3-Day & Extended 16-Day Meteogram) ──
-    const sb = document.getElementById('tactical-summary-board');
-    const fCc = document.getElementById('fc-canvas-controls');
-    let activeFcResort = FORECAST_DATA && FORECAST_DATA.resorts ? Object.keys(FORECAST_DATA.resorts)[0] : null;
-
-    const renderTacticalSummary = (resort) => {
-      if (!FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[resort]) return;
-      const hourly = FORECAST_DATA.resorts[resort];
-      const limit = Math.min(168, hourly.temperature_2m?.length || 0); // 7 days
-      if (limit === 0) return;
-
-      const snow = hourly.snowfall ? hourly.snowfall.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
-      const rain = hourly.rain ? hourly.rain.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
-      
-      const gusts = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).filter(v=>v!==null) : [];
-      const maxGust = gusts.length ? Math.max(...gusts) : 0;
-      const gustDayIdx = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).indexOf(maxGust) : 0;
-      const gustDate = hourly.time ? new Date(hourly.time[gustDayIdx]) : new Date(localNow.getTime() + (gustDayIdx * 3600 * 1000));
-      const gustDayStr = gustDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
-
-      const fz = hourly.freezinglevel_height ? hourly.freezinglevel_height.slice(0, limit).filter(v => v !== null) : [];
-      const maxFz = fz.length ? Math.max(...fz) : 0;
-      const minFz = fz.length ? Math.min(...fz) : 0;
-
-      const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
-
-      sb.innerHTML = `
-          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
-              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Snow Yield ❄️</div>
-              <div style="font-size:2.5rem; font-weight:800; color:var(--snow-yield); line-height:1;">${snow.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">cm</span></div>
-          </div>
-          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
-              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Rain Hazard 🌧️</div>
-              <div style="font-size:2.5rem; font-weight:800; color:${rain > 5 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${rain.toFixed(1)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">mm</span></div>
-          </div>
-          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
-              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Peak Wind Hold Risk 💨</div>
-              <div style="font-size:2.5rem; font-weight:800; color:${maxGust > 65 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${maxGust.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">km/h</span></div>
-              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Expected on ${gustDayStr}</div>
-          </div>
-          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
-              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Freezing Line (0°C) 🏔️</div>
-              <div style="font-size:1.2rem; font-weight:800; color:var(--text-main); line-height:1.4;">Max: <span style="color:${maxFz > meta.base ? '#ef4444' : 'var(--brand)'};">${maxFz}m</span><br>Min: ${minFz}m</div>
-              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Base elevation is ${meta.base}m</div>
-          </div>
-      `;
-    };
-
-    if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
-      Object.keys(FORECAST_DATA.resorts).forEach(resort => {
-        const b = document.createElement('button'); b.innerText = resort.toUpperCase(); b.className = 'control-btn';
-        if(resort === activeFcResort) b.classList.add('active');
-        b.onclick = () => { 
-          Array.from(fCc.children).forEach(c=>c.classList.remove('active')); 
-          b.classList.add('active'); 
-          activeFcResort = resort; 
-          renderTacticalSummary(activeFcResort);
-          window.repaintForecastCanvas(); 
-        };
-        fCc.appendChild(b);
-      });
-      renderTacticalSummary(activeFcResort);
-    } else if (FORECAST_DATA && FORECAST_DATA.error) {
-      sb.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
-    }
-
-    // 3-Pane Meteogram Engine
-    const cvsFc = document.getElementById('forecast-canvas');
-    const ctxFc = cvsFc ? cvsFc.getContext('2d') : null;
-    let fcHoverIdx = null; let fcTouch = false;
-
-    window.repaintForecastCanvas = () => {
-      if (!ctxFc || !activeFcResort || !FORECAST_DATA.resorts[activeFcResort]) return;
-      ctxFc.clearRect(0,0,cvsFc.width,cvsFc.height);
-
-      const hourly = FORECAST_DATA.resorts[activeFcResort];
-      if (!hourly.temperature_2m) return;
-      const numDays = Math.floor(hourly.temperature_2m.length / 24);
-      if (numDays === 0) return;
-
-      const daily = [];
-      for (let i = 0; i < numDays; i++) {
-        const start = i * 24, end = start + 24;
-        const t = hourly.temperature_2m.slice(start, end).filter(v => v !== null);
-        const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
-        const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
-        const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end).filter(v => v !== null) : [];
-        const cc = ccArr.length ? ccArr.reduce((a,b)=>a+b,0)/ccArr.length : 0; 
-        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.12;
-        const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
-        const gust = gustArr.length ? Math.max(...gustArr) : 0;
-
-        let exactDate;
-        if (hourly.time && hourly.time[start]) exactDate = new Date(hourly.time[start]);
-        else exactDate = new Date(localNow.getTime() + i*86400000);
-
-        const dateStr = exactDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
-        
-        daily.push({ tMax: t.length ? Math.max(...t) : 0, tMin: t.length ? Math.min(...t) : 0, snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: dateStr });
-      }
-
-      const pX = 60, pY = 20, pRight = 60, pBot = 50;
-      const w = cvsFc.width - pX - pRight;
-      const h = cvsFc.height - pY - pBot; 
-      
-      // Strict 3-Pane Geometry
-      const hP1 = h * 0.45; // Temp Band
-      const hP2 = h * 0.25; // Precip Stack
-      const hP3 = h * 0.20; // Sun & Wind
-      const gap = h * 0.05; // Gap between panes
-      
-      const yP1 = pY;
-      const yP2 = yP1 + hP1 + gap;
-      const yP3 = yP2 + hP2 + gap;
-      
-      const colW = w / numDays;
-      const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
-
-      // Mapping Functions
-      const maxT = Math.max(5, ...daily.map(d=>d.tMax)) + 5;
-      const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 5;
-      const tRange = maxT - minT;
-      const mapYTemp = t => yP1 + hP1 - ((t - minT) / tRange) * hP1;
-
-      const maxPrecip = Math.max(10, ...daily.map(d => d.snow + d.rain));
-      const mapYPrecip = val => yP2 + hP2 - (val / maxPrecip) * hP2;
-      
-      const maxSun = 14; 
-      const mapYSun = val => yP3 + hP3 - (val / maxSun) * hP3;
-
-      const maxGust = Math.max(60, ...daily.map(d=>d.gust));
-      const mapYGust = g => yP3 + hP3 - (Math.min(g, maxGust) / maxGust) * hP3;
-
-      ctxFc.strokeStyle = getStyleVar('--grid-line'); 
-      ctxFc.fillStyle = getStyleVar('--text-muted'); 
-      ctxFc.font = fonts.axis;
-
-      // Axis Labels
-      ctxFc.save(); ctxFc.translate(20, yP1 + hP1/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(20, yP2 + hP2/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Precip (mm/cm)", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(20, yP3 + hP3/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Sun (h)", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, yP3 + hP3/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
-
-      // Grid Lines & Ticks
-      ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
-      for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
-        const y = mapYTemp(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
-        ctxFc.fillText(`${t}°`, pX-10, y);
-      }
-      const zeroY = mapYTemp(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
-      ctxFc.strokeStyle = getStyleVar('--grid-line');
-      
-      // Precip Grid
-      for(let p=0; p<=maxPrecip; p+=Math.ceil(maxPrecip/4)) {
-        if(p===0) continue; const y = mapYPrecip(p);
-        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${p}`, pX-10, y);
-      }
-      ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke(); ctxFc.strokeStyle = getStyleVar('--grid-line');
-
-      // Sun Grid (Left) / Gust Grid (Right)
-      for(let s=0; s<=maxSun; s+=7) {
-        if(s===0) continue; const y = mapYSun(s);
-        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX-10, y);
-      }
-      ctxFc.textAlign = 'left';
-      for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
-        const y = mapYGust(g); ctxFc.fillText(`${g}`, pX+w+10, y);
-      }
-      ctxFc.beginPath(); ctxFc.moveTo(pX,yP3+hP3); ctxFc.lineTo(pX+w,yP3+hP3); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
-
-      // 1. Draw Clouds (Background Pane 1 & 2)
-      daily.forEach((d, i) => {
-        ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
-        ctxFc.fillRect(pX + i*colW + 1, yP1, colW - 2, hP1 + gap + hP2); ctxFc.globalAlpha = 1.0;
-        
-        // Date Labels
-        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
-        const cx = pX + i*colW + colW/2;
-        const parts = d.label.split(', ');
-        if(parts.length === 2) {
-          ctxFc.fillText(parts[0], cx, yP3 + hP3 + 10);
-          ctxFc.fillText(parts[1], cx, yP3 + hP3 + 24);
-        } else {
-          ctxFc.fillText(d.label, cx, yP3 + hP3 + 10);
-        }
-      });
-
-      // 2. Temp Band
-      ctxFc.beginPath();
-      daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
-      for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
-      ctxFc.closePath();
-      const grad = ctxFc.createLinearGradient(0, yP1, 0, yP1+hP1);
-      grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)'); grad.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
-      ctxFc.fillStyle = grad; ctxFc.fill();
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
-
-      // 3. Precip & Sun Bars
-      daily.forEach((d, i) => {
-        const cx = pX + i*colW + colW/2;
-        const bW = Math.max(4, Math.min(colW * 0.5, 20));
-        
-        // Precip
-        const rH = hP2 - (mapYPrecip(d.rain) - yP2); 
-        const sH = hP2 - (mapYPrecip(d.snow) - yP2); 
-        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH, bW, rH); }
-        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH - sH, bW, sH); }
-
-        // Sun
-        const sunH = hP3 - (mapYSun(d.sun) - yP3);
-        if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP3+hP3 - sunH, bW, sunH); }
-      });
-
-      // 4. Wind Gusts Line
-      ctxFc.beginPath(); let drawingG = false;
-      daily.forEach((d, i) => {
-        const cx = pX + i*colW + colW/2;
-        const y = mapYGust(d.gust);
-        if(!drawingG) { ctxFc.moveTo(cx, y); drawingG = true; } else { ctxFc.lineTo(cx, y); }
-      });
-      ctxFc.strokeStyle = '#ef4444'; ctxFc.lineWidth = 2; ctxFc.setLineDash([5, 5]); ctxFc.stroke(); ctxFc.setLineDash([]);
-
-      // 5. Hover Tooltip
-      if (fcHoverIdx !== null && fcHoverIdx >= 0 && fcHoverIdx < numDays) {
-        const d = daily[fcHoverIdx];
-        const hx = pX + fcHoverIdx*colW + colW/2;
-        
-        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, yP3+hP3); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
-
-        ctxFc.fillStyle = getStyleVar('--bg-header');
-        
-        const scale = cvsFc.width / (cvsFc.clientWidth || 800);
-        const boxW = 190 * scale, boxH = 175 * scale, padding = 15 * scale;
-        let boxX = hx + padding, boxY = pY;
-        if (fcTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
-        if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
-        
-        ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = getStyleVar('--border-color'); ctxFc.strokeRect(boxX, boxY, boxW, boxH);
-        ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
-        
-        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, boxY + (10*scale));
-        ctxFc.fillStyle = getStyleVar('--text-main'); 
-        ctxFc.fillText(`Max: ${d.tMax.toFixed(1)}°C`, boxX + padding, boxY + (35*scale));
-        ctxFc.fillText(`Min: ${d.tMin.toFixed(1)}°C`, boxX + padding, boxY + (55*scale));
-        ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, boxY + (80*scale));
-        
-        ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, boxY + (105*scale));
-        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, boxY + (125*scale));
-        ctxFc.fillStyle = '#ef4444'; ctxFc.fillText(`Gust: ${d.gust.toFixed(0)}km/h`, boxX + padding, boxY + (145*scale));
-      }
-    };
-
-    if (cvsFc) {
-      cvsFc.addEventListener('mousemove', (e) => {
-        fcTouch = false; const rect = cvsFc.getBoundingClientRect(); 
-        const mouseX = (e.clientX - rect.left) * (cvsFc.width / rect.width);
-        const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
-        fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
-        if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
-        window.repaintForecastCanvas();
-      });
-      cvsFc.addEventListener('mouseleave', () => { fcHoverIdx = null; window.repaintForecastCanvas(); });
-      cvsFc.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 0) {
-          e.preventDefault(); fcTouch = true; const rect = cvsFc.getBoundingClientRect();
-          const mouseX = (e.touches[0].clientX - rect.left) * (cvsFc.width / rect.width);
-          const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
-          fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
-          if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
-          window.repaintForecastCanvas();
-        }
-      }, {passive: false});
-      
-      window.addEventListener('resize', () => { window.repaintForecastCanvas(); });
-      setTimeout(window.repaintForecastCanvas, 100);
-    }
-
-    // ── TELEMETRY DRILLDOWN ──
     const dp = document.getElementById('date-picker'), dtb = document.querySelector('#daily-table tbody');
     const btnPrev = document.getElementById('btn-prev-day'), btnNext = document.getElementById('btn-next-day'), btnLatest = document.getElementById('btn-latest-day');
 
@@ -1044,7 +1023,6 @@
 
     renderTable(dp.value);
 
-    // ── HEATMAPS & TABS ──
     let hmRes = 7;
     const hc = document.getElementById('heatmap-container');
     const hmRc = document.getElementById('hm-resort-controls');
@@ -1150,7 +1128,6 @@
     };
     renderHeatmaps(); 
 
-    // ── GLOBAL CANVAS SYSTEM & CONTROLS ──
     const monthMarkers = [ { label: "Nov 1", off: 0 }, { label: "Dec 1", off: 30 }, { label: "Jan 1", off: 61 }, { label: "Feb 1", off: 92 }, { label: "Mar 1", off: 120 }, { label: "Apr 1", off: 151 }, { label: "May 1", off: 181 } ];
     const cc = document.getElementById('canvas-controls');
     let act = Object.keys(byResort)[0];
@@ -1165,7 +1142,6 @@
       cc.appendChild(b);
     });
 
-    // ── SNOWPACK CANVAS ──
     const cvs = document.getElementById('snow-canvas'), ctx = cvs.getContext('2d');
     const legend = document.getElementById('canvas-legend'), avgBtn = document.getElementById('toggle-avg-btn');
     let hoverDayOffset = null, maWindow = 1, showHistoricalAvg = true;
@@ -1301,7 +1277,6 @@
     window.addEventListener('resize', () => { window.repaintCanvas(); });
     setTimeout(window.repaintCanvas, 50);
 
-    // ── ATMOSPHERIC CONDITIONS CANVAS ──
     const cvsA = document.getElementById('atmos-canvas'), ctxA = cvsA.getContext('2d'), lblSeason = document.getElementById('atmos-season-label');
     let atmosHoverDay = null;
 
@@ -1355,7 +1330,6 @@
       ctxA.textAlign = 'center'; ctxA.textBaseline = 'top';
       monthMarkers.forEach(m => { const x = mapX(m.off); if (x <= pX+w) { ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, pY+h); ctxA.lineWidth = 2; ctxA.stroke(); ctxA.fillText(m.label, x, pY+h + 15); }});
 
-      // 2. Bars (Clamped)
       const barW = (w / 182) * 0.8;
       for(let i=0; i<=182; i++) {
         if(!atmosData[i]) continue;
@@ -1363,7 +1337,6 @@
         if(atmosData[i].snow > 0) { ctxA.fillStyle = getStyleVar('--snow-yield'); const sny = mapSnY(atmosData[i].snow); ctxA.fillRect(mapX(i), sny, barW, pY+h - sny); }
       }
 
-      // 3. Thermal Band 
       ctxA.beginPath(); let hasStart = false;
       for(let i=0; i<=182; i++) { if(atmosData[i] && atmosData[i].tMax !== null) { if(!hasStart) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i].tMax)); hasStart = true; } else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMax)); } } }
       for(let i=182; i>=0; i--) { if(atmosData[i] && atmosData[i].tMin !== null) { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMin)); } }
@@ -1380,14 +1353,12 @@
       };
       drawTLine('tMax', '#ef4444'); drawTLine('tMin', '#3b82f6');
 
-      // 4. Wind Gusts
       ctxA.beginPath(); let drawingG = false;
       for(let i=0; i<=182; i++) {
         if(atmosData[i] && atmosData[i].gust !== null) { if(!drawingG) { ctxA.moveTo(mapX(i), mapGustY(atmosData[i].gust)); drawingG = true; } else { ctxA.lineTo(mapX(i), mapGustY(atmosData[i].gust)); } } else { drawingG = false; }
       }
       ctxA.strokeStyle = 'rgba(239, 68, 68, 0.6)'; ctxA.lineWidth = 2; ctxA.setLineDash([5, 5]); ctxA.stroke(); ctxA.setLineDash([]);
 
-      // 5. Tooltip
       if (atmosHoverDay !== null && atmosData[atmosHoverDay]) {
         const d = atmosData[atmosHoverDay]; const hx = mapX(atmosHoverDay);
         ctxA.beginPath(); ctxA.moveTo(hx, pY); ctxA.lineTo(hx, pY+h); ctxA.strokeStyle = getStyleVar('--text-main'); ctxA.lineWidth = 2; ctxA.setLineDash([5, 5]); ctxA.stroke(); ctxA.setLineDash([]);
