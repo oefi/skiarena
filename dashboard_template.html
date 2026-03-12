@@ -72,7 +72,7 @@
   h2 { margin-top: 0; color: var(--brand); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
   
   .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-  .badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; background: var(--border-color); }
+  .badge { padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: var(--border-color); }
   .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
   /* ── ANIMATIONS & FLASHING ── */
@@ -88,8 +88,8 @@
   .flash-cell { animation: cellPulse 0.6s ease-out forwards; }
 
   /* ── CONTROLS ── */
-  .theme-toggles span, .font-resizers span { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
-  .theme-toggles span:hover, .font-resizers span:hover { transform: scale(1.2); background: var(--border-color); }
+  .font-resizers span, #theme-cycle-btn { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
+  .font-resizers span:hover, #theme-cycle-btn:hover { transform: scale(1.2); background: var(--border-color); }
 
   #toc a { padding: 0.3rem 0.6rem; border-radius: 4px; transition: background 0.2s, color 0.2s; text-decoration: none; color: inherit; opacity: 0.8; font-weight: 600; font-size: 0.85rem; }
   #toc a:hover { background: var(--border-color); opacity: 1; }
@@ -185,9 +185,12 @@
   .legend-color { width: 16px; height: 4px; border-radius: 2px; }
   .legend-dotted { border-bottom: 3px dotted var(--text-main); background: transparent !important; height: 0; width: 16px; }
 
-  @media (max-width: 768px) { 
-    header { flex-direction: column; gap: 0.8rem; padding: 1rem !important; } 
+  @media (max-width: 1024px) { 
+    header { display: flex !important; flex-direction: column; gap: 0.8rem; padding: 1rem !important; } 
+    header > div { width: 100%; justify-content: center !important; text-align: center; }
     #toc { justify-content: center; width: 100%; flex-wrap: wrap; } 
+  }
+  @media (max-width: 768px) {
     .fc-body { grid-template-columns: 1fr; }
     .hm-months-container { flex-direction: column; gap: 1rem; }
     .hm-month-label { text-align: left; border-bottom: 1px solid var(--grid-line); padding-bottom: 2px; }
@@ -209,32 +212,31 @@
 <!-- Global Glassmorphic Tooltip Container -->
 <div id="global-tooltip"></div>
 
-<!-- ── HEADER ── -->
-<header style="position: sticky; top: 0; z-index: 999; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: var(--bg-header); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-color);">
-  <h1 style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.05em;">🎿 ZL Skiarena</h1>
-  <nav id="toc" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    <a href="#powder-alarm">Forecast</a>
-    <a href="#heatmap">Matrix</a>
-    <a href="#drilldown">Telemetry</a>
-    <a href="#snowpack">Snowpack</a>
-    <a href="#atmosphere">Atmosphere</a>
-  </nav>
-  <div style="display: flex; gap: 1.5rem; align-items: center;">
-    <span class="font-resizers">
-      <span tabindex="0" role="button" onclick="setLocalFont('sm')" title="Compact Font">➖</span> 
-      <span tabindex="0" role="button" onclick="setLocalFont('lg')" title="Large Font">➕</span>
-    </span>
-    <span class="theme-toggles">
-      <span tabindex="0" role="button" onclick="setLocalTheme('light')" title="Light Mode">☀️</span>
-      <span tabindex="0" role="button" onclick="setLocalTheme('grey')" title="Dark Grey Mode">🌥️</span>
-      <span tabindex="0" role="button" onclick="setLocalTheme('night')" title="Night Mode">🌙</span>
-      <span tabindex="0" role="button" onclick="setLocalTheme('print')" title="Printable">🖨️</span>
-    </span>
-  </div>
-</header>
-
-<main class="container">
+<!-- ── LEAN 3-COLUMN HEADER ── -->
+<header style="position: sticky; top: 0; z-index: 999; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 0.6rem 1rem; background: var(--bg-header); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
   
+  <!-- Left: Navigation & Controls -->
+  <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+    <nav id="toc" style="display: flex; gap: 0.25rem;">
+      <a href="#powder-alarm">Forecast</a>
+      <a href="#heatmap">Matrix</a>
+      <a href="#drilldown">Telemetry</a>
+      <a href="#snowpack">Snowpack</a>
+      <a href="#atmosphere">Atmos</a>
+    </nav>
+    <div style="display: flex; gap: 0.25rem; align-items: center; border-left: 1px solid var(--border-color); padding-left: 1rem;">
+      <span class="font-resizers" style="display: flex; gap: 0.2rem;">
+        <span tabindex="0" role="button" onclick="setLocalFont('sm')" title="Compact Font">➖</span> 
+        <span tabindex="0" role="button" onclick="setLocalFont('lg')" title="Large Font">➕</span>
+      </span>
+      <span tabindex="0" role="button" id="theme-cycle-btn" onclick="cycleTheme()" title="Cycle Theme" style="margin-left: 0.25rem;">🎨</span>
+    </div>
+  </div>
+
+  <!-- Center: Title -->
+  <div style="text-align: center;">
+    <h1 style="margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.05em; color: var(--text-main);">🎿 ZL Skiarena</h1>
+  </div>
   <div class="flex-between" style="font-size: 0.85rem; color: var(--text-muted); background: var(--bg-card); padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 6px;">
     <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
       <span id="status-badge">Checking data matrix...</span>
@@ -248,32 +250,34 @@
 
   <!-- ── FORECAST (TACTICAL & EXTENDED) ── -->
   <section id="powder-alarm">
-    <h2>MeteoSwiss Tactical Forecast (72h) 📡</h2>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1.5rem;">High-resolution aggregate models. Tactical precision for the next 3 days.</p>
-    <div id="forecast-container" class="grid-layout">
+    <div class="flex-between" style="margin-bottom: 1.5rem;">
+      <div>
+        <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Forecast & Alpine Hazards 📡</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">High-resolution aggregate models mapped to exact base and summit topography.</p>
+      </div>
+      <div id="fc-canvas-controls" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+    </div>
+
+    <!-- The 7-Day Tactical Overview -->
+    <div id="tactical-summary-board" class="grid-layout" style="margin-bottom: 2rem;">
       <div style="color: var(--text-muted); font-style: italic;">Awaiting payload...</div>
     </div>
 
     <!-- The Extended Visual Outlook (Meteogram) -->
-    <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-      <div class="flex-between" style="margin-bottom: 1rem;">
-        <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem;">Extended Meteogram (16-Day Horizon) 🗓️</h3>
-        <div id="fc-canvas-controls" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
-      </div>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem;">Dynamic dual-pane rendering of long-range API data. Top Pane: Temperature, Clouds & Sun. Bottom Pane: Stacked Snow/Rain & Wind Gusts.</p>
+    <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+      <h3 style="margin: 0 0 1rem 0; color: var(--text-main); font-size: 1.1rem;">Extended Meteogram (16-Day Horizon) 🗓️</h3>
       
       <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; overflow: hidden;">
         <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); flex-wrap: wrap;">
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:linear-gradient(to bottom, #ef4444, #3b82f6); border-radius:2px;"></div> Temp Range (°C)</div>
-          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--sun-yield); border-radius:2px;"></div> Sun</div>
-          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--cloud-base); border-radius:2px;"></div> Clouds</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--snow-yield); border-radius:2px;"></div> Snow (cm)</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--rain-yield); border-radius:2px;"></div> Rain (mm)</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--sun-yield); border-radius:2px;"></div> Sun (h)</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--cloud-base); border-radius:2px;"></div> Clouds</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:16px; height:2px; border-bottom:2px dashed #ef4444;"></div> Wind Gusts</div>
         </div>
         <div style="position: relative;">
-          <!-- Increased canvas height to 550 to support dual-pane dense layout -->
-          <canvas id="forecast-canvas" width="1200" height="550"></canvas>
+          <canvas id="forecast-canvas" width="1200" height="600"></canvas>
         </div>
       </div>
     </div>
@@ -426,17 +430,30 @@
 
 <script>
   // ── CORE SYSTEM ──
+  const themesList = ['light', 'grey', 'night', 'print'];
+  const themeIcons = { 'light': '☀️', 'grey': '🌥️', 'night': '🌙', 'print': '🖨️' };
+
   function setLocalTheme(t) { 
     document.documentElement.dataset.theme = t; 
-    localStorage.setItem('zl_theme', t); 
+    localStorage.setItem('zl_theme', t);
+    const btn = document.getElementById('theme-cycle-btn');
+    if (btn) btn.innerText = themeIcons[t] || '🎨';
     if(window.repaintCanvas) window.repaintCanvas(); 
     if(window.repaintAtmosCanvas) window.repaintAtmosCanvas();
     if(window.repaintForecastCanvas) window.repaintForecastCanvas();
   }
+  
+  function cycleTheme() {
+    let current = document.documentElement.dataset.theme;
+    let nextIdx = (themesList.indexOf(current) + 1) % themesList.length;
+    setLocalTheme(themesList[nextIdx]);
+  }
+
   function setLocalFont(f) { 
     document.documentElement.dataset.font = f; 
     localStorage.setItem('zl_font', f); 
   }
+  
   document.documentElement.dataset.theme = localStorage.getItem('zl_theme') || 'night';
   document.documentElement.dataset.font = localStorage.getItem('zl_font') || 'md';
 
@@ -527,17 +544,21 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     
-    document.querySelectorAll('.theme-toggles span, .font-resizers span').forEach(el => {
+    // Init theme icon
+    const themeBtn = document.getElementById('theme-cycle-btn');
+    if(themeBtn) themeBtn.innerText = themeIcons[document.documentElement.dataset.theme] || '🎨';
+
+    document.querySelectorAll('.font-resizers span, #theme-cycle-btn').forEach(el => {
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }});
     });
 
     const sb = document.getElementById('status-badge'), ts = document.getElementById('update-time');
     if (!SKI_DATA || !SKI_DATA.records || SKI_DATA.records.length === 0) { 
-      sb.innerHTML = `<span class="badge" style="background:#ef4444;color:white;">⚠ Data Missing</span>`; 
+      sb.innerHTML = `<span class="badge" style="background:#ef4444;color:white;">⚠ No Data</span>`; 
       return; 
     }
-    sb.innerHTML = `<span class="badge" style="background:var(--brand);color:white;">✓ Matrices Online</span>`;
-    ts.innerText = `Data Baked: ${latestDataDate}`;
+    sb.innerHTML = `<span class="badge" style="background:var(--brand);color:white;">✓ Online</span>`;
+    ts.innerText = `Baked: ${latestDataDate}`;
 
     // ── DATA ENGINE ──
     const byDate = {}, byResort = {}, dates = [];
@@ -621,40 +642,7 @@
       const fPowder = Math.min(sSnow / 20.0, 1.0);
       const fSun = Math.min(sunHours / 8.0, 1.0);
       const fCoverage = Math.min(snDepth, 1.0);
-
-      const totalWeight = weights.pow + weights.sun + weights.cov;
-      if (totalWeight === 0) return { score: 0.5, metrics: { fPowder, fSun, fCoverage, fatal: [] } };
-
-      let rawScore = ((fPowder * weights.pow) + (fSun * weights.sun) + (fCoverage * weights.cov)) / totalWeight;
-      const fatal = [];
-
-      if (bRain > 2 && bTemp > 0 && sSnow < 2) { rawScore *= 0.2; fatal.push("Rain Penalty"); }
-      if (sGust > 75) { rawScore *= 0.3; fatal.push("Wind Hold"); }
-      if (bTemp !== null && bTemp > 5) { rawScore *= 0.8; fatal.push("Slush Risk"); }
-
-      return { score: rawScore, metrics: { fPowder, fSun, fCoverage, fatal } };
-    };
-
-    // ── ADVANCED TOOLTIP BUILDER ──
-    const generateRichTooltipHTML = (title, dScore, finalSc, extras = '') => {
-      if (finalSc === null) return `<div class="tt-data-node"><div>Data unavailable for ${title}</div></div>`;
-      
-      const pC = dScore.metrics.fPowder >= 0.8 ? 'var(--snow-yield)' : 'var(--text-main)';
-      const sC = dScore.metrics.fSun >= 0.8 ? 'var(--sun-yield)' : 'var(--text-main)';
-      const cC = dScore.metrics.fCoverage >= 0.8 ? '#22c55e' : 'var(--text-main)';
-
-      let html = `<div class="tt-data-node">
-        <div style="font-size:0.9rem; font-weight:800; color:var(--brand); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.4rem; margin-bottom:0.4rem;">${title}</div>
-        ${extras}
-        <div style="color:var(--text-muted); font-size:0.7rem; margin-top:0.4rem; text-transform:uppercase;">Algorithmic Engine</div>
-        <div class="tt-grid">
-          <span style="color:var(--text-muted)">❄️ Powder</span> <span class="tt-val" style="color:${pC}">${(dScore.metrics.fPowder*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-          <span style="color:var(--text-muted)">☀️ Bluebird</span> <span class="tt-val" style="color:${sC}">${(dScore.metrics.fSun*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-          <span style="color:var(--text-muted)">🏔️ Coverage</span> <span class="tt-val" style="color:${cC}">${(dScore.metrics.fCoverage*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-        </div>`;
-      
-      if (dScore.metrics.fatal.length > 0) {
-        html += `<div style="margin-top:0.6rem; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5); border-radius:4px; color:#ef4444; font-weight:bold; font-size:0.75rem; display:flex; gap:0.4rem; align-items:center;">
+        <div style="margin-top:0.6rem; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5); border-radius:4px; color:#ef4444; font-weight:bold; font-size:0.75rem; display:flex; gap:0.4rem; align-items:center;">
           <span>🚨</span> <span>Penalties Active:<br>${dScore.metrics.fatal.join(' · ')}</span>
         </div>`;
       }
@@ -664,55 +652,72 @@
 
 
     // ── FORECAST ENGINE (Tactical 3-Day & Extended 16-Day Meteogram) ──
-    const fc = document.getElementById('forecast-container');
+    const sb = document.getElementById('tactical-summary-board');
     const fCc = document.getElementById('fc-canvas-controls');
     let activeFcResort = FORECAST_DATA && FORECAST_DATA.resorts ? Object.keys(FORECAST_DATA.resorts)[0] : null;
 
+    const renderTacticalSummary = (resort) => {
+      if (!FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[resort]) return;
+      const hourly = FORECAST_DATA.resorts[resort];
+      const limit = Math.min(168, hourly.temperature_2m?.length || 0); // 7 days
+      if (limit === 0) return;
+
+      const snow = hourly.snowfall ? hourly.snowfall.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
+      const rain = hourly.rain ? hourly.rain.slice(0, limit).reduce((a,b)=>a+(b||0),0) : 0;
+      
+      const gusts = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).filter(v=>v!==null) : [];
+      const maxGust = gusts.length ? Math.max(...gusts) : 0;
+      const gustDayIdx = hourly.windgusts_10m ? hourly.windgusts_10m.slice(0, limit).indexOf(maxGust) : 0;
+      const gustDate = hourly.time ? new Date(hourly.time[gustDayIdx]) : new Date(localNow.getTime() + (gustDayIdx * 3600 * 1000));
+      const gustDayStr = gustDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+
+      const fz = hourly.freezinglevel_height ? hourly.freezinglevel_height.slice(0, limit).filter(v => v !== null) : [];
+      const maxFz = fz.length ? Math.max(...fz) : 0;
+      const minFz = fz.length ? Math.min(...fz) : 0;
+
+      const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
+
+      sb.innerHTML = `
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Snow Yield ❄️</div>
+              <div style="font-size:2.5rem; font-weight:800; color:var(--snow-yield); line-height:1;">${snow.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">cm</span></div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">7-Day Rain Hazard 🌧️</div>
+              <div style="font-size:2.5rem; font-weight:800; color:${rain > 5 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${rain.toFixed(1)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">mm</span></div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Peak Wind Hold Risk 💨</div>
+              <div style="font-size:2.5rem; font-weight:800; color:${maxGust > 65 ? '#ef4444' : 'var(--text-main)'}; line-height:1;">${maxGust.toFixed(0)}<span style="font-size:1.2rem; color:var(--text-muted); margin-left:0.2rem;">km/h</span></div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Expected on ${gustDayStr}</div>
+          </div>
+          <div class="fc-card" style="padding: 1.2rem; display:flex; flex-direction:column; justify-content:center;">
+              <div style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; letter-spacing:0.05em;">Freezing Line (0°C) 🏔️</div>
+              <div style="font-size:1.2rem; font-weight:800; color:var(--text-main); line-height:1.4;">Max: <span style="color:${maxFz > meta.base ? '#ef4444' : 'var(--brand)'};">${maxFz}m</span><br>Min: ${minFz}m</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">Base elevation is ${meta.base}m</div>
+          </div>
+      `;
+    };
+
     if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
-      fc.innerHTML = ''; 
-      const dayNames = ['Today', 'Tomorrow', 'Day 3'];
-      
-      Object.entries(FORECAST_DATA.resorts).forEach(([resort, hourly]) => {
-        let cardsHtml = '';
-        for (let i = 0; i < 3; i++) {
-          const start = i * 24, end = start + 24;
-          if (!hourly.temperature_2m || hourly.temperature_2m.length <= start) break;
-          
-          const tArr = hourly.temperature_2m.slice(start, end).filter(v => v !== null);
-          const tMin = tArr.length ? Math.min(...tArr) : 0, tMax = tArr.length ? Math.max(...tArr) : 0;
-          const snow = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
-          const rain = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
-          const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
-          const gust = gustArr.length ? Math.max(...gustArr) : 0;
-          const fzArr = hourly.freezinglevel_height ? hourly.freezinglevel_height.slice(start, end).filter(v => v !== null) : [];
-          const fz = fzArr.length ? Math.round(fzArr.reduce((a,b)=>a+b,0)/fzArr.length) : 0;
-
-          const gustClass = gust > 60 ? 'alert' : '';
-          const snowClass = snow > 5 ? 'good' : '';
-          const rainClass = rain > 1 ? 'alert' : '';
-
-          cardsHtml += `<div class="fc-day"><div class="fc-day-title">${dayNames[i]}</div><div class="fc-stat"><span>🌡️ Temp</span> <span class="fc-val">${tMin.toFixed(0)}° / ${tMax.toFixed(0)}°C</span></div><div class="fc-stat"><span>❄️ Snow</span> <span class="fc-val ${snowClass}">${snow.toFixed(1)} cm</span></div><div class="fc-stat"><span>🌧️ Rain</span> <span class="fc-val ${rainClass}">${rain.toFixed(1)} mm</span></div><div class="fc-stat"><span>💨 Gusts</span> <span class="fc-val ${gustClass}">${gust.toFixed(0)} km/h</span></div><div class="fc-stat"><span>🏔️ Freez</span> <span class="fc-val">${fz} m</span></div></div>`;
-        }
-
-        const totSnow = hourly.snowfall ? hourly.snowfall.slice(0, 72).reduce((a,b)=>a+b,0) : 0;
-        const maxGust = hourly.windgusts_10m ? Math.max(...hourly.windgusts_10m.slice(0,72)) : 0;
-        let warning = '';
-        if (maxGust > 70) warning = `<span style="color:#ef4444; font-size:0.8rem;">⚠️ High Wind Hold Risk</span>`;
-        else if (totSnow > 15) warning = `<span style="color:var(--brand); font-size:0.8rem;">❄️ Dump Alert (${totSnow.toFixed(0)}cm)</span>`;
-
-        const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
-        fc.innerHTML += `<div class="fc-card"><div class="fc-header"><span>${resort} <span style="opacity:0.6; font-size:0.75rem; font-weight:normal; text-transform:lowercase;">(${meta.base}m - ${meta.summit}m)</span></span>${warning}</div><div class="fc-body">${cardsHtml}</div></div>`;
-      
+      Object.keys(FORECAST_DATA.resorts).forEach(resort => {
         const b = document.createElement('button'); b.innerText = resort.toUpperCase(); b.className = 'control-btn';
         if(resort === activeFcResort) b.classList.add('active');
-        b.onclick = () => { Array.from(fCc.children).forEach(c=>c.classList.remove('active')); b.classList.add('active'); activeFcResort = resort; window.repaintForecastCanvas(); };
+        b.onclick = () => { 
+          Array.from(fCc.children).forEach(c=>c.classList.remove('active')); 
+          b.classList.add('active'); 
+          activeFcResort = resort; 
+          renderTacticalSummary(activeFcResort);
+          window.repaintForecastCanvas(); 
+        };
         fCc.appendChild(b);
       });
+      renderTacticalSummary(activeFcResort);
     } else if (FORECAST_DATA && FORECAST_DATA.error) {
-      fc.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
+      sb.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
     }
 
-    // 2. Dual-Pane Meteogram Engine
+    // 3-Pane Meteogram Engine
     const cvsFc = document.getElementById('forecast-canvas');
     const ctxFc = cvsFc ? cvsFc.getContext('2d') : null;
     let fcHoverIdx = null; let fcTouch = false;
@@ -738,7 +743,6 @@
         const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
         const gust = gustArr.length ? Math.max(...gustArr) : 0;
 
-        // Extract exact API date if available, otherwise guess via local browser clock
         let exactDate;
         if (hourly.time && hourly.time[start]) exactDate = new Date(hourly.time[start]);
         else exactDate = new Date(localNow.getTime() + i*86400000);
@@ -748,103 +752,120 @@
         daily.push({ tMax: t.length ? Math.max(...t) : 0, tMin: t.length ? Math.min(...t) : 0, snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: dateStr });
       }
 
-      const pX = 60, pY = 20, pRight = 60;
+      const pX = 60, pY = 20, pRight = 60, pBot = 50;
       const w = cvsFc.width - pX - pRight;
-      const h = cvsFc.height - pY * 2 - 40; // Extra room at bottom for stacked dates
+      const h = cvsFc.height - pY - pBot; 
       
-      const hTop = h * 0.60;
-      const gap = h * 0.10;
-      const hBot = h * 0.30;
+      // Strict 3-Pane Geometry
+      const hP1 = h * 0.45; // Temp Band
+      const hP2 = h * 0.25; // Precip Stack
+      const hP3 = h * 0.20; // Sun & Wind
+      const gap = h * 0.05; // Gap between panes
       
-      const midY = pY + hTop;
-      const botY = midY + gap;
+      const yP1 = pY;
+      const yP2 = yP1 + hP1 + gap;
+      const yP3 = yP2 + hP2 + gap;
       
       const colW = w / numDays;
       const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
 
+      // Mapping Functions
       const maxT = Math.max(5, ...daily.map(d=>d.tMax)) + 5;
       const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 5;
       const tRange = maxT - minT;
-      const mapYTemp = t => midY - ((t - minT) / tRange) * hTop;
+      const mapYTemp = t => yP1 + hP1 - ((t - minT) / tRange) * hP1;
 
       const maxPrecip = Math.max(10, ...daily.map(d => d.snow + d.rain));
-      const mapYPrecipHeight = val => (val / maxPrecip) * hBot;
+      const mapYPrecip = val => yP2 + hP2 - (val / maxPrecip) * hP2;
       
+      const maxSun = 14; 
+      const mapYSun = val => yP3 + hP3 - (val / maxSun) * hP3;
+
       const maxGust = Math.max(60, ...daily.map(d=>d.gust));
-      const mapYGust = g => (pY + h) - (Math.min(g, maxGust) / maxGust) * hBot;
+      const mapYGust = g => yP3 + hP3 - (Math.min(g, maxGust) / maxGust) * hP3;
 
       ctxFc.strokeStyle = getStyleVar('--grid-line'); 
       ctxFc.fillStyle = getStyleVar('--text-muted'); 
       ctxFc.font = fonts.axis;
 
-      ctxFc.save(); ctxFc.translate(20, pY + hTop/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(20, botY + hBot/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Precip (mm/cm)", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, botY + hBot/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
+      // Axis Labels
+      ctxFc.save(); ctxFc.translate(20, yP1 + hP1/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, yP2 + hP2/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Precip (mm/cm)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, yP3 + hP3/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Sun (h)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, yP3 + hP3/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
 
+      // Grid Lines & Ticks
       ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
       for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
         const y = mapYTemp(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
         ctxFc.fillText(`${t}°`, pX-10, y);
       }
       const zeroY = mapYTemp(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+      ctxFc.strokeStyle = getStyleVar('--grid-line');
       
-      daily.forEach((d, i) => {
-        const cx = pX + i*colW + colW/2;
-        ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
-        ctxFc.fillRect(pX + i*colW + 2, pY, colW - 4, hTop); ctxFc.globalAlpha = 1.0;
-        
-        const maxSun = 14; 
-        const sunH = Math.min((d.sun / maxSun) * (hTop*0.4), hTop*0.4);
-        ctxFc.fillStyle = getStyleVar('--sun-yield');
-        const sW = Math.max(4, Math.min(colW * 0.3, 16));
-        ctxFc.fillRect(cx - sW/2, midY - sunH, sW, sunH);
+      // Precip Grid
+      for(let p=0; p<=maxPrecip; p+=Math.ceil(maxPrecip/4)) {
+        if(p===0) continue; const y = mapYPrecip(p);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${p}`, pX-10, y);
+      }
+      ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke(); ctxFc.strokeStyle = getStyleVar('--grid-line');
 
-        // Date Labels (Stacked vertically for 16-col dense layouts)
+      // Sun Grid (Left) / Gust Grid (Right)
+      for(let s=0; s<=maxSun; s+=7) {
+        if(s===0) continue; const y = mapYSun(s);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX-10, y);
+      }
+      ctxFc.textAlign = 'left';
+      for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
+        const y = mapYGust(g); ctxFc.fillText(`${g}`, pX+w+10, y);
+      }
+      ctxFc.beginPath(); ctxFc.moveTo(pX,yP3+hP3); ctxFc.lineTo(pX+w,yP3+hP3); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+
+      // 1. Draw Clouds (Background Pane 1 & 2)
+      daily.forEach((d, i) => {
+        ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
+        ctxFc.fillRect(pX + i*colW + 1, yP1, colW - 2, hP1 + gap + hP2); ctxFc.globalAlpha = 1.0;
+        
+        // Date Labels
         ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
+        const cx = pX + i*colW + colW/2;
         const parts = d.label.split(', ');
         if(parts.length === 2) {
-          ctxFc.fillText(parts[0], cx, pY + h + 10);
-          ctxFc.fillText(parts[1], cx, pY + h + 24);
+          ctxFc.fillText(parts[0], cx, yP3 + hP3 + 10);
+          ctxFc.fillText(parts[1], cx, yP3 + hP3 + 24);
         } else {
-          ctxFc.fillText(d.label, cx, pY + h + 10);
+          ctxFc.fillText(d.label, cx, yP3 + hP3 + 10);
         }
       });
 
+      // 2. Temp Band
       ctxFc.beginPath();
       daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
       for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
       ctxFc.closePath();
-      const grad = ctxFc.createLinearGradient(0, pY, 0, midY);
+      const grad = ctxFc.createLinearGradient(0, yP1, 0, yP1+hP1);
       grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)'); grad.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
       ctxFc.fillStyle = grad; ctxFc.fill();
-
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
 
-      ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'right';
-      for(let p=0; p<=maxPrecip; p+=Math.ceil(maxPrecip/4)) {
-        if(p===0) continue;
-        const y = (pY + h) - mapYPrecipHeight(p);
-        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
-        ctxFc.fillText(`${p}`, pX-10, y);
-      }
-      ctxFc.textAlign = 'left';
-      for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
-        const y = mapYGust(g);
-        ctxFc.fillText(`${g}`, pX+w+10, y);
-      }
-      ctxFc.beginPath(); ctxFc.moveTo(pX,pY+h); ctxFc.lineTo(pX+w,pY+h); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
-
+      // 3. Precip & Sun Bars
       daily.forEach((d, i) => {
         const cx = pX + i*colW + colW/2;
-        const bW = Math.max(6, Math.min(colW * 0.6, 24));
-        const rH = mapYPrecipHeight(d.rain);
-        const sH = mapYPrecipHeight(d.snow);
+        const bW = Math.max(4, Math.min(colW * 0.5, 20));
+        
+        // Precip
+        const rH = hP2 - (mapYPrecip(d.rain) - yP2); 
+        const sH = hP2 - (mapYPrecip(d.snow) - yP2); 
+        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH, bW, rH); }
+        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - rH - sH, bW, sH); }
 
-        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, (pY+h) - rH, bW, rH); }
-        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, (pY+h) - rH - sH, bW, sH); }
+        // Sun
+        const sunH = hP3 - (mapYSun(d.sun) - yP3);
+        if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP3+hP3 - sunH, bW, sunH); }
       });
 
+      // 4. Wind Gusts Line
       ctxFc.beginPath(); let drawingG = false;
       daily.forEach((d, i) => {
         const cx = pX + i*colW + colW/2;
@@ -853,12 +874,12 @@
       });
       ctxFc.strokeStyle = '#ef4444'; ctxFc.lineWidth = 2; ctxFc.setLineDash([5, 5]); ctxFc.stroke(); ctxFc.setLineDash([]);
 
-
+      // 5. Hover Tooltip
       if (fcHoverIdx !== null && fcHoverIdx >= 0 && fcHoverIdx < numDays) {
         const d = daily[fcHoverIdx];
         const hx = pX + fcHoverIdx*colW + colW/2;
         
-        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, pY+h); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
+        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, yP3+hP3); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
 
         ctxFc.fillStyle = getStyleVar('--bg-header');
         
