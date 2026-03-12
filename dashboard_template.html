@@ -1089,7 +1089,7 @@
             const vs = chunkDays.map(d => {
               if(!dataMap[d]) return null;
               return computeDynamicScore(dataMap[d], weights);
-            }).filter(s=>s.score!==null);
+            }).filter(s => s !== null && s.score !== null);
 
             const snowTot = chunkDays.reduce((a,d) => a+(dataMap[d]?.summit?.snowfall_sum ?? dataMap[d]?.snowfall_sum ?? 0), 0);
             
