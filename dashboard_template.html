@@ -152,8 +152,8 @@
   .hm-months-container { display: flex; gap: 4px; width: 100%; }
   .hm-month-block { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
   .hm-month-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 2px; text-align: center; letter-spacing: 0.05em; }
-  .hm-grid { display: flex; gap: 2px; height: 24px; width: 100%; }
-  .hm-cell { flex-grow: 1; height: 100%; border-radius: 2px; position: relative; cursor: crosshair; transition: background 0.3s ease; }
+  .hm-grid { display: flex; gap: 2px; height: 28px; width: 100%; }
+  .hm-cell { flex-grow: 1; height: 100%; border-radius: 2px; position: relative; cursor: crosshair; transition: background 0.3s ease; overflow: hidden; }
   .hm-cell:hover { opacity: 0.7; }
   .hm-cell-future {
     background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px) !important;
@@ -162,6 +162,10 @@
   [data-theme="light"] .hm-cell-future, [data-theme="print"] .hm-cell-future {
     background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.05) 4px, rgba(0,0,0,0.05) 8px) !important;
   }
+  
+  .hm-cell-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .hm-emoji { font-size: 0.65rem; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+  .hm-hours { font-size: 0.5rem; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); letter-spacing: -0.05em; }
 
   /* ── TABLE ── */
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 700px; font-variant-numeric: tabular-nums; }
@@ -292,20 +296,20 @@
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:16px; height:2px; border-bottom:2px dashed #ef4444;"></div> Gusts</div>
         </div>
 
-        <div style="position: relative; flex-grow: 1; min-height: 400px;">
-          <canvas id="forecast-canvas" width="800" height="500"></canvas>
+        <div style="position: relative; flex-grow: 1; min-height: 300px;">
+          <canvas id="forecast-canvas" width="800" height="380"></canvas>
         </div>
 
       </div>
     </div>
   </section>
 
-  <!-- ── HEATMAP (DYNAMIC RECIPE ENGINE) ── -->
+  <!-- ── HEATMAP (DUAL-FACTOR NORMALIZED ENGINE) ── -->
   <section id="heatmap">
     <div class="flex-between" style="margin-bottom: 1rem; align-items: flex-end;">
       <div>
         <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Seasonal Quality Matrix 🔥</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Historical footprint based on algorithm shift.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Normalized directly against the resort's 6-year peak thresholds.</p>
       </div>
       <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
         <button class="control-btn" data-res="1">1 Day</button>
@@ -319,28 +323,19 @@
       
       <!-- Archetype Quick Selectors -->
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-muted); margin-right: 0.5rem; letter-spacing: 0.05em;">Archetypes:</span>
-        <button class="control-btn archetype-btn" data-pow="100" data-sun="0" data-cov="50">🌨️ Powder Hound</button>
-        <button class="control-btn archetype-btn" data-pow="0" data-sun="100" data-cov="80">☀️ Bluebird Cruiser</button>
-        <button class="control-btn archetype-btn" data-pow="20" data-sun="60" data-cov="100">🧊 Spring Base</button>
-        <button class="control-btn archetype-btn active" data-pow="50" data-sun="50" data-cov="50">⚖️ Balanced</button>
+        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-muted); margin-right: 0.5rem; letter-spacing: 0.05em;">Presets:</span>
+        <button class="control-btn archetype-btn" data-sun="100" data-cov="0">☀️ Pure Bluebird</button>
+        <button class="control-btn archetype-btn" data-sun="0" data-cov="100">🏔️ Deep Base</button>
+        <button class="control-btn archetype-btn active" data-sun="50" data-cov="50">⚖️ Balanced</button>
       </div>
 
       <!-- Raw Sliders -->
       <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.2rem;">
           <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:bold; color:var(--text-main);">
-            <span>❄️ Fresh Snow</span> <span id="lbl-pow" style="transition: color 0.2s;">50%</span>
-          </label>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Rewards 24h dumps. Maxes at 20cm.</span>
-          <input type="range" id="w-pow" min="0" max="100" value="50">
-        </div>
-        
-        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.2rem;">
-          <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:bold; color:var(--text-main);">
             <span>☀️ Clear Skies</span> <span id="lbl-sun" style="transition: color 0.2s;">50%</span>
           </label>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Rewards direct sun. Maxes at 8 hours.</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Measured against historical peak sunshine.</span>
           <input type="range" id="w-sun" min="0" max="100" value="50">
         </div>
         
@@ -348,7 +343,7 @@
           <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:bold; color:var(--text-main);">
             <span>🏔️ Base Coverage</span> <span id="lbl-cov" style="transition: color 0.2s;">50%</span>
           </label>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Rewards total snowpack. Maxes at 100cm.</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Measured against historical peak snow depth.</span>
           <input type="range" id="w-cov" min="0" max="100" value="50">
         </div>
       </div>
@@ -442,9 +437,15 @@
 </footer>
 
 <script>
-  // ── CORE SYSTEM ──
+  // ── CORE SYSTEM & HSL GRADIENT ENGINE ──
   const themesList = ['light', 'grey', 'night', 'print'];
   const themeIcons = { 'light': '☀️', 'grey': '🌥️', 'night': '🌙', 'print': '🖨️' };
+
+  const getColor = (s) => {
+    if (s === null || s === undefined) return 'transparent';
+    // HSL Interpolation: 0 = Red, 120 = Green. Mathematically pure.
+    return `hsl(${Math.round(s * 120)}, 80%, 45%)`;
+  };
 
   function setLocalTheme(t) { 
     document.documentElement.dataset.theme = t; 
@@ -495,7 +496,6 @@
     }
   }
 
-  const getColor = (s) => s === null ? 'transparent' : s >= 0.85 ? '#22c55e' : s >= 0.70 ? '#84cc16' : s >= 0.55 ? '#eab308' : s >= 0.40 ? '#f97316' : '#ef4444';
   const getStyleVar = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const seasonColors = ['#64748b', '#d946ef', '#0ea5e9', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6'];
 
@@ -557,7 +557,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     
-    // Init theme icon
     const themeBtn = document.getElementById('theme-cycle-btn');
     if(themeBtn) themeBtn.innerText = themeIcons[document.documentElement.dataset.theme] || '🎨';
 
@@ -668,9 +667,25 @@
         const t = hourly.temperature_2m.slice(start, end).filter(v => v !== null);
         const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
+        
+        // Patch perpetual bluebird bug: Infer cloud density from WMO weather codes if explicit data is missing
         const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end).filter(v => v !== null) : [];
-        const cc = ccArr.length ? ccArr.reduce((a,b)=>a+b,0)/ccArr.length : 0; 
-        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.12;
+        const wcArr = hourly.weathercode ? hourly.weathercode.slice(start, end).filter(v => v !== null) : [];
+        let cc = 0;
+        if (ccArr.length) {
+            cc = ccArr.reduce((a,b)=>a+b,0)/ccArr.length;
+        } else if (wcArr.length) {
+            cc = wcArr.reduce((a, c) => {
+                if (c === 0) return a + 5;
+                if (c === 1) return a + 20;
+                if (c === 2) return a + 50;
+                if (c === 3) return a + 90;
+                return a + 100;
+            }, 0) / wcArr.length;
+        }
+        
+        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.10; 
+        
         const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
         const gust = gustArr.length ? Math.max(...gustArr) : 0;
 
@@ -683,56 +698,84 @@
         daily.push({ tMax: t.length ? Math.max(...t) : 0, tMin: t.length ? Math.min(...t) : 0, snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: dateStr });
       }
 
-      const pX = 60, pY = 20, pRight = 60, pBot = 50;
+      const pX = 60, pY = 20, pRight = 60, pBot = 40;
       const w = cvsFc.width - pX - pRight;
       const h = cvsFc.height - pY - pBot; 
       
-      // Condensed Graph Architecture: Precip collapsed into Temp band
-      const hP1 = h * 0.65, hP2 = h * 0.25, gap = h * 0.1;
+      const hP1 = h * 0.70, hP2 = h * 0.20, gap = h * 0.10;
       const yP1 = pY, yP2 = yP1 + hP1 + gap;
       
       const colW = w / numDays;
       const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
 
-      const maxT = Math.max(5, ...daily.map(d=>d.tMax)) + 5;
-      const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 5;
+      // Force thermal ceiling artificially high to drop the 0°C line and make room for precip bars
+      const dataMaxT = Math.max(...daily.map(d=>d.tMax));
+      const maxT = Math.max(10, dataMaxT + 6);
+      const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 2;
       const tRange = maxT - minT;
       const mapYTemp = t => yP1 + hP1 - ((t - minT) / tRange) * hP1;
-
-      const maxPrecip = Math.max(10, ...daily.map(d => d.snow + d.rain));
-      // Precip consumes only the bottom 35% of the temperature band
-      const mapYPrecip = val => yP1 + hP1 - (val / maxPrecip) * (hP1 * 0.35);
       
-      const maxSun = 14; 
-      const mapYSun = val => yP2 + hP2 - (val / maxSun) * hP2;
+      const zeroY = mapYTemp(0);
+
+      const maxPrecip = Math.max(5, ...daily.map(d => d.snow + d.rain));
+      // Anchor precip at zeroY and explode upwards, maxing out at 85% of available headroom
+      const mapYPrecip = val => zeroY - (val / maxPrecip) * (zeroY - yP1) * 0.85;
+
+      const maxSun = 12; 
+      const mapYSun = val => yP2 + hP2 - (Math.min(val, maxSun) / maxSun) * hP2;
 
       const maxGust = Math.max(60, ...daily.map(d=>d.gust));
       const mapYGust = g => yP2 + hP2 - (Math.min(g, maxGust) / maxGust) * hP2;
 
       ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.font = fonts.axis;
 
-      ctxFc.save(); ctxFc.translate(20, yP1 + hP1/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp / Precip", 0, 0); ctxFc.restore();
-      ctxFc.save(); ctxFc.translate(20, yP2 + hP2/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Sun (h)", 0, 0); ctxFc.restore();
+      // Label Setup
+      ctxFc.save(); ctxFc.translate(20, yP1 + hP1/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, yP1 + (zeroY - yP1)/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText("Precip (mm)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, yP2 + hP2/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText("Sun (h)", 0, 0); ctxFc.restore();
       ctxFc.save(); ctxFc.translate(cvsFc.width - 20, yP2 + hP2/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
 
+      // Left Axis: Temperature
       ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
       for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
-        const y = mapYTemp(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
+        const y = mapYTemp(t);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y);
+        ctxFc.lineWidth = (t === 0) ? 2 : 1;
+        ctxFc.strokeStyle = (t === 0) ? getStyleVar('--text-muted') : getStyleVar('--grid-line');
+        ctxFc.stroke();
+        ctxFc.fillStyle = getStyleVar('--text-muted');
         ctxFc.fillText(`${t}°`, pX-10, y);
       }
-      const zeroY = mapYTemp(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
       ctxFc.strokeStyle = getStyleVar('--grid-line');
       
-      for(let s=0; s<=maxSun; s+=7) {
+      // Right Axis: Precipitation (Anchored at 0°C)
+      ctxFc.textAlign = 'left';
+      ctxFc.fillStyle = '#3b82f6';
+      const pTicks = [0, maxPrecip/2, maxPrecip];
+      pTicks.forEach(pt => {
+        const y = mapYPrecip(pt);
+        if (pt > 0) {
+            ctxFc.beginPath(); ctxFc.moveTo(pX+w-5, y); ctxFc.lineTo(pX+w, y);
+            ctxFc.strokeStyle = '#3b82f6'; ctxFc.lineWidth = 1; ctxFc.stroke();
+        }
+        ctxFc.fillText(`${pt.toFixed(0)}`, pX+w+8, y);
+      });
+
+      // Bottom Pane: Sun Axis
+      ctxFc.textAlign = 'right';
+      ctxFc.fillStyle = getStyleVar('--text-muted');
+      for(let s=0; s<=maxSun; s+=6) {
         if(s===0) continue; const y = mapYSun(s);
         ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX-10, y);
       }
+      // Bottom Pane: Gusts Axis
       ctxFc.textAlign = 'left';
       for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
         const y = mapYGust(g); ctxFc.fillText(`${g}`, pX+w+10, y);
       }
       ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
 
+      // Clouds Overlay
       daily.forEach((d, i) => {
         ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
         ctxFc.fillRect(pX + i*colW + 1, yP1, colW - 2, hP1); ctxFc.globalAlpha = 1.0;
@@ -747,22 +790,7 @@
         }
       });
 
-      // Precip embedded within Temp Chart
-      daily.forEach((d, i) => {
-        const cx = pX + i*colW + colW/2;
-        const bW = Math.max(4, Math.min(colW * 0.5, 30));
-        
-        const rH = (yP1+hP1) - mapYPrecip(d.rain);
-        const sH = (yP1+hP1) - mapYPrecip(d.snow); 
-        
-        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, yP1+hP1 - rH, bW, rH); }
-        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, yP1+hP1 - rH - sH, bW, sH); }
-        
-        const sunH = hP2 - (mapYSun(d.sun) - yP2);
-        if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - sunH, bW, sunH); }
-      });
-
-      // Temp Graph plotted over Precip
+      // Thermal Band (Drawn BEFORE precip so bars pop)
       ctxFc.beginPath();
       daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
       for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
@@ -773,7 +801,28 @@
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
 
-      // Gusts
+      // Precip & Sun Yields
+      daily.forEach((d, i) => {
+        const cx = pX + i*colW + colW/2;
+        const bW = Math.max(4, Math.min(colW * 0.5, 30));
+        
+        if (d.rain > 0) { 
+            const rY = mapYPrecip(d.rain);
+            ctxFc.fillStyle = getStyleVar('--rain-yield'); 
+            ctxFc.fillRect(cx - bW/2, rY, bW, zeroY - rY); 
+        }
+        if (d.snow > 0) { 
+            const sY = mapYPrecip(d.rain + d.snow);
+            const rY = mapYPrecip(d.rain);
+            ctxFc.fillStyle = getStyleVar('--snow-yield'); 
+            ctxFc.fillRect(cx - bW/2, sY, bW, rY - sY); 
+        }
+        
+        const sunH = hP2 - (mapYSun(d.sun) - yP2);
+        if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - sunH, bW, sunH); }
+      });
+
+      // Wind Gust Spikes
       ctxFc.beginPath(); let drawingG = false;
       daily.forEach((d, i) => {
         const cx = pX + i*colW + colW/2; const y = mapYGust(d.gust);
@@ -840,7 +889,7 @@
     }
 
     // =========================================================
-    // MODULE 2: HISTORICAL MATRIX (Dependent)
+    // MODULE 2: HISTORICAL MATRIX & GLOBAL BOUNDS NORMALIZATION
     // =========================================================
     if (!SKI_DATA || !SKI_DATA.records || SKI_DATA.records.length === 0) { 
       sb.innerHTML = `⚠ Historical Data Offline`; 
@@ -859,6 +908,24 @@
     });
     dates.sort();
 
+    const boundsCache = {};
+    const getResortBounds = (res) => {
+       if(boundsCache[res]) return boundsCache[res];
+       const rd = byResort[res] || [];
+       let minSun = 999, maxSun = 0, minSn = 999, maxSn = 0;
+       rd.forEach(r => {
+          const sun = (r.sunshine_duration ?? 0) / 3600;
+          const sn = r.summit?.snow_depth ?? r.snow_depth ?? 0;
+          if (sun < minSun) minSun = sun;
+          if (sun > maxSun) maxSun = sun;
+          if (sn < minSn) minSn = sn;
+          if (sn > maxSn) maxSn = sn;
+       });
+       if (minSun === 999) return { minSun:0, maxSun:1, minSn:0, maxSn:1 };
+       boundsCache[res] = { minSun, maxSun, minSn, maxSn };
+       return boundsCache[res];
+    };
+
     const curSeasonYear = dates.length > 0 ? (parseInt(dates[dates.length-1].slice(5,7)) >= 10 ? parseInt(dates[dates.length-1].slice(0,4)) : parseInt(dates[dates.length-1].slice(0,4)) - 1) : null;
 
     const getHistoricalAverage = (resort, mmdd) => {
@@ -873,14 +940,13 @@
       return (valid.reduce((a,b) => a+b, 0) / valid.length) * 100;
     };
 
-    const uiPow = document.getElementById('w-pow'), lblPow = document.getElementById('lbl-pow');
     const uiSun = document.getElementById('w-sun'), lblSun = document.getElementById('lbl-sun');
     const uiCov = document.getElementById('w-cov'), lblCov = document.getElementById('lbl-cov'); 
     
-    const getWeights = () => ({ pow: parseInt(uiPow.value) / 100, sun: parseInt(uiSun.value) / 100, cov: parseInt(uiCov.value) / 100 });
+    const getWeights = () => ({ sun: parseInt(uiSun.value) / 100, cov: parseInt(uiCov.value) / 100 });
 
     const triggerVisualFlash = () => {
-      [lblPow, lblSun, lblCov].forEach(el => {
+      [lblSun, lblCov].forEach(el => {
         el.classList.remove('flash-update'); void el.offsetWidth; el.classList.add('flash-update');
       });
       document.querySelectorAll('.hm-cell, .quality-badge').forEach(el => {
@@ -889,12 +955,12 @@
     };
 
     const updateUIAfterAlgorithmShift = (flash = true) => {
-      lblPow.innerText = `${uiPow.value}%`; lblSun.innerText = `${uiSun.value}%`; lblCov.innerText = `${uiCov.value}%`;
+      lblSun.innerText = `${uiSun.value}%`; lblCov.innerText = `${uiCov.value}%`;
       renderHeatmaps(); renderTable(document.getElementById('date-picker').value);
       if(flash) triggerVisualFlash();
     };
 
-    [uiPow, uiSun, uiCov].forEach(el => {
+    [uiSun, uiCov].forEach(el => {
       el.addEventListener('input', () => {
         document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
         updateUIAfterAlgorithmShift(true);
@@ -905,65 +971,48 @@
       btn.onclick = (e) => {
         document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-        uiPow.value = btn.dataset.pow; uiSun.value = btn.dataset.sun; uiCov.value = btn.dataset.cov;
+        uiSun.value = btn.dataset.sun; uiCov.value = btn.dataset.cov;
         updateUIAfterAlgorithmShift(true);
       };
     });
 
-    const computeDynamicScore = (r, weights) => {
-      if ((r.base?.temperature_2m_max ?? r.temperature_2m_max) === null && (r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0) === 0) {
-        return { score: null, metrics: { fPowder:0, fSun:0, fCoverage:0, fatal:[] } };
+    const computeDynamicScore = (r, weights, bounds) => {
+      if ((r.base?.temperature_2m_max ?? r.temperature_2m_max) === null && 
+          (r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0) === 0 && 
+          (r.summit?.snow_depth ?? r.snow_depth) === null) {
+        return { score: null, metrics: { fSun:0, fCoverage:0 } };
       }
-
-      const sSnow = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
-      const bRain = r.base?.precipitation_sum ?? r.precipitation_sum ?? 0;
-      const bTemp = r.base?.temperature_2m_max ?? r.temperature_2m_max ?? null;
-      const sGust = r.summit?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0;
-      const sunSecs = r.sunshine_duration ?? 0;
-      const sunHours = sunSecs / 3600;
+      
+      const sunHours = (r.sunshine_duration ?? 0) / 3600;
       const snDepth = r.summit?.snow_depth ?? r.snow_depth ?? 0;
 
-      const fPowder = Math.min(sSnow / 20.0, 1.0);
-      const fSun = Math.min(sunHours / 8.0, 1.0);
-      const fCoverage = Math.min(snDepth, 1.0);
+      let fSun = bounds.maxSun > bounds.minSun ? (sunHours - bounds.minSun) / (bounds.maxSun - bounds.minSun) : 0;
+      let fCoverage = bounds.maxSn > bounds.minSn ? (snDepth - bounds.minSn) / (bounds.maxSn - bounds.minSn) : 0;
+      
+      fSun = Math.max(0, Math.min(1, fSun));
+      fCoverage = Math.max(0, Math.min(1, fCoverage));
 
-      const totalWeight = weights.pow + weights.sun + weights.cov;
-      if (totalWeight === 0) return { score: 0.5, metrics: { fPowder, fSun, fCoverage, fatal: [] } };
+      const totalWeight = weights.sun + weights.cov;
+      let rawScore = totalWeight === 0 ? 0.5 : ((fSun * weights.sun) + (fCoverage * weights.cov)) / totalWeight;
 
-      let rawScore = ((fPowder * weights.pow) + (fSun * weights.sun) + (fCoverage * weights.cov)) / totalWeight;
-      const fatal = [];
-
-      if (bRain > 2 && bTemp > 0 && sSnow < 2) { rawScore *= 0.2; fatal.push("Rain Penalty"); }
-      if (sGust > 75) { rawScore *= 0.3; fatal.push("Wind Hold"); }
-      if (bTemp !== null && bTemp > 5) { rawScore *= 0.8; fatal.push("Slush Risk"); }
-
-      return { score: rawScore, metrics: { fPowder, fSun, fCoverage, fatal } };
+      return { score: rawScore, metrics: { fSun, fCoverage } };
     };
 
     const generateRichTooltipHTML = (title, dScore, finalSc, extras = '') => {
       if (finalSc === null) return `<div class="tt-data-node"><div>Data unavailable for ${title}</div></div>`;
       
-      const pC = dScore.metrics.fPowder >= 0.8 ? 'var(--snow-yield)' : 'var(--text-main)';
       const sC = dScore.metrics.fSun >= 0.8 ? 'var(--sun-yield)' : 'var(--text-main)';
       const cC = dScore.metrics.fCoverage >= 0.8 ? '#22c55e' : 'var(--text-main)';
 
-      let html = `<div class="tt-data-node">
+      return `<div class="tt-data-node">
         <div style="font-size:0.9rem; font-weight:800; color:var(--brand); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.4rem; margin-bottom:0.4rem;">${title}</div>
         ${extras}
-        <div style="color:var(--text-muted); font-size:0.7rem; margin-top:0.4rem; text-transform:uppercase;">Algorithmic Engine</div>
+        <div style="color:var(--text-muted); font-size:0.7rem; margin-top:0.4rem; text-transform:uppercase;">Dual-Factor Normalization</div>
         <div class="tt-grid">
-          <span style="color:var(--text-muted)">❄️ Powder</span> <span class="tt-val" style="color:${pC}">${(dScore.metrics.fPowder*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-          <span style="color:var(--text-muted)">☀️ Bluebird</span> <span class="tt-val" style="color:${sC}">${(dScore.metrics.fSun*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-          <span style="color:var(--text-muted)">🏔️ Coverage</span> <span class="tt-val" style="color:${cC}">${(dScore.metrics.fCoverage*10).toFixed(1)} <span style="font-size:0.6rem; opacity:0.6;">/ 10</span></span>
-        </div>`;
-      
-      if (dScore.metrics.fatal.length > 0) {
-        html += `<div style="margin-top:0.6rem; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5); border-radius:4px; color:#ef4444; font-weight:bold; font-size:0.75rem; display:flex; gap:0.4rem; align-items:center;">
-          <span>🚨</span> <span>Penalties Active:<br>${dScore.metrics.fatal.join(' · ')}</span>
-        </div>`;
-      }
-      html += `</div>`;
-      return html;
+          <span style="color:var(--text-muted)">☀️ Bluebird Factor</span> <span class="tt-val" style="color:${sC}">${(dScore.metrics.fSun*100).toFixed(0)}%</span>
+          <span style="color:var(--text-muted)">🏔️ Base Factor</span> <span class="tt-val" style="color:${cC}">${(dScore.metrics.fCoverage*100).toFixed(0)}%</span>
+        </div>
+      </div>`;
     };
 
     const dp = document.getElementById('date-picker'), dtb = document.querySelector('#daily-table tbody');
@@ -995,7 +1044,8 @@
         const fmt = (t) => t !== null && t !== undefined ? `${t.toFixed(1)}°C` : '—'; 
         const warn = (r.flags && r.flags.length) ? `<span title="Data Flag: ${r.flags.join(',')}" style="cursor:help;">⚠️</span> ` : '';
         
-        const dScore = computeDynamicScore(r, weights);
+        const bounds = getResortBounds(r.resort);
+        const dScore = computeDynamicScore(r, weights, bounds);
         const finalSc = dScore.score;
 
         const extrasHtml = `
@@ -1029,7 +1079,7 @@
           <td style="position:relative; text-align:right;">
             <div class="quality-badge has-tooltip" style="margin-left: auto;">
               <div style="width:12px;height:12px;border-radius:50%;background:${getColor(finalSc)}"></div>
-              ${finalSc!==null?(finalSc*10).toFixed(1)+'/10':'—'}
+              ${finalSc!==null?(finalSc*100).toFixed(0)+'%':'—'}
               ${tooltipPayload}
             </div>
           </td>
@@ -1063,6 +1113,7 @@
 
     window.renderHeatmaps = () => {
       const weights = getWeights();
+      const bounds = getResortBounds(window.GLOBAL_RESORT);
       hc.innerHTML = '';
       
       const rData = byResort[window.GLOBAL_RESORT];
@@ -1097,35 +1148,56 @@
             
             const vs = chunkDays.map(d => {
               if(!dataMap[d]) return null;
-              return computeDynamicScore(dataMap[d], weights);
-            }).filter(s => s !== null && s.score !== null);
+              return {
+                 scoreData: computeDynamicScore(dataMap[d], weights, bounds),
+                 precipHours: dataMap[d].precipitation_hours ?? 0,
+                 snowSum: dataMap[d].summit?.snowfall_sum ?? dataMap[d].snowfall_sum ?? 0,
+                 precipSum: dataMap[d].base?.precipitation_sum ?? dataMap[d].precipitation_sum ?? 0
+              };
+            }).filter(s => s !== null && s.scoreData.score !== null);
 
-            const snowTot = chunkDays.reduce((a,d) => a+(dataMap[d]?.summit?.snowfall_sum ?? dataMap[d]?.snowfall_sum ?? 0), 0);
+            const snowTot = vs.reduce((a,c) => a + c.snowSum, 0);
+            const precipTot = vs.reduce((a,c) => a + c.precipSum, 0);
+            const precipHoursTot = vs.reduce((a,c) => a + c.precipHours, 0);
             
             let avgScoreObj = null, scoreAvg = null;
             if (vs.length > 0) {
               const count = vs.length;
-              scoreAvg = vs.reduce((a,c)=>a+c.score,0)/count;
+              scoreAvg = vs.reduce((a,c)=>a+c.scoreData.score,0)/count;
               avgScoreObj = {
                  score: scoreAvg,
                  metrics: {
-                   fPowder: vs.reduce((a,c)=>a+c.metrics.fPowder,0)/count,
-                   fSun: vs.reduce((a,c)=>a+c.metrics.fSun,0)/count,
-                   fCoverage: vs.reduce((a,c)=>a+c.metrics.fCoverage,0)/count,
-                   fatal: [] 
+                   fSun: vs.reduce((a,c)=>a+c.scoreData.metrics.fSun,0)/count,
+                   fCoverage: vs.reduce((a,c)=>a+c.scoreData.metrics.fCoverage,0)/count
                  }
               };
             }
             
-            blocks.push({ d: `${startStr} to ${endStr}`, sObj: avgScoreObj, s: scoreAvg, f: snowTot, isFuture });
+            blocks.push({ d: `${startStr} to ${endStr}`, sObj: avgScoreObj, s: scoreAvg, f: snowTot, pH: precipHoursTot, pS: precipTot, isFuture });
           }
           
           html += `<div class="hm-month-block"><div class="hm-month-label">${mo.name}</div><div class="hm-grid">
             ${blocks.map(w => {
               if (w.isFuture) return `<div class="hm-cell hm-cell-future has-tooltip"><div class="tt-data-node"><div>Future Window: ${w.d}</div></div></div>`;
-              const ex = `<div style="font-size:0.75rem; color:var(--text-main); margin-bottom:0.4rem;">Total Snow: <b style="color:#3b82f6">${w.f.toFixed(1)}cm</b></div>`;
+              
+              let emojiHtml = '';
+              if (w.pH > 0) {
+                 if (w.f > 0) {
+                    emojiHtml = `<div class="hm-cell-content"><span class="hm-emoji">❄️</span><span class="hm-hours">${Math.round(w.pH)}h</span></div>`;
+                 } else if (w.pS > 0) {
+                    emojiHtml = `<div class="hm-cell-content"><span class="hm-emoji">🌧️</span><span class="hm-hours">${Math.round(w.pH)}h</span></div>`;
+                 }
+              }
+
+              const ex = `<div style="font-size:0.75rem; color:var(--text-main); margin-bottom:0.4rem; display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
+                  <span>Snowfall: <b style="color:#3b82f6">${w.f.toFixed(1)}cm</b></span>
+                  <span>Duration: <b>${Math.round(w.pH)}h</b></span>
+              </div>`;
+              
               const tHtml = generateRichTooltipHTML(w.d, w.sObj, w.s, ex);
+              
               return `<div class="hm-cell has-tooltip" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};">
+                 ${emojiHtml}
                  ${tHtml}
               </div>`;
             }).join('')}
