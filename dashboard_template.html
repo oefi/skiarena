@@ -20,7 +20,8 @@
     --font-base: 16px;
     --snow-stroke: rgba(77, 127, 255, 1);
     --sun-yield: rgba(234, 179, 8, 0.6);
-    --snow-yield: rgba(59, 130, 246, 0.7);
+    --snow-yield: rgba(147, 197, 253, 0.9); /* Lighter blue for snow */
+    --rain-yield: rgba(37, 99, 235, 0.9);  /* Deep blue for rain */
     --cloud-base: rgba(156, 163, 175, 0.3);
     scroll-padding-top: 5rem; 
     scroll-behavior: smooth;
@@ -230,23 +231,26 @@
       <div style="color: var(--text-muted); font-style: italic;">Awaiting payload...</div>
     </div>
 
-    <!-- The Extended Visual Outlook -->
+    <!-- The Extended Visual Outlook (Meteogram) -->
     <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
       <div class="flex-between" style="margin-bottom: 1rem;">
-        <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem;">Extended Visual Outlook 🗓️</h3>
+        <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem;">Extended Meteogram (14-Day Horizon) 🗓️</h3>
         <div id="fc-canvas-controls" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem;">General trajectory mapped across the maximum API horizon. Highs/Lows, Sun Hours, Cloud Canopies, and Snow Dumps.</p>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem;">Dynamic dual-pane rendering of long-range API data. Top Pane: Temperature, Clouds & Sun. Bottom Pane: Stacked Snow/Rain & Wind Gusts.</p>
       
       <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; overflow: hidden;">
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); flex-wrap: wrap;">
+        <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); flex-wrap: wrap;">
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:linear-gradient(to bottom, #ef4444, #3b82f6); border-radius:2px;"></div> Temp Range (°C)</div>
-          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--sun-yield); border-radius:2px;"></div> Sun (hrs)</div>
-          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--cloud-base); border-radius:2px;"></div> Cloud Canopy</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--sun-yield); border-radius:2px;"></div> Sun</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--cloud-base); border-radius:2px;"></div> Clouds</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--snow-yield); border-radius:2px;"></div> Snow (cm)</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--rain-yield); border-radius:2px;"></div> Rain (mm)</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:16px; height:2px; border-bottom:2px dashed #ef4444;"></div> Wind Gusts</div>
         </div>
         <div style="position: relative;">
-          <canvas id="forecast-canvas" width="1200" height="350"></canvas>
+          <!-- Increased canvas height to 550 to support dual-pane dense layout -->
+          <canvas id="forecast-canvas" width="1200" height="550"></canvas>
         </div>
       </div>
     </div>
@@ -254,14 +258,20 @@
 
   <!-- ── HEATMAP (DYNAMIC RECIPE ENGINE) ── -->
   <section id="heatmap">
-    <div class="flex-between" style="margin-bottom: 1rem;">
-      <h2 style="margin:0; border:none; padding:0;">Seasonal Quality Matrix 🔥</h2>
+    <div class="flex-between" style="margin-bottom: 1rem; align-items: flex-end;">
+      <div>
+        <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Seasonal Quality Matrix 🔥</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Select a resort to view its historical footprint. Matrix repaints instantly on metric shift.</p>
+      </div>
       <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
         <button class="control-btn" data-res="1">1 Day</button>
         <button class="control-btn" data-res="3">3 Days</button>
         <button class="control-btn active" data-res="7">7 Days</button>
       </div>
     </div>
+
+    <!-- Matrix Resort Tabs -->
+    <div id="hm-resort-controls" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);"></div>
     
     <!-- Dynamic Score UI (The Recipe Maker) -->
     <div id="algo-controls" style="display: flex; gap: 1.5rem; flex-wrap: wrap; background: var(--bg-main); padding: 1.5rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
@@ -292,7 +302,6 @@
 
     </div>
 
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;">Tune your perfect day. The matrix repaints instantly based on your preferences. Mother Nature vetoes (rain, extreme wind) apply automatically.</p>
     <div id="heatmap-container" style="display: flex; flex-direction: column; gap: 2rem;"></div>
   </section>
 
@@ -427,9 +436,8 @@
   const seasonColors = ['#64748b', '#d946ef', '#0ea5e9', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6'];
 
   // ── DPI-AWARE TYPOGRAPHY SCALER ──
-  // Calculates the physical scaling ratio of the canvas to inject perfect font sizes regardless of screen size.
   const getResponsiveCanvasFonts = (cvs, baseAxisPt, baseTooltipPt) => {
-    const scale = cvs.width / (cvs.clientWidth || 1000); // Fallback if hidden
+    const scale = cvs.width / (cvs.clientWidth || 1000); 
     return {
       axis: `bold ${Math.max(12, Math.floor(baseAxisPt * scale))}px system-ui`,
       tooltip: `${Math.max(14, Math.floor(baseTooltipPt * scale))}px system-ui`
@@ -438,7 +446,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     
-    // Keyboard Accessibility
     document.querySelectorAll('.theme-toggles span, .font-resizers span').forEach(el => {
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }});
     });
@@ -475,7 +482,7 @@
       return (valid.reduce((a,b) => a+b, 0) / valid.length) * 100;
     };
 
-    // ── ALGORITHMIC SCORING ENGINE (The Recipe Maker) ──
+    // ── ALGORITHMIC SCORING ENGINE ──
     const uiPow = document.getElementById('w-pow'), lblPow = document.getElementById('lbl-pow');
     const uiSun = document.getElementById('w-sun'), lblSun = document.getElementById('lbl-sun');
     const uiCov = document.getElementById('w-cov'), lblCov = document.getElementById('lbl-cov'); 
@@ -495,10 +502,9 @@
       const sunHours = sunSecs / 3600;
       const snDepth = r.summit?.snow_depth ?? r.snow_depth ?? 0;
 
-      // Mathematical limits clamped
       const fPowder = Math.min(sSnow / 20.0, 1.0);
       const fSun = Math.min(sunHours / 8.0, 1.0);
-      const fCoverage = Math.min(snDepth, 1.0); // Depth is in meters. 1.0m = 100% ideal.
+      const fCoverage = Math.min(snDepth, 1.0);
 
       const totalWeight = weights.pow + weights.sun + weights.cov;
       if (totalWeight === 0) return { score: 0.5, metrics: { fPowder, fSun, fCoverage, fatal: [] } };
@@ -520,7 +526,7 @@
 
     [uiPow, uiSun, uiCov].forEach(el => el.addEventListener('input', updateUIAfterAlgorithmShift));
 
-    // ── FORECAST ENGINE (Tactical 3-Day & Extended 7-Day) ──
+    // ── FORECAST ENGINE (Tactical 3-Day & Extended 14-Day Meteogram) ──
     const fc = document.getElementById('forecast-container');
     const fCc = document.getElementById('fc-canvas-controls');
     let activeFcResort = FORECAST_DATA && FORECAST_DATA.resorts ? Object.keys(FORECAST_DATA.resorts)[0] : null;
@@ -560,7 +566,7 @@
         const meta = STATIC_METADATA[resort.toLowerCase()] || {base:'?', summit:'?'};
         fc.innerHTML += `<div class="fc-card"><div class="fc-header"><span>${resort} <span style="opacity:0.6; font-size:0.75rem; font-weight:normal; text-transform:lowercase;">(${meta.base}m - ${meta.summit}m)</span></span>${warning}</div><div class="fc-body">${cardsHtml}</div></div>`;
       
-        // Add button for Extended Canvas
+        // Add button for Extended Meteogram
         const b = document.createElement('button'); b.innerText = resort.toUpperCase(); b.className = 'control-btn';
         if(resort === activeFcResort) b.classList.add('active');
         b.onclick = () => { Array.from(fCc.children).forEach(c=>c.classList.remove('active')); b.classList.add('active'); activeFcResort = resort; window.repaintForecastCanvas(); };
@@ -570,7 +576,7 @@
       fc.innerHTML = `<div style="color:#ef4444; padding: 1rem; border: 1px dashed #ef4444; border-radius:6px; width: 100%;">API Failure: ${FORECAST_DATA.error}</div>`;
     }
 
-    // 2. Extended Canvas Engine
+    // 2. Dual-Pane Meteogram Engine
     const cvsFc = document.getElementById('forecast-canvas');
     const ctxFc = cvsFc ? cvsFc.getContext('2d') : null;
     let fcHoverIdx = null; let fcTouch = false;
@@ -589,74 +595,138 @@
         const start = i * 24, end = start + 24;
         const t = hourly.temperature_2m.slice(start, end);
         const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+b,0) : 0;
+        const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+b,0) : 0;
         const cc = hourly.cloudcover ? hourly.cloudcover.slice(start, end).reduce((a,b)=>a+b,0)/24 : 0; 
         const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+b,0)/3600 : (100-cc)*0.12;
-        
+        const gust = hourly.windgusts_10m ? Math.max(...hourly.windgusts_10m.slice(start, end)) : 0;
+
         const d = new Date(localNow.getTime() + i*86400000);
-        daily.push({ tMax: Math.max(...t), tMin: Math.min(...t), snow: sn, cloud: cc, sun: sun, label: d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}) });
+        daily.push({ tMax: Math.max(...t), tMin: Math.min(...t), snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}) });
       }
 
-      const pX = 60, pY = 40, w = cvsFc.width - pX * 2, h = cvsFc.height - pY * 2 - 20;
+      // Meteogram Splitting Math
+      const pX = 60, pY = 20, pRight = 60;
+      const w = cvsFc.width - pX - pRight;
+      const h = cvsFc.height - pY * 2 - 20; // leaves room for x-axis labels at bottom
+      
+      const hTop = h * 0.60;
+      const gap = h * 0.10;
+      const hBot = h * 0.30;
+      
+      const midY = pY + hTop;
+      const botY = midY + gap;
+      
       const colW = w / numDays;
       const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
 
+      // Value Scaling
       const maxT = Math.max(5, ...daily.map(d=>d.tMax)) + 5;
       const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 5;
       const tRange = maxT - minT;
-      const mapY = t => pY + h - ((t - minT) / tRange) * h;
+      const mapYTemp = t => midY - ((t - minT) / tRange) * hTop;
 
-      // Draw Grid & Axes
-      ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.font = fonts.axis; ctxFc.textBaseline = 'middle'; ctxFc.textAlign = 'right';
+      const maxPrecip = Math.max(10, ...daily.map(d => d.snow + d.rain));
+      const mapYPrecipHeight = val => (val / maxPrecip) * hBot;
+      
+      const maxGust = Math.max(60, ...daily.map(d=>d.gust));
+      const mapYGust = g => (pY + h) - (Math.min(g, maxGust) / maxGust) * hBot;
+
+      ctxFc.strokeStyle = getStyleVar('--grid-line'); 
+      ctxFc.fillStyle = getStyleVar('--text-muted'); 
+      ctxFc.font = fonts.axis;
+
+      // --- AXIS TITLES ---
+      ctxFc.save(); ctxFc.translate(20, pY + hTop/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Temp (°C)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(20, botY + hBot/2); ctxFc.rotate(-Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Precip (mm/cm)", 0, 0); ctxFc.restore();
+      ctxFc.save(); ctxFc.translate(cvsFc.width - 20, botY + hBot/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts (km/h)", 0, 0); ctxFc.restore();
+
+      // --- TOP PANE (Temp / Clouds / Sun) ---
+      ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
       for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
-        const y = mapY(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
+        const y = mapYTemp(t); ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
         ctxFc.fillText(`${t}°`, pX-10, y);
       }
-      const zeroY = mapY(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+      const zeroY = mapYTemp(0); ctxFc.beginPath(); ctxFc.moveTo(pX,zeroY); ctxFc.lineTo(pX+w,zeroY); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
       
-      // Draw Columns (Cloud, Sun, Snow)
       daily.forEach((d, i) => {
         const cx = pX + i*colW + colW/2;
-        
+        // Clouds Background
         ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
-        ctxFc.fillRect(pX + i*colW + 4, pY, colW - 8, h); ctxFc.globalAlpha = 1.0;
-
-        const maxSun = 12; 
-        const sunH = Math.min((d.sun / maxSun) * (h*0.4), h*0.4);
+        ctxFc.fillRect(pX + i*colW + 2, pY, colW - 4, hTop); ctxFc.globalAlpha = 1.0;
+        
+        // Sun Bars
+        const maxSun = 14; 
+        const sunH = Math.min((d.sun / maxSun) * (hTop*0.4), hTop*0.4);
         ctxFc.fillStyle = getStyleVar('--sun-yield');
-        ctxFc.fillRect(cx - 15, pY + h - sunH, 12, sunH);
+        const sW = Math.max(4, Math.min(colW * 0.3, 16));
+        ctxFc.fillRect(cx - sW/2, midY - sunH, sW, sunH);
 
-        const maxSnow = 30; 
-        const snH = Math.min((d.snow / maxSnow) * (h*0.4), h*0.4);
-        ctxFc.fillStyle = getStyleVar('--snow-yield');
-        ctxFc.fillRect(cx + 3, pY + h - snH, 12, snH);
-
+        // Date Labels (Bottom of canvas)
         ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
         ctxFc.fillText(d.label, cx, pY + h + 10);
       });
 
-      // Draw Thermal Band
+      // Thermal Band
       ctxFc.beginPath();
-      daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapY(d.tMax)); else ctxFc.lineTo(cx, mapY(d.tMax)); });
-      for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapY(daily[i].tMin)); }
+      daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
+      for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
       ctxFc.closePath();
-      const grad = ctxFc.createLinearGradient(0, pY, 0, pY+h);
+      const grad = ctxFc.createLinearGradient(0, pY, 0, midY);
       grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)'); grad.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
       ctxFc.fillStyle = grad; ctxFc.fill();
 
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapY(d.tMax)); else ctxFc.lineTo(cx,mapY(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapY(d.tMin)); else ctxFc.lineTo(cx,mapY(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
+      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
+      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
 
-      // Interactive Tooltip
+      // --- BOTTOM PANE (Precipitation & Gusts) ---
+      ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'right';
+      for(let p=0; p<=maxPrecip; p+=Math.ceil(maxPrecip/4)) {
+        if(p===0) continue;
+        const y = (pY + h) - mapYPrecipHeight(p);
+        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
+        ctxFc.fillText(`${p}`, pX-10, y);
+      }
+      // Right axis labels (Gusts)
+      ctxFc.textAlign = 'left';
+      for(let g=20; g<=maxGust; g+=Math.ceil(maxGust/3)) {
+        const y = mapYGust(g);
+        ctxFc.fillText(`${g}`, pX+w+10, y);
+      }
+      ctxFc.beginPath(); ctxFc.moveTo(pX,pY+h); ctxFc.lineTo(pX+w,pY+h); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+
+      daily.forEach((d, i) => {
+        const cx = pX + i*colW + colW/2;
+        const bW = Math.max(6, Math.min(colW * 0.6, 24));
+        const rH = mapYPrecipHeight(d.rain);
+        const sH = mapYPrecipHeight(d.snow);
+
+        // Rain (Base)
+        if (rH > 0) { ctxFc.fillStyle = getStyleVar('--rain-yield'); ctxFc.fillRect(cx - bW/2, (pY+h) - rH, bW, rH); }
+        // Snow (Stacked on Rain)
+        if (sH > 0) { ctxFc.fillStyle = getStyleVar('--snow-yield'); ctxFc.fillRect(cx - bW/2, (pY+h) - rH - sH, bW, sH); }
+      });
+
+      // Wind Gusts (Dashed Line)
+      ctxFc.beginPath(); let drawingG = false;
+      daily.forEach((d, i) => {
+        const cx = pX + i*colW + colW/2;
+        const y = mapYGust(d.gust);
+        if(!drawingG) { ctxFc.moveTo(cx, y); drawingG = true; } else { ctxFc.lineTo(cx, y); }
+      });
+      ctxFc.strokeStyle = '#ef4444'; ctxFc.lineWidth = 2; ctxFc.setLineDash([5, 5]); ctxFc.stroke(); ctxFc.setLineDash([]);
+
+
+      // --- INTERACTIVE TOOLTIP ---
       if (fcHoverIdx !== null && fcHoverIdx >= 0 && fcHoverIdx < numDays) {
         const d = daily[fcHoverIdx];
         const hx = pX + fcHoverIdx*colW + colW/2;
+        
         ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, pY+h); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
 
         ctxFc.fillStyle = getStyleVar('--bg-header');
         
-        // Scale Tooltip Box based on fonts
         const scale = cvsFc.width / (cvsFc.clientWidth || 800);
-        const boxW = 180 * scale, boxH = 135 * scale, padding = 15 * scale;
+        const boxW = 190 * scale, boxH = 175 * scale, padding = 15 * scale;
         let boxX = hx + padding, boxY = pY;
         if (fcTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
@@ -669,7 +739,10 @@
         ctxFc.fillText(`Max: ${d.tMax.toFixed(1)}°C`, boxX + padding, boxY + (35*scale));
         ctxFc.fillText(`Min: ${d.tMin.toFixed(1)}°C`, boxX + padding, boxY + (55*scale));
         ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, boxY + (80*scale));
-        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, boxY + (100*scale));
+        
+        ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, boxY + (105*scale));
+        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, boxY + (125*scale));
+        ctxFc.fillStyle = '#ef4444'; ctxFc.fillText(`Gust: ${d.gust.toFixed(0)}km/h`, boxX + padding, boxY + (145*scale));
       }
     };
 
@@ -677,7 +750,7 @@
       cvsFc.addEventListener('mousemove', (e) => {
         fcTouch = false; const rect = cvsFc.getBoundingClientRect(); 
         const mouseX = (e.clientX - rect.left) * (cvsFc.width / rect.width);
-        const pX = 60, w = cvsFc.width - pX * 2, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
+        const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
         fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
         if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
         window.repaintForecastCanvas();
@@ -687,14 +760,13 @@
         if (e.touches.length > 0) {
           e.preventDefault(); fcTouch = true; const rect = cvsFc.getBoundingClientRect();
           const mouseX = (e.touches[0].clientX - rect.left) * (cvsFc.width / rect.width);
-          const pX = 60, w = cvsFc.width - pX * 2, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
+          const pX = 60, pRight = 60, w = cvsFc.width - pX - pRight, numDays = Math.floor(FORECAST_DATA.resorts[activeFcResort].temperature_2m.length / 24);
           fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
           if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
           window.repaintForecastCanvas();
         }
       }, {passive: false});
       
-      // Repaint on window resize so fonts rescale
       window.addEventListener('resize', () => { window.repaintForecastCanvas(); });
       setTimeout(window.repaintForecastCanvas, 100);
     }
@@ -780,11 +852,28 @@
 
     renderTable(dp.value);
 
-    // ── HEATMAPS ──
+    // ── HEATMAPS & TABS ──
     let hmRes = 7;
     const hc = document.getElementById('heatmap-container');
+    const hmRc = document.getElementById('hm-resort-controls');
     const targetMonths = [ {m: 12, name: 'Dec', d: 31}, {m: 1, name: 'Jan', d: 31}, {m: 2, name: 'Feb', d: 29}, {m: 3, name: 'Mar', d: 31}, {m: 4, name: 'Apr', d: 30} ];
     
+    // Default Tab
+    let activeHmResort = Object.keys(byResort).includes('schoeneben') ? 'schoeneben' : Object.keys(byResort)[0];
+
+    // Build Tabs
+    Object.keys(byResort).forEach(r => {
+      const b = document.createElement('button'); b.innerText = r.toUpperCase(); b.className = 'control-btn';
+      if(r === activeHmResort) b.classList.add('active');
+      b.onclick = () => { 
+        Array.from(hmRc.children).forEach(c=>c.classList.remove('active')); 
+        b.classList.add('active'); 
+        activeHmResort = r; 
+        renderHeatmaps(); 
+      };
+      hmRc.appendChild(b);
+    });
+
     document.querySelectorAll('#heatmap-controls .control-btn').forEach(btn => {
       btn.onclick = (e) => {
         document.querySelectorAll('#heatmap-controls .control-btn').forEach(b => b.classList.remove('active'));
@@ -800,54 +889,55 @@
     window.renderHeatmaps = () => {
       const weights = getWeights();
       hc.innerHTML = '';
-      Object.keys(byResort).forEach(resort => {
-        const rData = byResort[resort];
-        const dataMap = {};
-        rData.forEach(r => dataMap[r.date] = r);
-        
-        let html = `<div><h3 style="margin:0 0 0.5rem 0; font-size:1rem; text-transform:capitalize;">${resort}</h3>`;
-        
-        const seasons = getSeasonYears(rData);
-        seasons.forEach(startYear => {
-          const ss = `${startYear}/${String(startYear+1).slice(2)}`;
-          html += `<div class="hm-season-row"><div style="text-align:right; font-weight:bold; color:var(--text-muted);">${ss}</div><div class="hm-months-container">`;
-          
-          targetMonths.forEach(mo => {
-            const y = mo.m === 12 ? startYear : startYear + 1;
-            const daysInMonth = mo.m === 2 ? new Date(y, 2, 0).getDate() : mo.d; 
-            
-            const blocks = [];
-            for(let day=1; day<=daysInMonth; day+=hmRes) {
-              const chunkDays = [];
-              for(let i=0; i<hmRes && (day+i)<=daysInMonth; i++) {
-                chunkDays.push(`${y}-${String(mo.m).padStart(2,'0')}-${String(day+i).padStart(2,'0')}`);
-              }
-              
-              const startStr = chunkDays[0], endStr = chunkDays[chunkDays.length-1];
-              let isFuture = startStr > latestDataDate;
-              
-              const vs = chunkDays.map(d => {
-                if(!dataMap[d]) return null;
-                return computeDynamicScore(dataMap[d], weights).score;
-              }).filter(s=>s!==null);
+      
+      const rData = byResort[activeHmResort];
+      if (!rData) return;
 
-              const snowTot = chunkDays.reduce((a,d) => a+(dataMap[d]?.summit?.snowfall_sum ?? dataMap[d]?.snowfall_sum ?? 0), 0);
-              const scoreAvg = vs.length > 0 ? vs.reduce((a,c)=>a+c,0)/vs.length : null;
-              
-              blocks.push({ d: `${startStr} to ${endStr}`, s: scoreAvg, f: snowTot, isFuture });
+      const dataMap = {};
+      rData.forEach(r => dataMap[r.date] = r);
+      
+      let html = `<div><h3 style="margin:0 0 0.5rem 0; font-size:1.2rem; text-transform:capitalize; color:var(--brand);">${activeHmResort}</h3>`;
+      
+      const seasons = getSeasonYears(rData);
+      seasons.forEach(startYear => {
+        const ss = `${startYear}/${String(startYear+1).slice(2)}`;
+        html += `<div class="hm-season-row"><div style="text-align:right; font-weight:bold; color:var(--text-muted);">${ss}</div><div class="hm-months-container">`;
+        
+        targetMonths.forEach(mo => {
+          const y = mo.m === 12 ? startYear : startYear + 1;
+          const daysInMonth = mo.m === 2 ? new Date(y, 2, 0).getDate() : mo.d; 
+          
+          const blocks = [];
+          for(let day=1; day<=daysInMonth; day+=hmRes) {
+            const chunkDays = [];
+            for(let i=0; i<hmRes && (day+i)<=daysInMonth; i++) {
+              chunkDays.push(`${y}-${String(mo.m).padStart(2,'0')}-${String(day+i).padStart(2,'0')}`);
             }
             
-            html += `<div class="hm-month-block"><div class="hm-month-label">${mo.name}</div><div class="hm-grid">
-              ${blocks.map(w => {
-                if (w.isFuture) return `<div class="hm-cell hm-cell-future" title="Future (${w.d})"></div>`;
-                return `<div class="hm-cell" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};" title="${w.d}\nScore: ${w.s!==null?(w.s*10).toFixed(1):'—'}\nSnow: ${w.f.toFixed(1)}cm"></div>`;
-              }).join('')}
-            </div></div>`;
-          });
-          html += `</div></div>`;
+            const startStr = chunkDays[0], endStr = chunkDays[chunkDays.length-1];
+            let isFuture = startStr > latestDataDate;
+            
+            const vs = chunkDays.map(d => {
+              if(!dataMap[d]) return null;
+              return computeDynamicScore(dataMap[d], weights).score;
+            }).filter(s=>s!==null);
+
+            const snowTot = chunkDays.reduce((a,d) => a+(dataMap[d]?.summit?.snowfall_sum ?? dataMap[d]?.snowfall_sum ?? 0), 0);
+            const scoreAvg = vs.length > 0 ? vs.reduce((a,c)=>a+c,0)/vs.length : null;
+            
+            blocks.push({ d: `${startStr} to ${endStr}`, s: scoreAvg, f: snowTot, isFuture });
+          }
+          
+          html += `<div class="hm-month-block"><div class="hm-month-label">${mo.name}</div><div class="hm-grid">
+            ${blocks.map(w => {
+              if (w.isFuture) return `<div class="hm-cell hm-cell-future" title="Future (${w.d})"></div>`;
+              return `<div class="hm-cell" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};" title="${w.d}\nScore: ${w.s!==null?(w.s*10).toFixed(1):'—'}\nSnow: ${w.f.toFixed(1)}cm"></div>`;
+            }).join('')}
+          </div></div>`;
         });
-        hc.innerHTML += html + `</div>`;
+        html += `</div></div>`;
       });
+      hc.innerHTML += html + `</div>`;
     };
     renderHeatmaps(); 
 
@@ -1107,7 +1197,7 @@
         ctxA.fillStyle = getStyleVar('--text-main'); 
         ctxA.fillText(`Max/Min: ${d.tMax !== null ? d.tMax.toFixed(1) : '—'} / ${d.tMin !== null ? d.tMin.toFixed(1) : '—'}°C`, boxX + padding, boxY + (45*scale));
         ctxA.fillText(`Sun: ${d.sun.toFixed(1)} hrs`, boxX + padding, boxY + (70*scale));
-        ctxA.fillStyle = '#3b82f6'; ctxA.fillText(`Snow: ${d.snow.toFixed(1)} cm`, boxX + padding, boxY + (95*scale));
+        ctxA.fillStyle = '#60a5fa'; ctxA.fillText(`Snow: ${d.snow.toFixed(1)} cm`, boxX + padding, boxY + (95*scale));
         ctxA.fillStyle = '#ef4444'; ctxA.fillText(`Gust: ${d.gust.toFixed(0)} km/h`, boxX + (115*scale), boxY + (95*scale));
         
         if(d.tMax !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(d.tMax), 6, 0, 2*Math.PI); ctxA.fillStyle='#ef4444'; ctxA.fill(); }
