@@ -84,9 +84,12 @@
   }
   .flash-update { animation: updatePulse 0.6s ease-out forwards; border-radius: 4px; }
 
-  /* ── CONTROLS ── */
-  #theme-cycle-btn { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
-  #theme-cycle-btn:hover { transform: scale(1.2); background: var(--border-color); }
+  /* ── CONTROLS & HEADER ── */
+  .font-resizers span, #theme-cycle-btn { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
+  .font-resizers span:hover, #theme-cycle-btn:hover { transform: scale(1.2); background: var(--border-color); }
+
+  #toc a { padding: 0.2rem 0.4rem; border-radius: 4px; transition: background 0.2s, color 0.2s; text-decoration: none; color: inherit; opacity: 0.7; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  #toc a:hover { background: var(--border-color); opacity: 1; }
 
   .control-btn { 
     padding: 0.4rem 0.8rem; height: 36px;
@@ -182,6 +185,7 @@
   @media (max-width: 1024px) { 
     header.main-header { display: flex !important; flex-direction: column; gap: 0.8rem; padding: 1rem !important; } 
     header.main-header > div { width: 100%; justify-content: center !important; text-align: center; }
+    #toc { justify-content: center; width: 100%; flex-wrap: wrap; }
   }
   @media (max-width: 768px) {
     .hm-months-container { flex-direction: column; gap: 1rem; }
@@ -189,6 +193,7 @@
     .hm-season-row { grid-template-columns: 1fr; gap: 0.2rem; align-items: start; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem; }
     .hm-season-row > div:first-child { text-align: left !important; font-size: 1rem; color: var(--text-main) !important; }
     section { padding: 1rem; }
+    #toc { display: none !important; } /* Hide TOC entirely on tiny screens to save space */
   }
   @media (max-width: 500px) {
     .resort-name-full { display: none; }
@@ -211,10 +216,21 @@
 <!-- ── LEAN HEADER (UNPINNED) ── -->
 <header class="main-header" style="position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 0.6rem 1rem; background: var(--bg-header); border-bottom: 1px solid var(--border-color);">
   
-  <!-- Left: Controls -->
-  <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-    <div style="display: flex; gap: 0.25rem; align-items: center;">
-      <span tabindex="0" role="button" id="theme-cycle-btn" onclick="cycleTheme()" title="Cycle Theme">🎨</span>
+  <!-- Left: Controls & TOC (Architectural Requirement) -->
+  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+    <nav id="toc" style="display: flex; gap: 0.25rem;">
+      <a href="#powder-alarm" title="Forecast">📡</a>
+      <a href="#heatmap" title="Matrix">🔥</a>
+      <a href="#drilldown" title="Telemetry">📅</a>
+      <a href="#snowpack" title="Snowpack">🏔️</a>
+      <a href="#atmosphere" title="Atmos">🌡️</a>
+    </nav>
+    <div style="display: flex; gap: 0.25rem; align-items: center; border-left: 1px solid var(--border-color); padding-left: 0.5rem;">
+      <span class="font-resizers" style="display: flex; gap: 0.1rem;">
+        <span tabindex="0" role="button" onclick="setLocalFont('sm')" title="Compact Font">➖</span> 
+        <span tabindex="0" role="button" onclick="setLocalFont('lg')" title="Large Font">➕</span>
+      </span>
+      <span tabindex="0" role="button" id="theme-cycle-btn" onclick="cycleTheme()" title="Cycle Theme" style="margin-left: 0.25rem;">🎨</span>
     </div>
   </div>
 
@@ -263,6 +279,7 @@
         
         <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); flex-wrap: wrap;">
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:linear-gradient(to bottom, #ef4444, #3b82f6); border-radius:2px;"></div> Temp Range</div>
+          <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:16px; height:2px; border-bottom:2px dashed #a16207;"></div> Soil (0cm)</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--snow-yield); border-radius:2px;"></div> Snow</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--rain-yield); border-radius:2px;"></div> Rain</div>
           <div style="display:flex; align-items:center; gap:0.4rem;"><div style="width:12px; height:12px; background:var(--cloud-base); border-radius:2px;"></div> Clouds</div>
@@ -394,7 +411,6 @@
 
   const getColor = (s) => {
     if (s === null || s === undefined) return 'transparent';
-    // HSL Interpolation: 0 = Red, 120 = Green. Mathematically pure.
     return `hsl(${Math.round(s * 120)}, 80%, 45%)`;
   };
 
@@ -413,8 +429,14 @@
     let nextIdx = (themesList.indexOf(current) + 1) % themesList.length;
     setLocalTheme(themesList[nextIdx]);
   }
+
+  function setLocalFont(f) { 
+    document.documentElement.dataset.font = f; 
+    localStorage.setItem('zl_font', f); 
+  }
   
   document.documentElement.dataset.theme = localStorage.getItem('zl_theme') || 'night';
+  document.documentElement.dataset.font = localStorage.getItem('zl_font') || 'md';
 
   const STATIC_METADATA = {
     'nauders': { base: 1400, summit: 2750 },
@@ -428,7 +450,7 @@
   try { SKI_DATA = __SKI_DATA_PLACEHOLDER__; } catch(e) {}
   try { FORECAST_DATA = __FORECAST_DATA_PLACEHOLDER__; } catch(e) {}
 
-  // ── TEMPORAL GUILLOTINE (Absolute Local Time Ceilings) ──
+  // ── TEMPORAL GUILLOTINE ──
   const localNow = new Date();
   const yyyy = localNow.getFullYear(), mm = String(localNow.getMonth() + 1).padStart(2, '0'), dd = String(localNow.getDate()).padStart(2, '0');
   const localTodayStr = `${yyyy}-${mm}-${dd}`;
@@ -505,7 +527,7 @@
     const themeBtn = document.getElementById('theme-cycle-btn');
     if(themeBtn) themeBtn.innerText = themeIcons[document.documentElement.dataset.theme] || '🎨';
 
-    document.querySelectorAll('#theme-cycle-btn').forEach(el => {
+    document.querySelectorAll('.font-resizers span, #theme-cycle-btn').forEach(el => {
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }});
     });
 
@@ -537,7 +559,7 @@
     });
 
     // =========================================================
-    // MODULE 1: FORECAST ENGINE (Decoupled & Null-Guarded)
+    // MODULE 1: FORECAST ENGINE (Soil Temp & Density Math Injected)
     // =========================================================
     const fcBoard = document.getElementById('tactical-summary-board');
 
@@ -615,6 +637,13 @@
         const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         
+        // Pluck the raw precip mm and soil temp (if the backend was updated to fetch them)
+        const precipArr = hourly.precipitation ? hourly.precipitation.slice(start, end).filter(v => v !== null) : [];
+        const totalPrecip = precipArr.length ? precipArr.reduce((a,b)=>a+b, 0) : rn + (sn * 0.1); 
+        
+        const soilArr = hourly.soil_temperature_0cm ? hourly.soil_temperature_0cm.slice(start, end).filter(v => v !== null) : [];
+        const soilTemp = soilArr.length ? soilArr.reduce((a,b)=>a+b, 0)/soilArr.length : null;
+
         const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end).filter(v => v !== null) : [];
         const wcArr = hourly.weathercode ? hourly.weathercode.slice(start, end).filter(v => v !== null) : [];
         let cc = 0;
@@ -641,7 +670,18 @@
 
         const dateStr = exactDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
         
-        daily.push({ tMax: t.length ? Math.max(...t) : 0, tMin: t.length ? Math.min(...t) : 0, snow: sn, rain: rn, gust: gust, cloud: cc, sun: sun, label: dateStr });
+        daily.push({ 
+            tMax: t.length ? Math.max(...t) : 0, 
+            tMin: t.length ? Math.min(...t) : 0, 
+            snow: sn, 
+            rain: rn, 
+            precip: totalPrecip,
+            soil: soilTemp,
+            gust: gust, 
+            cloud: cc, 
+            sun: sun, 
+            label: dateStr 
+        });
       }
 
       // Responsive Frame Matrix
@@ -663,15 +703,18 @@
       const colW = w / numDays;
       const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
 
-      const dataMaxT = Math.max(...daily.map(d=>d.tMax));
+      // Dynamically stretch thermal Y-axis bounds to prevent soil temp clipping
+      const dataMaxT = Math.max(...daily.map(d => Math.max(d.tMax, d.soil !== null ? d.soil : -999)));
+      const dataMinT = Math.min(...daily.map(d => Math.min(d.tMin, d.soil !== null ? d.soil : 999)));
+
       const maxT = Math.max(10, dataMaxT + 6);
-      const minT = Math.min(-5, ...daily.map(d=>d.tMin)) - 2;
+      const minT = Math.min(-5, dataMinT) - 2;
       const tRange = maxT - minT;
       const mapYTemp = t => yP1 + hP1 - ((t - minT) / tRange) * hP1;
       
       const zeroY = mapYTemp(0);
 
-      const maxPrecip = Math.max(5, ...daily.map(d => d.snow + d.rain));
+      const maxPrecip = Math.max(5, ...daily.map(d => d.precip));
       const mapYPrecip = val => zeroY - (val / maxPrecip) * (zeroY - yP1) * 0.85;
 
       const maxSun = 12; 
@@ -738,7 +781,7 @@
         if (isNarrow) {
             ctxFc.save();
             ctxFc.translate(cx, yP2 + hP2 + 10);
-            ctxFc.rotate(Math.PI / 6); // 30 degrees pivot
+            ctxFc.rotate(Math.PI / 6); 
             ctxFc.textAlign = 'left';
             ctxFc.textBaseline = 'middle';
             ctxFc.fillText(d.label.replace(',', ''), 0, 0); 
@@ -754,6 +797,7 @@
         }
       });
 
+      // Air Temp Thermal Band
       ctxFc.beginPath();
       daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
       for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
@@ -764,6 +808,25 @@
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
       ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
 
+      // Soil Temp Baseline
+      let hasSoil = false;
+      ctxFc.beginPath();
+      daily.forEach((d, i) => {
+        if (d.soil !== null) {
+            const cx = pX + i*colW + colW/2;
+            if (!hasSoil) { ctxFc.moveTo(cx, mapYTemp(d.soil)); hasSoil = true; }
+            else { ctxFc.lineTo(cx, mapYTemp(d.soil)); }
+        }
+      });
+      if (hasSoil) {
+          ctxFc.strokeStyle = '#a16207'; // Heavy brown dirt line
+          ctxFc.lineWidth = 2;
+          ctxFc.setLineDash([6, 4]);
+          ctxFc.stroke();
+          ctxFc.setLineDash([]);
+      }
+
+      // Precip & Sun Yields
       daily.forEach((d, i) => {
         const cx = pX + i*colW + colW/2;
         const bW = Math.max(4, Math.min(colW * 0.5, 30));
@@ -798,7 +861,13 @@
         ctxFc.fillStyle = getStyleVar('--bg-header');
         
         const scale = cvsFc.width / (cvsFc.clientWidth || 800);
-        const boxW = 190 * scale, boxH = 175 * scale, padding = 15 * scale;
+        
+        // Expand the glass tooltip bounding box if we have extra density or soil data
+        let rows = 6;
+        if (d.soil !== null) rows++;
+        if (d.snow > 0 && d.precip > 0) rows++;
+        const boxW = 190 * scale, boxH = (30 + (rows * 20)) * scale, padding = 15 * scale;
+        
         let boxX = hx + padding, boxY = pY;
         if (fcTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
@@ -806,14 +875,34 @@
         ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = getStyleVar('--border-color'); ctxFc.strokeRect(boxX, boxY, boxW, boxH);
         ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
         
-        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, boxY + (10*scale));
+        let currentY = boxY + (10*scale);
+        const yStep = 20 * scale;
+
+        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, currentY); currentY += yStep + (5*scale);
+        
         ctxFc.fillStyle = getStyleVar('--text-main'); 
-        ctxFc.fillText(`Max: ${d.tMax.toFixed(1)}°C`, boxX + padding, boxY + (35*scale));
-        ctxFc.fillText(`Min: ${d.tMin.toFixed(1)}°C`, boxX + padding, boxY + (55*scale));
-        ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, boxY + (80*scale));
-        ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, boxY + (105*scale));
-        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, boxY + (125*scale));
-        ctxFc.fillStyle = '#ef4444'; ctxFc.fillText(`Gust: ${d.gust.toFixed(0)}km/h`, boxX + padding, boxY + (145*scale));
+        ctxFc.fillText(`Air Max: ${d.tMax.toFixed(1)}°C`, boxX + padding, currentY); currentY += yStep;
+        ctxFc.fillText(`Air Min: ${d.tMin.toFixed(1)}°C`, boxX + padding, currentY); currentY += yStep;
+        
+        if (d.soil !== null) {
+            ctxFc.fillStyle = '#a16207'; 
+            ctxFc.fillText(`Soil (0cm): ${d.soil.toFixed(1)}°C`, boxX + padding, currentY); currentY += yStep;
+        }
+        
+        ctxFc.fillStyle = getStyleVar('--text-main');
+        ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, currentY); currentY += yStep;
+        ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, currentY); currentY += yStep;
+        ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, currentY); currentY += yStep;
+        
+        // Inject the mathematical powder density ratio if it snowed
+        if (d.snow > 0 && d.precip > 0) {
+            let ratio = (d.snow * 10) / d.precip;
+            let flavor = ratio > 15 ? "Blower 🌬️" : ratio < 7 ? "Cement 🧱" : "Standard ❄️";
+            ctxFc.fillStyle = getStyleVar('--text-main');
+            ctxFc.fillText(`Density: ${ratio.toFixed(1)}:1 (${flavor})`, boxX + padding, currentY); currentY += yStep;
+        }
+
+        ctxFc.fillStyle = '#ef4444'; ctxFc.fillText(`Gust: ${d.gust.toFixed(0)}km/h`, boxX + padding, currentY);
       }
     };
 
