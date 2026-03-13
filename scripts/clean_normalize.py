@@ -26,10 +26,10 @@ def extract_daily(raw_json):
     extracted = []
 
     for i, d in enumerate(daily.get("time", [])):
-        # STRICT WINTER MANDATE: Keep only Dec 1 through May 1. Purge the rest.
+        # STRICT WINTER MANDATE: Keep only Nov 1 through May 1. Purge the rest.
         d_obj = datetime.strptime(d, "%Y-%m-%d")
         m = d_obj.month
-        if m not in [12, 1, 2, 3, 4] and not (m == 5 and d_obj.day == 1):
+        if m not in [11, 12, 1, 2, 3, 4] and not (m == 5 and d_obj.day == 1):
             continue
 
         # Bomb-proof array indexing
