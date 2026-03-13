@@ -62,7 +62,7 @@ def main():
         print("\n[!] WARNING: Fetch failed, but cached data exists. Proceeding with stale data.")
     else:
         run([sys.executable, str(SCRIPTS / "clean_normalize.py")], "Clean & Normalize")
-        run([sys.executable, str(SCRIPTS / "compute_metrics.py")], "Compute scores")
+        # RIP compute_metrics.py - Logic moved to frontend Canvas engine.
 
     # 2. Fetch Forecast (Phase 2)
     run([sys.executable, str(SCRIPTS / "fetch_forecast.py")], "Fetch High-Res Forecast", allow_fail=True)
