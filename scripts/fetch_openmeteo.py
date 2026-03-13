@@ -13,7 +13,7 @@ from datetime import date, timedelta, datetime
 OUTPUT_DIR = Path(__file__).parent.parent / "data" / "raw"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 BASE_URL   = "https://archive-api.open-meteo.com/v1/archive"
-START_DATE = "2019-12-10"
+START_DATE = "2019-11-01"
 
 DAILY_VARS = [
     "temperature_2m_max", 
