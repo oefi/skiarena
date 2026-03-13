@@ -75,7 +75,6 @@
   h2 { margin-top: 0; color: var(--brand); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
   
   .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-  .badge { padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: var(--border-color); }
   .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
   /* ── ANIMATIONS & FLASHING ── */
@@ -84,18 +83,10 @@
     100% { background-color: transparent; transform: scale(1); }
   }
   .flash-update { animation: updatePulse 0.6s ease-out forwards; border-radius: 4px; }
-  @keyframes cellPulse {
-    0% { filter: brightness(1.5); transform: scale(1.05); z-index: 10; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
-    100% { filter: brightness(1); transform: scale(1); z-index: 1; box-shadow: none; }
-  }
-  .flash-cell { animation: cellPulse 0.6s ease-out forwards; }
 
   /* ── CONTROLS ── */
-  .font-resizers span, #theme-cycle-btn { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
-  .font-resizers span:hover, #theme-cycle-btn:hover { transform: scale(1.2); background: var(--border-color); }
-
-  #toc a { padding: 0.3rem 0.6rem; border-radius: 4px; transition: background 0.2s, color 0.2s; text-decoration: none; color: inherit; opacity: 0.8; font-weight: 600; font-size: 0.85rem; }
-  #toc a:hover { background: var(--border-color); opacity: 1; }
+  #theme-cycle-btn { cursor: pointer; transition: transform 0.1s; display: inline-block; user-select: none; padding: 0.3rem; border-radius: 4px; }
+  #theme-cycle-btn:hover { transform: scale(1.2); background: var(--border-color); }
 
   .control-btn { 
     padding: 0.4rem 0.8rem; height: 36px;
@@ -111,8 +102,6 @@
   .control-btn.active { background: var(--brand); color: #ffffff; border-color: var(--brand); }
   .control-btn.toggle-btn { border: 1px dashed var(--text-muted); color: var(--text-muted); background: transparent; }
   .control-btn.toggle-btn.active { background: var(--text-main); color: var(--bg-main); border-style: solid; border-color: var(--text-main); }
-  .archetype-btn { background: transparent; border: 1px solid var(--border-color); font-size: 0.8rem; }
-  .archetype-btn.active { background: var(--text-main); color: var(--bg-main); border-color: var(--text-main); }
 
   /* ── GLOBAL RESORT TABS ── */
   .resort-tab-btn {
@@ -122,6 +111,9 @@
   }
   .resort-tab-btn:hover { color: var(--text-main); background: var(--border-color); }
   .resort-tab-btn.active { color: #fff; background: var(--brand); border-color: var(--brand); }
+  
+  .resort-name-full { display: inline; }
+  .resort-name-short { display: none; }
 
   /* Forms & Sliders */
   input[type="date"] {
@@ -131,20 +123,10 @@
     font-family: inherit; font-size: 0.85rem; font-weight: 600;
     color-scheme: inherit; outline: none; transition: border-color 0.2s;
   }
-  input[type="range"] {
-    accent-color: var(--brand); cursor: pointer; height: 6px; width: 100%;
-    background: var(--border-color); border-radius: 3px; outline: none; -webkit-appearance: none; margin: 0.5rem 0;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: var(--brand); cursor: pointer; transition: transform 0.1s;
-  }
-  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
   /* ── FORECAST CARDS ── */
   #forecast-wrapper { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: stretch; }
   @media (min-width: 1024px) { #forecast-wrapper { grid-template-columns: 320px 1fr; } }
-  
   .fc-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; padding: 1rem; display: flex; flex-direction: column; justify-content: center; }
 
   /* ── HEATMAP ── */
@@ -200,7 +182,6 @@
   @media (max-width: 1024px) { 
     header.main-header { display: flex !important; flex-direction: column; gap: 0.8rem; padding: 1rem !important; } 
     header.main-header > div { width: 100%; justify-content: center !important; text-align: center; }
-    #toc { justify-content: center; width: 100%; flex-wrap: wrap; } 
   }
   @media (max-width: 768px) {
     .hm-months-container { flex-direction: column; gap: 1rem; }
@@ -209,12 +190,16 @@
     .hm-season-row > div:first-child { text-align: left !important; font-size: 1rem; color: var(--text-main) !important; }
     section { padding: 1rem; }
   }
+  @media (max-width: 500px) {
+    .resort-name-full { display: none; }
+    .resort-name-short { display: inline; }
+    .resort-tab-btn { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+  }
   @media print { 
     body { background: white !important; color: black !important; } 
     section { border: 1px solid #ccc; break-inside: avoid; margin-bottom: 1rem; padding: 1rem; } 
     header, #global-resort-header { display: none !important; } 
     canvas { filter: grayscale(100%); border-color: #000; } 
-    #algo-controls { display: none !important; }
   }
 </style>
 </head>
@@ -223,24 +208,13 @@
 <!-- Global Glassmorphic Tooltip Container -->
 <div id="global-tooltip"></div>
 
-<!-- ── LEAN 3-COLUMN HEADER (UNPINNED) ── -->
+<!-- ── LEAN HEADER (UNPINNED) ── -->
 <header class="main-header" style="position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 0.6rem 1rem; background: var(--bg-header); border-bottom: 1px solid var(--border-color);">
   
-  <!-- Left: Navigation & Controls -->
+  <!-- Left: Controls -->
   <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-    <nav id="toc" style="display: flex; gap: 0.25rem;">
-      <a href="#powder-alarm">Forecast</a>
-      <a href="#heatmap">Matrix</a>
-      <a href="#drilldown">Telemetry</a>
-      <a href="#snowpack">Snowpack</a>
-      <a href="#atmosphere">Atmos</a>
-    </nav>
-    <div style="display: flex; gap: 0.25rem; align-items: center; border-left: 1px solid var(--border-color); padding-left: 1rem;">
-      <span class="font-resizers" style="display: flex; gap: 0.2rem;">
-        <span tabindex="0" role="button" onclick="setLocalFont('sm')" title="Compact Font">➖</span> 
-        <span tabindex="0" role="button" onclick="setLocalFont('lg')" title="Large Font">➕</span>
-      </span>
-      <span tabindex="0" role="button" id="theme-cycle-btn" onclick="cycleTheme()" title="Cycle Theme" style="margin-left: 0.25rem;">🎨</span>
+    <div style="display: flex; gap: 0.25rem; align-items: center;">
+      <span tabindex="0" role="button" id="theme-cycle-btn" onclick="cycleTheme()" title="Cycle Theme">🎨</span>
     </div>
   </div>
 
@@ -304,12 +278,12 @@
     </div>
   </section>
 
-  <!-- ── HEATMAP (DUAL-FACTOR NORMALIZED ENGINE) ── -->
+  <!-- ── HEATMAP (SINGLE-FACTOR NORMALIZED ENGINE) ── -->
   <section id="heatmap">
     <div class="flex-between" style="margin-bottom: 1rem; align-items: flex-end;">
       <div>
-        <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Seasonal Quality Matrix 🔥</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Normalized directly against the resort's 6-year peak thresholds.</p>
+        <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Bluebird Matrix 🔥</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Normalized directly against the resort's 6-year peak sunlight thresholds.</p>
       </div>
       <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
         <button class="control-btn" data-res="1">1 Day</button>
@@ -317,39 +291,8 @@
         <button class="control-btn active" data-res="7">7 Days</button>
       </div>
     </div>
-    
-    <!-- Dynamic Score UI (The Recipe Maker) -->
-    <div id="algo-controls" style="display: flex; flex-direction: column; gap: 1rem; background: var(--bg-main); padding: 1.5rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
-      
-      <!-- Archetype Quick Selectors -->
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text-muted); margin-right: 0.5rem; letter-spacing: 0.05em;">Presets:</span>
-        <button class="control-btn archetype-btn" data-sun="100" data-cov="0">☀️ Pure Bluebird</button>
-        <button class="control-btn archetype-btn" data-sun="0" data-cov="100">🏔️ Deep Base</button>
-        <button class="control-btn archetype-btn active" data-sun="50" data-cov="50">⚖️ Balanced</button>
-      </div>
 
-      <!-- Raw Sliders -->
-      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.2rem;">
-          <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:bold; color:var(--text-main);">
-            <span>☀️ Clear Skies</span> <span id="lbl-sun" style="transition: color 0.2s;">50%</span>
-          </label>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Measured against historical peak sunshine.</span>
-          <input type="range" id="w-sun" min="0" max="100" value="50">
-        </div>
-        
-        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.2rem;">
-          <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:bold; color:var(--text-main);">
-            <span>🏔️ Base Coverage</span> <span id="lbl-cov" style="transition: color 0.2s;">50%</span>
-          </label>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Measured against historical peak snow depth.</span>
-          <input type="range" id="w-cov" min="0" max="100" value="50">
-        </div>
-      </div>
-    </div>
-
-    <div id="heatmap-container" style="display: flex; flex-direction: column; gap: 2rem;"></div>
+    <div id="heatmap-container" style="display: flex; flex-direction: column; gap: 2rem; margin-top: 1rem;"></div>
   </section>
 
   <!-- ── DAILY TELEMETRY (CONTEXT AWARE) ── -->
@@ -372,7 +315,7 @@
             <th>Summit Temp</th>
             <th>Snow Depth <span style="text-transform:none; font-weight:normal; opacity:0.7;">(vs Hist. Avg)</span></th>
             <th>New Snow (24h)</th>
-            <th style="text-align: right;">Algorithmic Score <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Hover)</span></th>
+            <th style="text-align: right;">Bluebird Score <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Hover)</span></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -440,6 +383,14 @@
   // ── CORE SYSTEM & HSL GRADIENT ENGINE ──
   const themesList = ['light', 'grey', 'night', 'print'];
   const themeIcons = { 'light': '☀️', 'grey': '🌥️', 'night': '🌙', 'print': '🖨️' };
+  
+  const RESORT_ABBREVIATIONS = {
+    'nauders': 'naud',
+    'schoeneben': 'schoen',
+    'watles': 'wat',
+    'sulden': 'suld',
+    'trafoi': 'traf'
+  };
 
   const getColor = (s) => {
     if (s === null || s === undefined) return 'transparent';
@@ -462,14 +413,8 @@
     let nextIdx = (themesList.indexOf(current) + 1) % themesList.length;
     setLocalTheme(themesList[nextIdx]);
   }
-
-  function setLocalFont(f) { 
-    document.documentElement.dataset.font = f; 
-    localStorage.setItem('zl_font', f); 
-  }
   
   document.documentElement.dataset.theme = localStorage.getItem('zl_theme') || 'night';
-  document.documentElement.dataset.font = localStorage.getItem('zl_font') || 'md';
 
   const STATIC_METADATA = {
     'nauders': { base: 1400, summit: 2750 },
@@ -560,7 +505,7 @@
     const themeBtn = document.getElementById('theme-cycle-btn');
     if(themeBtn) themeBtn.innerText = themeIcons[document.documentElement.dataset.theme] || '🎨';
 
-    document.querySelectorAll('.font-resizers span, #theme-cycle-btn').forEach(el => {
+    document.querySelectorAll('#theme-cycle-btn').forEach(el => {
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }});
     });
 
@@ -573,8 +518,10 @@
     const glbHeader = document.getElementById('global-resort-header');
     globalResorts.forEach(r => {
       const b = document.createElement('button');
-      b.innerText = r.toUpperCase();
       b.className = 'resort-tab-btn' + (r === window.GLOBAL_RESORT ? ' active' : '');
+      const shortName = RESORT_ABBREVIATIONS[r] ? RESORT_ABBREVIATIONS[r].toUpperCase() : r.toUpperCase();
+      b.innerHTML = `<span class="resort-name-full">${r.toUpperCase()}</span><span class="resort-name-short">${shortName}</span>`;
+      
       b.onclick = () => { 
         document.querySelectorAll('.resort-tab-btn').forEach(btn => btn.classList.remove('active'));
         b.classList.add('active');
@@ -705,8 +652,7 @@
       const pX = isMobile ? 40 : 60;
       const pY = 20;
       const pRight = isMobile ? 40 : 60;
-      const pBot = isNarrow ? 85 : 40; // Expand bottom footprint to intercept angled dates
-      const labelOffset = isMobile ? 4 : 10;
+      const pBot = isNarrow ? 85 : 40;
 
       const w = cvsFc.width - pX - pRight;
       const h = cvsFc.height - pY - pBot; 
@@ -746,6 +692,7 @@
       ctxFc.save(); ctxFc.translate(rightTitleOff, yP2 + hP2/2); ctxFc.rotate(Math.PI/2); ctxFc.textAlign = "center"; ctxFc.fillText("Gusts", 0, 0); ctxFc.restore();
 
       ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
+      const labelOffset = isMobile ? 4 : 10;
       for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
         const y = mapYTemp(t);
         ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y);
@@ -913,7 +860,7 @@
     }
 
     // =========================================================
-    // MODULE 2: HISTORICAL MATRIX & GLOBAL BOUNDS NORMALIZATION
+    // MODULE 2: HISTORICAL MATRIX & SINGLE-FACTOR NORMALIZATION
     // =========================================================
     if (!SKI_DATA || !SKI_DATA.records || SKI_DATA.records.length === 0) { 
       sb.innerHTML = `⚠ Historical Data Offline`; 
@@ -936,17 +883,14 @@
     const getResortBounds = (res) => {
        if(boundsCache[res]) return boundsCache[res];
        const rd = byResort[res] || [];
-       let minSun = 999, maxSun = 0, minSn = 999, maxSn = 0;
+       let minSun = 999, maxSun = 0;
        rd.forEach(r => {
           const sun = (r.sunshine_duration ?? 0) / 3600;
-          const sn = r.summit?.snow_depth ?? r.snow_depth ?? 0;
           if (sun < minSun) minSun = sun;
           if (sun > maxSun) maxSun = sun;
-          if (sn < minSn) minSn = sn;
-          if (sn > maxSn) maxSn = sn;
        });
-       if (minSun === 999) return { minSun:0, maxSun:1, minSn:0, maxSn:1 };
-       boundsCache[res] = { minSun, maxSun, minSn, maxSn };
+       if (minSun === 999) return { minSun:0, maxSun:1 };
+       boundsCache[res] = { minSun, maxSun };
        return boundsCache[res];
     };
 
@@ -964,77 +908,37 @@
       return (valid.reduce((a,b) => a+b, 0) / valid.length) * 100;
     };
 
-    const uiSun = document.getElementById('w-sun'), lblSun = document.getElementById('lbl-sun');
-    const uiCov = document.getElementById('w-cov'), lblCov = document.getElementById('lbl-cov'); 
-    
-    const getWeights = () => ({ sun: parseInt(uiSun.value) / 100, cov: parseInt(uiCov.value) / 100 });
-
     const triggerVisualFlash = () => {
-      [lblSun, lblCov].forEach(el => {
-        el.classList.remove('flash-update'); void el.offsetWidth; el.classList.add('flash-update');
-      });
       document.querySelectorAll('.hm-cell, .quality-badge').forEach(el => {
         el.classList.remove('flash-cell'); void el.offsetWidth; el.classList.add('flash-cell');
       });
     };
 
-    const updateUIAfterAlgorithmShift = (flash = true) => {
-      lblSun.innerText = `${uiSun.value}%`; lblCov.innerText = `${uiCov.value}%`;
-      renderHeatmaps(); renderTable(document.getElementById('date-picker').value);
-      if(flash) triggerVisualFlash();
-    };
-
-    [uiSun, uiCov].forEach(el => {
-      el.addEventListener('input', () => {
-        document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
-        updateUIAfterAlgorithmShift(true);
-      });
-    });
-
-    document.querySelectorAll('.archetype-btn').forEach(btn => {
-      btn.onclick = (e) => {
-        document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        uiSun.value = btn.dataset.sun; uiCov.value = btn.dataset.cov;
-        updateUIAfterAlgorithmShift(true);
-      };
-    });
-
-    const computeDynamicScore = (r, weights, bounds) => {
+    const computeDynamicScore = (r, bounds) => {
       if ((r.base?.temperature_2m_max ?? r.temperature_2m_max) === null && 
           (r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0) === 0 && 
           (r.summit?.snow_depth ?? r.snow_depth) === null) {
-        return { score: null, metrics: { fSun:0, fCoverage:0 } };
+        return { score: null, metrics: { fSun:0 } };
       }
       
       const sunHours = (r.sunshine_duration ?? 0) / 3600;
-      const snDepth = r.summit?.snow_depth ?? r.snow_depth ?? 0;
-
       let fSun = bounds.maxSun > bounds.minSun ? (sunHours - bounds.minSun) / (bounds.maxSun - bounds.minSun) : 0;
-      let fCoverage = bounds.maxSn > bounds.minSn ? (snDepth - bounds.minSn) / (bounds.maxSn - bounds.minSn) : 0;
-      
       fSun = Math.max(0, Math.min(1, fSun));
-      fCoverage = Math.max(0, Math.min(1, fCoverage));
 
-      const totalWeight = weights.sun + weights.cov;
-      let rawScore = totalWeight === 0 ? 0.5 : ((fSun * weights.sun) + (fCoverage * weights.cov)) / totalWeight;
-
-      return { score: rawScore, metrics: { fSun, fCoverage } };
+      return { score: fSun, metrics: { fSun } };
     };
 
     const generateRichTooltipHTML = (title, dScore, finalSc, extras = '') => {
       if (finalSc === null) return `<div class="tt-data-node"><div>Data unavailable for ${title}</div></div>`;
       
       const sC = dScore.metrics.fSun >= 0.8 ? 'var(--sun-yield)' : 'var(--text-main)';
-      const cC = dScore.metrics.fCoverage >= 0.8 ? '#22c55e' : 'var(--text-main)';
 
       return `<div class="tt-data-node">
         <div style="font-size:0.9rem; font-weight:800; color:var(--brand); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.4rem; margin-bottom:0.4rem;">${title}</div>
         ${extras}
-        <div style="color:var(--text-muted); font-size:0.7rem; margin-top:0.4rem; text-transform:uppercase;">Dual-Factor Normalization</div>
+        <div style="color:var(--text-muted); font-size:0.7rem; margin-top:0.4rem; text-transform:uppercase;">Bluebird Index Normalization</div>
         <div class="tt-grid">
           <span style="color:var(--text-muted)">☀️ Bluebird Factor</span> <span class="tt-val" style="color:${sC}">${(dScore.metrics.fSun*100).toFixed(0)}%</span>
-          <span style="color:var(--text-muted)">🏔️ Base Factor</span> <span class="tt-val" style="color:${cC}">${(dScore.metrics.fCoverage*100).toFixed(0)}%</span>
         </div>
       </div>`;
     };
@@ -1058,7 +962,6 @@
       }
       
       const mmdd = dStr.slice(5);
-      const weights = getWeights();
 
       dtb.innerHTML = byDate[dStr].map(r => {
         const meta = STATIC_METADATA[r.resort.toLowerCase()] || {base:'?', summit:'?'};
@@ -1069,7 +972,7 @@
         const warn = (r.flags && r.flags.length) ? `<span title="Data Flag: ${r.flags.join(',')}" style="cursor:help;">⚠️</span> ` : '';
         
         const bounds = getResortBounds(r.resort);
-        const dScore = computeDynamicScore(r, weights, bounds);
+        const dScore = computeDynamicScore(r, bounds);
         const finalSc = dScore.score;
 
         const extrasHtml = `
@@ -1136,7 +1039,6 @@
     };
 
     window.renderHeatmaps = () => {
-      const weights = getWeights();
       const bounds = getResortBounds(window.GLOBAL_RESORT);
       hc.innerHTML = '';
       
@@ -1173,7 +1075,7 @@
             const vs = chunkDays.map(d => {
               if(!dataMap[d]) return null;
               return {
-                 scoreData: computeDynamicScore(dataMap[d], weights, bounds),
+                 scoreData: computeDynamicScore(dataMap[d], bounds),
                  precipHours: dataMap[d].precipitation_hours ?? 0,
                  snowSum: dataMap[d].summit?.snowfall_sum ?? dataMap[d].snowfall_sum ?? 0,
                  precipSum: dataMap[d].base?.precipitation_sum ?? dataMap[d].precipitation_sum ?? 0
@@ -1191,8 +1093,7 @@
               avgScoreObj = {
                  score: scoreAvg,
                  metrics: {
-                   fSun: vs.reduce((a,c)=>a+c.scoreData.metrics.fSun,0)/count,
-                   fCoverage: vs.reduce((a,c)=>a+c.scoreData.metrics.fCoverage,0)/count
+                   fSun: vs.reduce((a,c)=>a+c.scoreData.metrics.fSun,0)/count
                  }
               };
             }
