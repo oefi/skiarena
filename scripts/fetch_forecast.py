@@ -16,7 +16,8 @@ BASE_URL = "https://api.open-meteo.com/v1/forecast"
 HOURLY_VARS = [
     "temperature_2m", "apparent_temperature", "precipitation", "rain", 
     "snowfall", "weathercode", "windspeed_10m", "windgusts_10m", 
-    "visibility", "freezinglevel_height"
+    "visibility", "freezinglevel_height", "soil_temperature_0cm",
+    "sunshine_duration"
 ]
 FORECAST_DAYS = 16
 
@@ -68,5 +69,4 @@ def main():
             json.dump({"error": str(e), "resorts": {}}, f)
 
 if __name__ == "__main__":
-
     main()
