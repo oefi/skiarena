@@ -12,7 +12,8 @@ from pathlib import Path
 
 BASE    = Path(__file__).parent.parent
 SCRIPTS = BASE / "scripts"
-DATA    = BASE / "data" / "processed" / "enriched_data.json"
+# Rerouted from enriched_data.json
+DATA    = BASE / "data" / "processed" / "master_data.json"
 OUT     = BASE / "nauders_dashboard.html"
 
 def run(cmd, desc, allow_fail=False):
@@ -61,8 +62,8 @@ def main():
     if not fetch_success and has_cache:
         print("\n[!] WARNING: Fetch failed, but cached data exists. Proceeding with stale data.")
     else:
+        # We only run clean_normalize now. Metric computation is handled via Canvas JS.
         run([sys.executable, str(SCRIPTS / "clean_normalize.py")], "Clean & Normalize")
-        # RIP compute_metrics.py - Logic moved to frontend Canvas engine.
 
     # 2. Fetch Forecast (Phase 2)
     run([sys.executable, str(SCRIPTS / "fetch_forecast.py")], "Fetch High-Res Forecast", allow_fail=True)
@@ -70,16 +71,16 @@ def main():
     # 3. Build & Wrap
     run([sys.executable, str(BASE / "build_dashboard.py")], "Build HTML")
 
+    # 4. Generate Social Media Assets
     og_script = SCRIPTS / "gen_og_image.py"
     if og_script.exists():
-        run([sys.executable, str(og_script)], "Regenerate og-image.png", allow_fail=True)
+        run([sys.executable, str(og_script)], "Generate OG Image")
 
-    if not OUT.exists():
-        sys.exit(1)
+    baked_date = last_baked_date() or "UNKNOWN"
+    print(f"\n[✓] ALL DONE. Data baked through: {baked_date}")
 
-    new_baked = last_baked_date()
+    _write_action_output("BAKED_THROUGH", baked_date)
     _write_action_output("DASHBOARD_CHANGED", "true")
-    _write_action_output("BAKED_THROUGH", new_baked or "unknown")
 
 if __name__ == "__main__":
     main()
