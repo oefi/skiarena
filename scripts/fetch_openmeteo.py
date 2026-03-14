@@ -45,14 +45,14 @@ def get_session():
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
-
-def fetch_one(session, name, lat, lon, elevation_label, vars_to_use, start_d, end_d):
+def fetch_one(session, name, lat, lon, label, elevation_m, vars_to_use, start_date, end_date):
     params = {
         "latitude": lat,
         "longitude": lon,
-        "start_date": start_d,
-        "end_date": end_d,
-        "daily": ",".join(vars_to_use), 
+        "elevation": elevation_m,
+        "start_date": start_date,
+        "end_date": end_date,
+        "daily": ",".join(vars_to_use),
         "timezone": "Europe/Berlin"
     }
     
