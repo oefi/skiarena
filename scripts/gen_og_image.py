@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Generate og-image.png (1200x630) for Zwei Laender Skiarena dashboard."""
-import cairosvg, math, random
+"""Generate og-image.png (1200x630) for Zwei Laender Skiarena dashboard.
+Heatmap data is loaded from enriched_data.json (real Bluebird Scores).
+Falls back to synthetic curves only if the enriched file is missing.
+"""
+import cairosvg, math, json
 from pathlib import Path
+from collections import defaultdict
 
-OUT = Path(__file__).parent.parent / "og-image.png"
+OUT          = Path(__file__).parent.parent / "og-image.png"
+ENRICHED     = Path(__file__).parent.parent / "data" / "processed" / "enriched_data.json"
 
 # Palette
 BG="#0d1829"; S2_COL="#1a2d4e"; ACCENT="#4d7fff"; ACCENT2="#7c9dff"
@@ -17,14 +22,92 @@ def sc(s):
     if s >= 0.40: return S2
     return S1
 
-# Heatmap data
-random.seed(42)
-SEASONS = ["2019/20","2020/21","2021/22","2022/23","2023/24","2024/25"]
-SMODS   = {"2019/20":+.05,"2020/21":-.08,"2021/22":+.10,
-           "2022/23":-.03,"2023/24":+.07,"2024/25":+.02}
-def wb(wn): return .35 + .55 * math.exp(-((wn-9)**2) / 50)
-HM = {s: [max(.05, min(1., wb(w)+SMODS[s]+random.gauss(0,.07)))
-          for w in range(1,19)] for s in SEASONS}
+
+# ── Load real Bluebird Scores from enriched_data.json ────────────────────────
+# Each season row in the heatmap = 18 weekly buckets (Dec wk1 → Apr wk4 roughly).
+# We compute the mean score across all 5 resorts per calendar-week bucket.
+# Falls back to a synthetic bell curve only if the data file doesn't exist.
+
+def _load_real_heatmap():
+    """Return (SEASONS list, HM dict {season: [18 floats]}) from enriched_data."""
+    if not ENRICHED.exists():
+        return None, None
+    try:
+        with open(ENRICHED) as f:
+            d = json.load(f)
+        records = d.get("records", [])
+        if not records:
+            return None, None
+
+        # Bucket records by season and ISO week-within-season
+        # Season window: Dec 1 – Apr 30 mapped to 18 weekly slots (≈4.33d/slot)
+        # Slot = floor((day_of_season - 0) / 18) capped to [0, 17]
+        from datetime import date as _date
+        bucket_scores = defaultdict(lambda: defaultdict(list))
+
+        for r in records:
+            score = r.get("score")
+            if score is None:
+                continue
+            ds = r["date"]
+            y, m, day = int(ds[:4]), int(ds[5:7]), int(ds[8:10])
+            # Season start year
+            sy = y if m >= 11 else y - 1
+            season_label = f"{sy}/{str(sy+1)[2:]}"
+            # Day offset within season: Nov 1 = 0
+            season_start = _date(sy, 11, 1)
+            current     = _date(y, m, day)
+            off = (current - season_start).days
+            # Map 182-day season to 18 slots; we only show Dec–Apr (days 30–181)
+            if off < 30 or off > 181:
+                continue
+            slot = min(17, (off - 30) * 18 // 152)
+            bucket_scores[season_label][slot].append(score)
+
+        if not bucket_scores:
+            return None, None
+
+        seasons = sorted(bucket_scores.keys())
+        hm = {}
+        for s in seasons:
+            row = []
+            for slot in range(18):
+                vals = bucket_scores[s].get(slot, [])
+                row.append(sum(vals) / len(vals) if vals else 0.5)
+            hm[s] = row
+        return seasons, hm
+    except Exception as e:
+        print(f"  [!] OG image: could not load enriched_data: {e}. Using synthetic.")
+        return None, None
+
+
+def _synthetic_heatmap():
+    """Reproducible synthetic bell curve fallback."""
+    import random as _random
+    _random.seed(42)
+    seasons = ["2019/20","2020/21","2021/22","2022/23","2023/24","2024/25"]
+    smods   = {"2019/20":+.05,"2020/21":-.08,"2021/22":+.10,
+               "2022/23":-.03,"2023/24":+.07,"2024/25":+.02}
+    def wb(wn): return .35 + .55 * math.exp(-((wn-9)**2) / 50)
+    return seasons, {s: [max(.05, min(1., wb(w)+smods[s]+_random.gauss(0,.07)))
+                         for w in range(1, 19)] for s in seasons}
+
+
+SEASONS, HM = _load_real_heatmap()
+if SEASONS is None:
+    SEASONS, HM = _synthetic_heatmap()
+
+# Dynamic record count + date range from meta
+_total_records = 0
+_date_range    = "Nov–Apr · 2019/20–2024/25"
+if ENRICHED.exists():
+    try:
+        with open(ENRICHED) as f:
+            _meta = json.load(f).get("_meta", {})
+        _total_records = _meta.get("total_records", 0)
+        resorts_meta = _meta.get("resorts", [])
+    except Exception:
+        pass
 
 W, H = 1200, 630
 SERIF = "'DejaVu Serif','Georgia',serif"
@@ -110,11 +193,12 @@ e.append(t(LX,    174, "Ski  Conditions  Dashboard", 17, MUTED, f=SANS, ls=0.10)
 e.append(ln(LX, 193, 608, 193))
 
 # Season + record chips
+_seasons_str = f"Nov–Apr · {SEASONS[0]}–{SEASONS[-1]}" if SEASONS else "Nov–Apr · 2019/20–2024/25"
+_rec_str     = f"{_total_records:,} records" if _total_records else "Live scores"
 e.append(r(LX, 206, 216, 30, S2_COL, rx=6))
-e.append(t(LX+11, 226, "Dec\u2013Apr \u00b7 2019/20\u20132024/25",
-           12, ACCENT2, w="600", f=MONO))
+e.append(t(LX+11, 226, _seasons_str, 12, ACCENT2, w="600", f=MONO))
 e.append(r(LX+228, 206, 122, 30, S2_COL, rx=6))
-e.append(t(LX+239, 226, "3,670 records", 12, MUTED, f=MONO))
+e.append(t(LX+239, 226, _rec_str, 12, MUTED, f=MONO))
 
 # Resort list
 RESORTS = [
@@ -214,7 +298,7 @@ for si, season in enumerate(SEASONS):
 e.append(ln(0, H-26, W, H-26, BORDER, 1))
 e.append(r(0, H-25, W, 25, "#060d18", op=0.9))
 e.append(t(LX, H-8,
-           "Open-Meteo ERA5-Land  \u00b7  Historical reanalysis  \u00b7  Free & open-source",
+           "Open-Meteo ERA5 + ERA5-Land  \u00b7  Bluebird Score  \u00b7  Free & open-source",
            11, FAINT, f=SANS))
 e.append(t(W-LX, H-8,
            "github.com/YOURUSERNAME/zweilaender-ski-dashboard",

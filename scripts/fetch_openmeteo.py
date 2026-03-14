@@ -135,6 +135,12 @@ def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, eleva
     # Merge: inject snow_depth array into ERA5 daily dict aligned by date
     era5_dates  = era5_data["daily"].get("time", [])
     depth_dates = depth_data["daily"].get("time", [])
+
+    if len(era5_dates) != len(depth_dates):
+        print(f"  [!] WARNING: ERA5 ({len(era5_dates)} days) and ERA5-Land ({len(depth_dates)} days) "
+              f"date ranges differ for {name}/{elevation_label}. "
+              f"snow_depth will be None for dates outside ERA5-Land coverage.")
+
     depth_by_date = dict(zip(depth_dates, depth_data["daily"].get("snow_depth", [])))
     era5_data["daily"]["snow_depth"] = [
         depth_by_date.get(d) for d in era5_dates
