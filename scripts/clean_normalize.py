@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Step 2 — Clean, Normalize & QC Pipeline
-Enforces the Strict Winter Mandate (Nov 1 - May 1).
-Infers missing sunshine data safely without destroying real storm days.
+Enforces the Strict Winter Mandate (Nov 1 - May 1). Drops summer slop.
+Merges base and summit data while rigorously checking for missing API variables.
+Zero inference: extracts sunshine duration explicitly from API facts.
 """
 
 import json
@@ -26,58 +27,48 @@ def extract_daily(raw_json):
     extracted = []
 
     for i, d in enumerate(daily.get("time", [])):
+        # STRICT WINTER MANDATE: Keep only Nov 1 through May 1. Purge the rest.
         d_obj = datetime.strptime(d, "%Y-%m-%d")
         m = d_obj.month
         if m not in [11, 12, 1, 2, 3, 4] and not (m == 5 and d_obj.day == 1):
             continue
 
         def safe_val(key):
-            arr = daily.get(key)
-            return arr[i] if arr and i < len(arr) else None
-
-        t_max  = safe_val("temperature_2m_max")
-        t_min  = safe_val("temperature_2m_min")
-        gusts  = safe_val("wind_gusts_10m_max")
-        precip = safe_val("precipitation_sum")
-        snow   = safe_val("snowfall_sum")
-        sun    = safe_val("sunshine_duration")
-        sw     = safe_val("shortwave_radiation_sum")
-        wc     = safe_val("weathercode")
+            v = daily.get(key, [])
+            return v[i] if i < len(v) and v[i] is not None else None
 
         flags = []
+        t_max = safe_val("temperature_2m_max")
+        t_min = safe_val("temperature_2m_min")
+        snow_sum = safe_val("snowfall_sum")
+        precip = safe_val("precipitation_sum")
+        gusts = safe_val("wind_gusts_10m_max")
+        wc = safe_val("weathercode")
+
+        if t_max is None or t_min is None: flags.append("MISSING_TEMP")
+        if snow_sum is None: flags.append("MISSING_SNOW_SUM")
+        if precip is None: flags.append("MISSING_PRECIP")
+
+        # -- HARD TRUTH MANDATE: SUNSHINE --
+        # Open-Meteo ERA5-Land provides 'sunshine_duration' in seconds.
+        # We perform zero inference. If the sensor payload is null, we log 0.
+        raw_sun_seconds = safe_val("sunshine_duration") 
         
-        if precip == 0.0 and snow is None:
-            snow = 0.0
-            flags.append("snow_inferred")
-
-        # Crucial Fix: Only infer if sun is literally missing (None). Allow 0.0 to stay 0.0!
-        if sun is None:
-            if sw is not None and sw > 2.0:
-                est_hours = (sw - 2.5) * 0.8
-                sun = max(0.0, min(est_hours, 12.0)) * 3600.0
-                flags.append("sun_inferred_from_radiation")
-            elif wc is not None:
-                if wc <= 1: sun = 36000.0
-                elif wc == 2: sun = 21600.0
-                elif wc == 3: sun = 7200.0
-                else: sun = 0.0
-                flags.append("sun_inferred_from_wmo")
-            else:
-                sun = 0.0
-
-        if t_max is None: flags.append("no_temp")
-        if gusts is None: flags.append("no_wind")
+        if raw_sun_seconds is not None:
+            sun_hours = round(raw_sun_seconds / 3600.0, 1)
+        else:
+            sun_hours = 0.0
+            flags.append("MISSING_SUN_SENSOR_DATA")
 
         record = {
             "date": d,
-            "temperature_2m_max": t_max,
-            "temperature_2m_min": t_min,
-            "apparent_temperature_min": safe_val("apparent_temperature_min"),
-            "snowfall_sum": snow,
+            "tMax": t_max,
+            "tMin": t_min,
+            "snowfall_sum": snow_sum,
             "snow_depth": safe_val("snow_depth"),
             "precipitation_sum": precip,
             "precipitation_hours": safe_val("precipitation_hours"),
-            "sunshine_duration": sun,
+            "sunshine_duration": sun_hours, # Pure API reflection
             "windspeed_10m_max": safe_val("windspeed_10m_max"),
             "wind_gusts_10m_max": gusts,
             "weathercode": wc,
@@ -106,9 +97,11 @@ def main():
             })
 
     all_records.sort(key=lambda x: (x["date"], x["resort"]))
-    master = {"_meta": {"resorts": RESORTS, "total_records": len(all_records)}, "records": all_records}
-    with open(OUT_DIR / "master_data.json", "w") as f:
-        json.dump(master, f, separators=(",", ":"))
+
+    out_file = OUT_DIR / "enriched_data.json"
+    with open(out_file, "w") as f:
+        json.dump({"meta": {"generated_at": datetime.now().isoformat()}, "records": all_records}, f, separators=(",", ":"))
+    print(f"Cleaned & normalized {len(all_records)} daily records.")
 
 if __name__ == "__main__":
     main()
