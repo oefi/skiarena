@@ -7,6 +7,7 @@ Infers missing sunshine data via WMO weather codes.
 """
 
 import json
+import math
 from pathlib import Path
 from datetime import datetime
 
@@ -15,6 +16,44 @@ OUT_DIR  = Path(__file__).parent.parent / "data" / "processed"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 RESORTS = ["nauders", "schoeneben", "watles", "sulden", "trafoi"]
+
+# ── Angstrom-Prescott shortwave → sunshine duration ───────────────────────────
+# When ERA5 sunshine_duration is null (which is the norm), we derive it from
+# shortwave_radiation_sum using the Angstrom-Prescott empirical equation:
+#   n = N * (Rs/Ra - a) / b,  a=0.25, b=0.50 (FAO-56 defaults)
+# where Ra = extraterrestrial radiation (MJ/m²/day), N = max daylight hours.
+# Far superior to WMO-code inference (continuous, bounded, physically grounded).
+# Reference latitude 47°N covers the entire Zwei Länder area.
+
+def _extraterrestrial_radiation(doy: int, lat_deg: float = 47.0) -> float:
+    """MJ/m²/day at top of atmosphere (Hargreaves–Samani)."""
+    dr   = 1 + 0.033 * math.cos(2 * math.pi * doy / 365)
+    decl = 0.409 * math.sin(2 * math.pi * doy / 365 - 1.39)
+    lat  = math.radians(lat_deg)
+    ws   = math.acos(max(-1.0, min(1.0, -math.tan(lat) * math.tan(decl))))
+    return 37.6 * dr * (ws * math.sin(lat) * math.sin(decl) +
+                         math.cos(lat) * math.cos(decl) * math.sin(ws))
+
+def _max_daylight_hours(doy: int, lat_deg: float = 47.0) -> float:
+    """Astronomical maximum sunshine hours for given day and latitude."""
+    lat  = math.radians(lat_deg)
+    decl = 0.409 * math.sin(2 * math.pi * doy / 365 - 1.39)
+    ws   = math.acos(max(-1.0, min(1.0, -math.tan(lat) * math.tan(decl))))
+    return 24 * ws / math.pi
+
+def shortwave_to_sunshine_seconds(srad_mj: float, doy: int) -> float:
+    """
+    Convert daily shortwave radiation (MJ/m²) to sunshine duration (seconds).
+    Returns 0.0 if inputs are invalid. Clamped to [0, N*3600].
+    """
+    if srad_mj is None or srad_mj <= 0:
+        return 0.0
+    Ra = _extraterrestrial_radiation(doy)
+    N  = _max_daylight_hours(doy)
+    if Ra <= 0:
+        return 0.0
+    n_hours = N * (srad_mj / Ra - 0.25) / 0.50
+    return max(0.0, min(N, n_hours)) * 3600
 
 def load_raw(resort, elevation):
     path = RAW_DIR / f"{resort}_{elevation}_raw.json"
@@ -54,20 +93,23 @@ def extract_daily(raw_json):
             snow = 0.0
             flags.append("snow_inferred")
 
-        # Physical Inference 2: ERA5 now provides sunshine_duration in the primary call.
-        # This inference only fires if the ERA5 fetch failed and synthetic data is in use,
-        # or in the rare case ERA5 returns a null for a specific day.
-        if sun is None and wc is not None:
-            if wc == 0:
-                sun = 36000.0  # ~10 hours pure sun
-            elif wc in [1, 2]:
-                sun = 21600.0  # ~6 hours partial sun
-            elif wc == 3:
-                sun = 7200.0   # ~2 hours overcast peek-a-boo
-            else:
-                # WMO 45-99: fog, drizzle, rain, snow, thunderstorm — zero direct sun
-                sun = 0.0
-            flags.append("sun_inferred")
+        # Sunshine duration: ERA5 archive does not publish sunshine_duration in daily calls.
+        # Primary: derive from shortwave_radiation_sum via Angstrom-Prescott (continuous,
+        #          physically grounded, far better than discrete WMO-code lookup).
+        # Fallback: if shortwave is also missing, use WMO code as last resort.
+        if sun is None:
+            if srad is not None and srad > 0:
+                d_obj_for_doy = datetime.strptime(d, "%Y-%m-%d")
+                doy = d_obj_for_doy.timetuple().tm_yday
+                sun = shortwave_to_sunshine_seconds(srad, doy)
+                flags.append("sun_from_shortwave")
+            elif wc is not None:
+                # Last-resort 4-step WMO ladder
+                if wc == 0:   sun = 36000.0
+                elif wc in [1, 2]: sun = 21600.0
+                elif wc == 3: sun = 7200.0
+                else:         sun = 0.0
+                flags.append("sun_inferred")
 
         if t_max is None: flags.append("no_temp")
         if gusts is None: flags.append("no_wind")

@@ -78,7 +78,11 @@ def main():
         sys.exit(1)
 
     new_baked = last_baked_date()
-    _write_action_output("DASHBOARD_CHANGED", "true")
+    # Only signal a change when we have real baked output.
+    # The git diff in the workflow step is the authoritative empty-commit guard,
+    # but this flag stops downstream steps from running needlessly on stale-cache runs.
+    dashboard_changed = OUT.exists() and new_baked is not None
+    _write_action_output("DASHBOARD_CHANGED", "true" if dashboard_changed else "false")
     _write_action_output("BAKED_THROUGH", new_baked or "unknown")
 
 if __name__ == "__main__":

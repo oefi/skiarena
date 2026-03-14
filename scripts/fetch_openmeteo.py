@@ -123,6 +123,7 @@ def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, eleva
         "daily": ",".join(ERA5_LAND_VARS),
         "timezone": "Europe/Berlin",
         "elevation": elevation_m,
+        "models": "era5_land",   # required: snow_depth exists only in ERA5-Land model
     }
 
     # Call A — ERA5
@@ -138,6 +139,9 @@ def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, eleva
     era5_data["daily"]["snow_depth"] = [
         depth_by_date.get(d) for d in era5_dates
     ]
+    # Also carry over the unit declaration from ERA5-Land so parsers stay consistent
+    if "daily_units" in era5_data and "daily_units" in depth_data:
+        era5_data["daily_units"]["snow_depth"] = depth_data["daily_units"].get("snow_depth", "m")
 
     if name != "probe":
         out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"
