@@ -4,11 +4,13 @@ Step 3 — Compute Ski Quality Metrics
 Reads master_data.json, computes per-record composite ski scores,
 writes enriched_data.json consumed by build_dashboard.py.
 
-Composite Bluebird Score (0.0–1.0) weights:
+Composite Bluebird Score (0.0–1.0):
   40%  Sunshine duration (normalized against resort 6-year peak)
   25%  Summit snow depth  (normalized against resort 6-year max)
   20%  Base temperature   (optimal range -12°C to -2°C)
-  15%  Wind penalty       (gusts above 50 km/h start degrading score)
+  15%  Wind component     (gusts above 50 km/h degrade score)
+  wind_penalty acts as a global multiplier on the whole composite.
+  +≤15% Powder day bonus  (summit snowfall > 10 cm + gusts < 50 km/h)
 """
 
 import json
@@ -107,6 +109,34 @@ def wind_penalty(gust_kmh):
     return 0.3  # full storm, most lifts closed
 
 
+def powder_bonus(snowfall_cm, gust_kmh):
+    """
+    Powder day bonus: up to +0.15 on raw composite when conditions are right.
+    Requires fresh snowfall > 10 cm AND manageable wind (< 50 km/h).
+    Scales linearly: 10 cm → 0.0, 30 cm → 0.15. Penalised by wind above 30 km/h.
+    """
+    if snowfall_cm is None or snowfall_cm < 10:
+        return 0.0
+    snow_factor = min(1.0, (snowfall_cm - 10) / 20)   # 0 at 10cm, 1.0 at 30cm
+    if gust_kmh is None or gust_kmh <= 30:
+        wind_factor = 1.0
+    elif gust_kmh <= 50:
+        wind_factor = 1.0 - (gust_kmh - 30) / 20      # degrades linearly to 0 at 50 km/h
+    else:
+        wind_factor = 0.0                               # too windy to call it powder day
+    return round(0.15 * snow_factor * wind_factor, 4)
+    """Returns a multiplier 0.3–1.0. Gusts above 50 km/h start hurting."""
+    if gust_kmh is None:
+        return 1.0
+    if gust_kmh <= 30:
+        return 1.0
+    if gust_kmh <= 50:
+        return 1.0 - 0.1 * (gust_kmh - 30) / 20   # mild degradation
+    if gust_kmh <= 80:
+        return 0.9 - 0.4 * (gust_kmh - 50) / 30   # lifts start closing
+    return 0.3  # full storm, most lifts closed
+
+
 def compute_score(record, bounds):
     """
     Returns dict: { score: float|None, metrics: { fSun, fDepth, fTemp, windMult } }
@@ -121,10 +151,11 @@ def compute_score(record, bounds):
     depth = s.get("snow_depth")
     t_max = b.get("temperature_2m_max")
     gust  = b.get("wind_gusts_10m_max")
+    fresh = s.get("snowfall_sum")       # summit fresh snow for powder detection
 
     # Require at least temp or depth to compute a score
     if t_max is None and depth is None:
-        return {"score": None, "metrics": {"fSun": 0, "fDepth": 0, "fTemp": 0, "windMult": 1}}
+        return {"score": None, "metrics": {"fSun": 0, "fDepth": 0, "fTemp": 0, "windMult": 1, "powderBonus": 0}}
 
     sun_range   = rb.get("sun",   (0, 1))
     depth_range = rb.get("depth", (0, 1))
@@ -133,18 +164,20 @@ def compute_score(record, bounds):
     f_depth = norm(depth if depth is not None else 0, *depth_range)
     f_temp  = temperature_score(t_max)
     w_mult  = wind_penalty(gust)
+    p_bonus = powder_bonus(fresh, gust)
 
-    # Weighted composite, wind acts as a global multiplier
+    # Weighted composite: wind is a global multiplier; powder is an additive bonus
     raw = (0.40 * f_sun) + (0.25 * f_depth) + (0.20 * f_temp) + (0.15 * w_mult)
-    score = round(max(0.0, min(1.0, raw * w_mult)), 4)
+    score = round(max(0.0, min(1.0, (raw + p_bonus) * w_mult)), 4)
 
     return {
         "score": score,
         "metrics": {
-            "fSun":    round(f_sun, 4),
-            "fDepth":  round(f_depth, 4),
-            "fTemp":   round(f_temp, 4),
-            "windMult": round(w_mult, 4),
+            "fSun":       round(f_sun, 4),
+            "fDepth":     round(f_depth, 4),
+            "fTemp":      round(f_temp, 4),
+            "windMult":   round(w_mult, 4),
+            "powderBonus": round(p_bonus, 4),
         }
     }
 
@@ -175,7 +208,7 @@ def main():
         "_meta": {
             **master["_meta"],
             "scored_records": scored,
-            "score_weights": {"sun": 0.40, "depth": 0.25, "temp": 0.20, "wind_mult": 0.15},
+            "score_weights": {"sun": 0.40, "depth": 0.25, "temp": 0.20, "wind_mult": 0.15, "powder_bonus": "≤0.15 additive"},
         },
         "records": enriched,
     }

@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
 """
 Zwei Länder Skiarena — Open-Meteo Historical Weather Fetcher
-Hardened with exponential backoff and ERA5-Land lag detection.
 
-ERA5-Land note: supplying the `elevation` parameter switches Open-Meteo from the
-standard ERA5 grid (~5-day lag) to ERA5-Land (~60-90 day lag). fetch_one() detects
-400 responses, parses the "Data only available until …" message, and returns the
-real cutoff so the caller can retry with the correct end date.
+Dual-call strategy per elevation:
+  Call A — ERA5 (no elevation param): all weather variables.
+            sunshine_duration, shortwave_radiation_sum, snowfall_sum, temperature,
+            wind, precipitation, weather_code are all correct here.
+  Call B — ERA5-Land (elevation param): snow_depth only.
+            snow_depth exists ONLY in ERA5-Land. The elevation param also enables
+            altitude-corrected temperature but we take that from Call A's lapse-rate
+            adjusted value for consistency.
+  Merge  — inject snow_depth from Call B into Call A's daily dict before saving.
+
+This eliminates the sunshine_duration inference band-aid in clean_normalize
+(ERA5-Land routinely drops it; ERA5 always has it) and gives accurate snowfall
+from ERA5 while keeping altitude-correct snow depth from ERA5-Land.
+
+ERA5-Land note: publishing lag is 5–7 days. The ERA5LagError handler detects the
+400 "Data only available until …" response and retries with the real cutoff,
+caching it for subsequent resort fetches.
 """
 
-import requests, json, time, sys, argparse, subprocess
+import requests, json, time, sys, argparse, subprocess, re
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
@@ -19,25 +31,25 @@ OUTPUT_DIR = Path(__file__).parent.parent / "data" / "raw"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 BASE_URL   = "https://archive-api.open-meteo.com/v1/archive"
 START_DATE = "2019-11-01"
-# ERA5-Land (triggered by the elevation parameter) publishes with a ~5-7 day lag now,
-# but has historically been up to 90 days. Conservative default keeps CI green.
 ERA5_LAG_DAYS = 7
 
-
-DAILY_VARS = [
+# Call A — ERA5 grid (no elevation). All variables except snow_depth.
+ERA5_VARS = [
     "temperature_2m_max",
     "temperature_2m_min",
     "apparent_temperature_min",
     "snowfall_sum",
-    "snow_depth",
     "precipitation_sum",
     "precipitation_hours",
     "sunshine_duration",
     "shortwave_radiation_sum",
-    "wind_speed_10m_max",        # replaces deprecated windspeed_10m_max
+    "wind_speed_10m_max",
     "wind_gusts_10m_max",
-    "weather_code",              # replaces deprecated weathercode
+    "weather_code",
 ]
+
+# Call B — ERA5-Land (elevation param). Only the variable that requires it.
+ERA5_LAND_VARS = ["snow_depth"]
 
 RESORTS = [
     ("nauders",    46.88, 10.50, 1400, 2750),
@@ -47,7 +59,7 @@ RESORTS = [
     ("trafoi",     46.55, 10.50, 1540, 2800)
 ]
 
-# ERA5-Land availability cutoff discovered at runtime (shared across all resort fetches)
+# Shared ERA5-Land cutoff discovered at runtime — avoids one extra round-trip per resort
 _discovered_end_date = None
 
 
@@ -55,81 +67,88 @@ def get_session():
     session = requests.Session()
     retry = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     return session
 
 
 class ERA5LagError(Exception):
-    """Raised when the API reports data is only available up to an earlier date."""
     def __init__(self, available_until: str):
         self.available_until = available_until
         super().__init__(f"ERA5-Land data only available until {available_until}")
 
 
-def fetch_one(session, name, lat, lon, elevation_label, vars_to_use, start_d, end_d, elevation_m=None):
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": start_d,
-        "end_date": end_d,
-        "daily": ",".join(vars_to_use),
-        "timezone": "Europe/Berlin"
-    }
-    if elevation_m is not None:
-        params["elevation"] = elevation_m  # forces lapse-rate interpolation to exact altitude
-
-    response = session.get(BASE_URL, params=params, timeout=15)
-
-    # Parse the body before raising, so we can extract the real cutoff date from 400s
+def _get(session, params):
+    """GET with body-aware error handling. Returns parsed JSON or raises."""
+    resp = session.get(BASE_URL, params=params, timeout=15)
     try:
-        body = response.json()
+        body = resp.json()
     except Exception:
         body = {}
-
-    if response.status_code == 400:
+    if resp.status_code == 400:
         reason = body.get("reason", "")
-        # Open-Meteo 400 body: {"error":true,"reason":"Data only available until 2025-12-15. ..."}
         if "only available until" in reason:
-            # Extract date — format is always YYYY-MM-DD at the start of the clause
-            import re
             m = re.search(r"(\d{4}-\d{2}-\d{2})", reason)
             if m:
                 raise ERA5LagError(m.group(1))
-        response.raise_for_status()  # re-raise for other 400 causes
-
-    response.raise_for_status()
-
-    data = body
-
-    # Also handle the case where the API returns 200 with an error body
-    if data.get("error") and "only available until" in data.get("reason", ""):
-        import re
-        m = re.search(r"(\d{4}-\d{2}-\d{2})", data["reason"])
+        resp.raise_for_status()
+    resp.raise_for_status()
+    # Also catch 200-with-error-body (Open-Meteo sometimes does this)
+    if body.get("error") and "only available until" in body.get("reason", ""):
+        m = re.search(r"(\d{4}-\d{2}-\d{2})", body["reason"])
         if m:
             raise ERA5LagError(m.group(1))
+    # Guard against empty returns (200 but no daily data)
+    n = len(body.get("daily", {}).get("time", []))
+    if n == 0:
+        raise ValueError(f"API returned 200 but zero daily records for params: {params}")
+    return body
+
+
+def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, elevation_m):
+    """
+    Perform Call A (ERA5, no elevation) + Call B (ERA5-Land, elevation for snow_depth),
+    inject snow_depth from B into A's daily dict, save one merged JSON file.
+    Returns number of days fetched.
+    """
+    base_params = {
+        "latitude": lat, "longitude": lon,
+        "start_date": start_d, "end_date": end_d,
+        "daily": ",".join(ERA5_VARS),
+        "timezone": "Europe/Berlin",
+    }
+    depth_params = {
+        "latitude": lat, "longitude": lon,
+        "start_date": start_d, "end_date": end_d,
+        "daily": ",".join(ERA5_LAND_VARS),
+        "timezone": "Europe/Berlin",
+        "elevation": elevation_m,
+    }
+
+    # Call A — ERA5
+    era5_data  = _get(session, base_params)
+
+    # Call B — ERA5-Land (snow_depth). Use same end_date; lag handled by caller.
+    depth_data = _get(session, depth_params)
+
+    # Merge: inject snow_depth array into ERA5 daily dict aligned by date
+    era5_dates  = era5_data["daily"].get("time", [])
+    depth_dates = depth_data["daily"].get("time", [])
+    depth_by_date = dict(zip(depth_dates, depth_data["daily"].get("snow_depth", [])))
+    era5_data["daily"]["snow_depth"] = [
+        depth_by_date.get(d) for d in era5_dates
+    ]
 
     if name != "probe":
         out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"
         with open(out_file, "w") as f:
-            json.dump(data, f)
+            json.dump(era5_data, f)
 
-    return len(data.get("daily", {}).get("time", []))
+    return len(era5_dates)
 
 
 def default_end_date():
     return (date.today() - timedelta(days=ERA5_LAG_DAYS)).strftime("%Y-%m-%d")
-
-
-def probe_variables(session, lat, lon, base_m):
-    try:
-        fetch_one(session, "probe", lat, lon, "test", DAILY_VARS, "2024-01-01", "2024-01-02")
-        return DAILY_VARS
-    except ERA5LagError:
-        return DAILY_VARS  # probe date is historical, lag error shouldn't happen
-    except Exception as e:
-        print(f"Probe failed: {e}")
-        return None
 
 
 def main():
@@ -144,53 +163,49 @@ def main():
         try:
             datetime.strptime(args.end_date, "%Y-%m-%d")
         except ValueError:
-            sys.exit(f"[!] ERROR: Invalid --end-date format '{args.end_date}'. Expected YYYY-MM-DD.")
+            sys.exit(f"[!] Invalid --end-date '{args.end_date}'. Expected YYYY-MM-DD.")
 
-    end_date = args.end_date if args.end_date else default_end_date()
-
+    end_date = args.end_date or default_end_date()
     if end_date < START_DATE:
-        sys.exit(f"[!] ERROR: --end-date ({end_date}) cannot be before START_DATE ({START_DATE}).")
+        sys.exit(f"[!] --end-date ({end_date}) cannot be before START_DATE ({START_DATE}).")
 
-    vars_to_use = DAILY_VARS
     session = get_session()
 
     if args.probe:
-        name, lat, lon, base_m, _ = RESORTS[0]
-        vars_to_use = probe_variables(session, lat, lon, base_m)
-        if not vars_to_use: sys.exit("No variables worked.")
+        try:
+            fetch_merged(session, "probe", RESORTS[0][1], RESORTS[0][2],
+                         "test", "2024-01-01", "2024-01-02", RESORTS[0][3])
+            print("Probe OK — all variables accessible.")
+        except Exception as e:
+            sys.exit(f"Probe failed: {e}")
+        return
 
     try:
         for name, lat, lon, base_m, summit_m in RESORTS:
             print(f"\n[{name.upper()}]")
-
-            # Use the already-discovered cutoff for subsequent resorts (saves one round-trip per resort)
-            effective_end = _discovered_end_date if _discovered_end_date else end_date
-
-            for elev_label, elev_m, elev_desc in [("base", base_m, base_m), ("summit", summit_m, summit_m)]:
+            for elev_label, elev_m in [("base", base_m), ("summit", summit_m)]:
+                effective_end = _discovered_end_date or end_date
                 try:
-                    n = fetch_one(session, name, lat, lon, elev_label, vars_to_use,
-                                  START_DATE, effective_end, elevation_m=elev_m)
-                    print(f"  ✓ {elev_label.capitalize():<7} ({elev_desc}m): {n} days")
+                    n = fetch_merged(session, name, lat, lon, elev_label,
+                                     START_DATE, effective_end, elev_m)
+                    print(f"  ✓ {elev_label.capitalize():<7} ({elev_m}m): {n} days")
                 except ERA5LagError as lag:
-                    # API told us the real cutoff — record it and retry once
-                    print(f"  [!] ERA5-Land lag detected: data only available until {lag.available_until}. Retrying…")
+                    print(f"  [!] ERA5-Land lag: data only available until {lag.available_until}. Retrying…")
                     _discovered_end_date = lag.available_until
-                    effective_end = lag.available_until
-                    n = fetch_one(session, name, lat, lon, elev_label, vars_to_use,
-                                  START_DATE, effective_end, elevation_m=elev_m)
-                    print(f"  ✓ {elev_label.capitalize():<7} ({elev_desc}m): {n} days  [capped at {effective_end}]")
-
+                    n = fetch_merged(session, name, lat, lon, elev_label,
+                                     START_DATE, lag.available_until, elev_m)
+                    print(f"  ✓ {elev_label.capitalize():<7} ({elev_m}m): {n} days  [capped at {lag.available_until}]")
             time.sleep(0.6)
 
     except Exception as e:
-        print(f"\n[!] CRITICAL: Open-Meteo fetch failed. Error: {e}")
-        print("    Initiating Hard Fallback: Generating Synthetic Data to keep pipeline green...")
+        print(f"\n[!] CRITICAL: Open-Meteo fetch failed: {e}")
+        print("    Initiating Hard Fallback: Generating Synthetic Data…")
         synth_script = Path(__file__).parent / "generate_synthetic.py"
         result = subprocess.run([sys.executable, str(synth_script)])
         if result.returncode != 0:
-            print("    [!] Fallback failed: generate_synthetic.py exited non-zero.")
             sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+

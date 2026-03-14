@@ -54,7 +54,9 @@ def extract_daily(raw_json):
             snow = 0.0
             flags.append("snow_inferred")
 
-        # Physical Inference 2: ERA5 drops sunshine duration randomly. Infer from WMO codes.
+        # Physical Inference 2: ERA5 now provides sunshine_duration in the primary call.
+        # This inference only fires if the ERA5 fetch failed and synthetic data is in use,
+        # or in the rare case ERA5 returns a null for a specific day.
         if sun is None and wc is not None:
             if wc == 0:
                 sun = 36000.0  # ~10 hours pure sun
@@ -91,10 +93,18 @@ def extract_daily(raw_json):
 
 def main():
     all_records = []
+    is_synthetic = False
+
     for resort in RESORTS:
         base_raw = load_raw(resort, "base")
         summ_raw = load_raw(resort, "summit")
         if not base_raw or not summ_raw: continue
+
+        # Detect if any raw file is synthetic fallback data
+        for raw in (base_raw, summ_raw):
+            src = raw.get("_meta", {}).get("source", "")
+            if "SYNTHETIC" in str(src).upper():
+                is_synthetic = True
 
         base_data = {r["date"]: r for r in extract_daily(base_raw)}
         summ_data = {r["date"]: r for r in extract_daily(summ_raw)}
@@ -111,7 +121,11 @@ def main():
     all_records.sort(key=lambda x: (x["date"], x["resort"]))
 
     master = {
-        "_meta": {"resorts": RESORTS, "total_records": len(all_records)},
+        "_meta": {
+            "resorts": RESORTS,
+            "total_records": len(all_records),
+            "source": "SYNTHETIC — replace with real Open-Meteo ERA5-Land data" if is_synthetic else "Open-Meteo ERA5 + ERA5-Land",
+        },
         "records": all_records,
     }
     with open(OUT_DIR / "master_data.json", "w") as f:
