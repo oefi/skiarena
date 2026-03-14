@@ -60,6 +60,8 @@ def main():
     fetch_cmd = [sys.executable, str(SCRIPTS / "fetch_openmeteo.py")]
     if args.end_date:
         fetch_cmd.extend(["--end-date", args.end_date])
+    if args.force:
+        fetch_cmd.append("--force")
         
     has_cache = DATA.exists()
     fetch_success = run(fetch_cmd, "Fetch Open-Meteo", allow_fail=has_cache)
