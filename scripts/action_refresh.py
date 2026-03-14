@@ -18,13 +18,17 @@ OUT     = BASE / "nauders_dashboard.html"
 def run(cmd, desc, allow_fail=False):
     print(f"\n▶ {desc}")
     print(f"  CMD: {' '.join(cmd)}")
+    sys.stdout.flush()  # force flush before subprocess captures stdout
     result = subprocess.run(cmd)
+    sys.stdout.flush()
     if result.returncode != 0:
         if allow_fail:
             print(f"  ⚠ {desc} failed, but continuing gracefully.")
+            sys.stdout.flush()
             return False
         else:
             print(f"  ✗ {desc} failed (exit {result.returncode}). Aborting.")
+            sys.stdout.flush()
             sys.exit(result.returncode)
     return True
 
@@ -33,8 +37,10 @@ def last_baked_date():
     try:
         with open(DATA, "r") as f:
             d = json.load(f)
-            return d["records"][-1]["date"]
-    except:
+            records = d.get("records", [])
+            # records sorted by (date, resort) — last entry has the latest date
+            return records[-1]["date"] if records else None
+    except Exception:
         return None
 
 def _write_action_output(key, value):

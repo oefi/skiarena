@@ -25,7 +25,9 @@ HOURLY_VARS = [
     "soil_temperature_0cm",
 ]
 
-# Daily aggregates — used directly in tactical board cards, avoids JS re-derivation
+# Daily aggregates — used directly in tactical board cards, avoids JS re-derivation.
+# NOTE: freezing_level_height has NO daily aggregate in the forecast API.
+# The JS derives per-day freeze-level stats from hourly.freezing_level_height.
 DAILY_VARS = [
     "temperature_2m_max",
     "temperature_2m_min",
@@ -35,8 +37,6 @@ DAILY_VARS = [
     "sunshine_duration",
     "wind_gusts_10m_max",
     "wind_speed_10m_max",
-    "freezing_level_height_max",
-    "freezing_level_height_min",
     "weather_code",
     "precipitation_hours",
 ]

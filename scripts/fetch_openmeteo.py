@@ -3,14 +3,15 @@
 Zwei Länder Skiarena — Open-Meteo Historical Weather Fetcher
 
 Dual-call strategy per elevation:
-  Call A — ERA5 (no elevation param): all weather variables.
+  Call A — ERA5 best-match (no elevation param): all daily weather variables.
             sunshine_duration, shortwave_radiation_sum, snowfall_sum, temperature,
-            wind, precipitation, weather_code are all correct here.
-  Call B — ERA5-Land (elevation param): snow_depth only.
-            snow_depth exists ONLY in ERA5-Land. The elevation param also enables
-            altitude-corrected temperature but we take that from Call A's lapse-rate
-            adjusted value for consistency.
-  Merge  — inject snow_depth from Call B into Call A's daily dict before saving.
+            wind, precipitation, weather_code are all available as daily aggregates.
+  Call B — ERA5-Land (elevation + models=era5_land): snow_depth HOURLY.
+            snow_depth exists ONLY in ERA5-Land. It has NO daily aggregate in the
+            archive API — we request hourly and compute the daily mean ourselves.
+            The elevation param enables altitude-corrected values.
+  Merge  — aggregate hourly snow_depth to daily mean, inject into Call A's daily
+            dict under the same key before saving.
 
 This eliminates the sunshine_duration inference band-aid in clean_normalize
 (ERA5-Land routinely drops it; ERA5 always has it) and gives accurate snowfall
@@ -22,6 +23,7 @@ caching it for subsequent resort fetches.
 """
 
 import requests, json, time, sys, argparse, subprocess, re
+from collections import defaultdict
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
@@ -47,9 +49,6 @@ ERA5_VARS = [
     "wind_gusts_10m_max",
     "weather_code",
 ]
-
-# Call B — ERA5-Land (elevation param). Only the variable that requires it.
-ERA5_LAND_VARS = ["snow_depth"]
 
 RESORTS = [
     ("nauders",    46.88, 10.50, 1400, 2750),
@@ -98,10 +97,12 @@ def _get(session, params):
         m = re.search(r"(\d{4}-\d{2}-\d{2})", body["reason"])
         if m:
             raise ERA5LagError(m.group(1))
-    # Guard against empty returns (200 but no daily data)
-    n = len(body.get("daily", {}).get("time", []))
-    if n == 0:
-        raise ValueError(f"API returned 200 but zero daily records for params: {params}")
+    # Guard against empty returns (200 but no data).
+    # snow_depth Call B now returns hourly, so check both keys.
+    n_daily  = len(body.get("daily",  {}).get("time", []))
+    n_hourly = len(body.get("hourly", {}).get("time", []))
+    if n_daily == 0 and n_hourly == 0:
+        raise ValueError(f"API returned 200 but zero records for params: {params}")
     return body
 
 
@@ -120,10 +121,10 @@ def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, eleva
     depth_params = {
         "latitude": lat, "longitude": lon,
         "start_date": start_d, "end_date": end_d,
-        "daily": ",".join(ERA5_LAND_VARS),
+        "hourly": "snow_depth",      # snow_depth is HOURLY-ONLY in the archive API
         "timezone": "Europe/Berlin",
         "elevation": elevation_m,
-        "models": "era5_land",   # required: snow_depth exists only in ERA5-Land model
+        "models": "era5_land",       # snow_depth only exists in ERA5-Land
     }
 
     # Call A — ERA5
@@ -132,22 +133,33 @@ def fetch_merged(session, name, lat, lon, elevation_label, start_d, end_d, eleva
     # Call B — ERA5-Land (snow_depth). Use same end_date; lag handled by caller.
     depth_data = _get(session, depth_params)
 
-    # Merge: inject snow_depth array into ERA5 daily dict aligned by date
-    era5_dates  = era5_data["daily"].get("time", [])
-    depth_dates = depth_data["daily"].get("time", [])
+    # Merge: aggregate hourly snow_depth → daily mean, inject into ERA5 daily dict.
+    # ERA5-Land returns hourly data; we compute the daily mean of non-null values.
+    # This gives a representative "average snowpack depth" for the day.
+    era5_dates   = era5_data["daily"].get("time", [])
+    hourly_times = depth_data["hourly"].get("time", [])
+    hourly_depth = depth_data["hourly"].get("snow_depth", [])
 
-    if len(era5_dates) != len(depth_dates):
-        print(f"  [!] WARNING: ERA5 ({len(era5_dates)} days) and ERA5-Land ({len(depth_dates)} days) "
-              f"date ranges differ for {name}/{elevation_label}. "
-              f"snow_depth will be None for dates outside ERA5-Land coverage.")
+    daily_depth_raw: dict = defaultdict(list)
+    for ts, v in zip(hourly_times, hourly_depth):
+        if v is not None:
+            daily_depth_raw[ts[:10]].append(v)
 
-    depth_by_date = dict(zip(depth_dates, depth_data["daily"].get("snow_depth", [])))
+    depth_by_date = {
+        d: sum(vs) / len(vs) for d, vs in daily_depth_raw.items() if vs
+    }
+
+    if len(era5_dates) != len(depth_by_date):
+        print(f"  [!] WARNING: ERA5 ({len(era5_dates)} days) and ERA5-Land "
+              f"({len(depth_by_date)} days aggregated) date ranges differ for "
+              f"{name}/{elevation_label}. snow_depth will be None for gaps.")
+
     era5_data["daily"]["snow_depth"] = [
         depth_by_date.get(d) for d in era5_dates
     ]
-    # Also carry over the unit declaration from ERA5-Land so parsers stay consistent
-    if "daily_units" in era5_data and "daily_units" in depth_data:
-        era5_data["daily_units"]["snow_depth"] = depth_data["daily_units"].get("snow_depth", "m")
+    # Carry over unit declaration from ERA5-Land hourly response
+    if "daily_units" in era5_data and "hourly_units" in depth_data:
+        era5_data["daily_units"]["snow_depth"] = depth_data["hourly_units"].get("snow_depth", "m")
 
     if name != "probe":
         out_file = OUTPUT_DIR / f"{name}_{elevation_label}_raw.json"

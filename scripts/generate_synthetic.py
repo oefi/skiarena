@@ -264,8 +264,11 @@ def generate_resort_elevation(resort_name, elevation_label):
             precip_h = round(min(18.0, 1.0 + intensity * 0.4 + random.gauss(0, 0.5)), 1)
             precip_h = max(0.0, precip_h)
 
-        # Shortwave radiation — proxy from sunshine hours (MJ/m²/day; ~0.75 MJ per sun-hour at alpine elev)
-        srad = round(max(0, sun_hours * 0.75 + random.gauss(0, 0.5)), 2)
+        # Shortwave radiation — proxy from sunshine hours (MJ/m²/day).
+        # ERA5 alpine range ≈ 1.1–1.9 MJ/hr per sun-hour depending on season;
+        # 1.5 MJ/hr is a reasonable midpoint. Only matters if sunshine_duration
+        # is somehow null (never the case for synthetic data, but stored for completeness).
+        srad = round(max(0, sun_hours * 1.5 + random.gauss(0, 0.5)), 2)
 
         # WMO code
         wcode = weathercode(snow_today_cm, rain_today_mm, sun_hours, wind_kmh)
