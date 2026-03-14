@@ -133,7 +133,7 @@ def compute_score(record, bounds):
     w_mult  = wind_penalty(gust)
 
     # Weighted composite, wind acts as a global multiplier
-    raw = (0.40 * f_sun) + (0.25 * f_depth) + (0.20 * f_temp) + (0.15 * (1.0 - (1.0 - w_mult)))
+    raw = (0.40 * f_sun) + (0.25 * f_depth) + (0.20 * f_temp) + (0.15 * w_mult)
     score = round(max(0.0, min(1.0, raw * w_mult)), 4)
 
     return {

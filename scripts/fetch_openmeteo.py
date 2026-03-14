@@ -4,7 +4,7 @@ Zwei Länder Skiarena — Open-Meteo Historical Weather Fetcher
 Hardened with exponential backoff and correct daily=var1&daily=var2 URI formatting.
 """
 
-import requests, json, time, sys, argparse
+import requests, json, time, sys, argparse, subprocess
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
