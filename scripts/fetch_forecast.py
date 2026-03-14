@@ -23,6 +23,8 @@ HOURLY_VARS = [
     "cloud_cover",
     "sunshine_duration",
     "soil_temperature_0cm",
+    "snow_depth",               # needed for forecast Bluebird Score (25% weight)
+    "precipitation_probability", # essential for trip planning confidence
 ]
 
 # Daily aggregates — used directly in tactical board cards, avoids JS re-derivation.
@@ -39,6 +41,7 @@ DAILY_VARS = [
     "wind_speed_10m_max",
     "weather_code",
     "precipitation_hours",
+    "uv_index_max",             # altitude UV exposure — critical at 2750-3250m summit
 ]
 
 FORECAST_DAYS = 16
