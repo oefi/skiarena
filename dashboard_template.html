@@ -642,36 +642,66 @@
         const sn = hourly.snowfall ? hourly.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         const rn = hourly.rain ? hourly.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         
-        // Pluck the raw precip mm and soil temp (if the backend was updated to fetch them)
         const precipArr = hourly.precipitation ? hourly.precipitation.slice(start, end).filter(v => v !== null) : [];
         const totalPrecip = precipArr.length ? precipArr.reduce((a,b)=>a+b, 0) : rn + (sn * 0.1); 
         
         const soilArr = hourly.soil_temperature_0cm ? hourly.soil_temperature_0cm.slice(start, end).filter(v => v !== null) : [];
         const soilTemp = soilArr.length ? soilArr.reduce((a,b)=>a+b, 0)/soilArr.length : null;
 
-        const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end).filter(v => v !== null) : [];
-        const wcArr = hourly.weathercode ? hourly.weathercode.slice(start, end).filter(v => v !== null) : [];
+        // DAYLIGHT ISOLATION: Only sample cloud cover between 08:00 and 16:00
+        const ccArr = hourly.cloudcover ? hourly.cloudcover.slice(start, end) : [];
         let cc = 0;
-        if (ccArr.length) {
-            cc = ccArr.reduce((a,b)=>a+b,0)/ccArr.length;
-        } else if (wcArr.length) {
-            cc = wcArr.reduce((a, c) => {
-                if (c === 0) return a + 5;
-                if (c === 1) return a + 20;
-                if (c === 2) return a + 50;
-                if (c === 3) return a + 90;
-                return a + 100;
-            }, 0) / wcArr.length;
+        const dayIndices = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+        let dayCcSum = 0, validCcCount = 0;
+        
+        dayIndices.forEach(idx => {
+            if (ccArr[idx] !== undefined && ccArr[idx] !== null) {
+                dayCcSum += ccArr[idx];
+                validCcCount++;
+            }
+        });
+        
+        if (validCcCount > 0) {
+            cc = dayCcSum / validCcCount;
+        } else {
+            const wcArr = hourly.weathercode ? hourly.weathercode.slice(start, end).filter(v => v !== null) : [];
+            if (wcArr.length) {
+                cc = wcArr.reduce((a, c) => {
+                    if (c === 0) return a + 5;
+                    if (c === 1) return a + 20;
+                    if (c === 2) return a + 50;
+                    if (c === 3) return a + 90;
+                    return a + 100;
+                }, 0) / wcArr.length;
+            }
         }
         
-        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.10; 
-        
-        const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
-        const gust = gustArr.length ? Math.max(...gustArr) : 0;
-
         let exactDate;
         if (hourly.time && hourly.time[start]) exactDate = new Date(hourly.time[start]);
         else exactDate = new Date(localNow.getTime() + i*86400000);
+
+        // SUNLIGHT ENGINE
+        let sun = 0;
+        const sunArr = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).filter(v => v !== null) : [];
+        const totalSunSecs = sunArr.reduce((a,b)=>a+b, 0);
+        
+        // If the API drops 0s for the extended forecast, fallback to our daytime cc calculation
+        if (sunArr.length > 0 && totalSunSecs > 0) {
+            sun = totalSunSecs / 3600;
+        } else {
+            const m = exactDate.getMonth(); 
+            let maxDaylight = 10;
+            if (m === 11 || m === 0) maxDaylight = 8.5;       // Dec, Jan
+            else if (m === 1 || m === 10) maxDaylight = 10.0; // Feb, Nov
+            else if (m === 2 || m === 9) maxDaylight = 11.5;  // Mar, Oct
+            else if (m === 3 || m === 8) maxDaylight = 13.5;  // Apr, Sep
+            else maxDaylight = 15.0;                          // Summer
+            
+            sun = ((100 - cc) / 100) * maxDaylight;
+        }
+        
+        const gustArr = hourly.windgusts_10m ? hourly.windgusts_10m.slice(start, end).filter(v => v !== null) : [];
+        const gust = gustArr.length ? Math.max(...gustArr) : 0;
 
         const dateStr = exactDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
         
