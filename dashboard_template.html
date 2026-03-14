@@ -657,8 +657,28 @@
                 return a + 100;
             }, 0) / wcArr.length;
         }
-        
-        const sun = hourly.sunshine_duration ? hourly.sunshine_duration.slice(start, end).reduce((a,b)=>a+(b||0),0)/3600 : (100-cc)*0.10; 
+
+        // Astronomical max daylight for 47°N (Alps) on this forecast day.
+        // Used both to cap real values (API anomalies) and to scale the fallback realistically.
+        let exactDateForSun;
+        if (hourly.time && hourly.time[start]) exactDateForSun = new Date(hourly.time[start]);
+        else exactDateForSun = new Date(localNow.getTime() + i*86400000);
+        const doy = Math.floor((exactDateForSun - new Date(exactDateForSun.getFullYear(), 0, 0)) / 86400000);
+        const decl = -23.45 * Math.cos((360/365 * (doy + 10)) * Math.PI/180) * Math.PI/180;
+        const lat = 47 * Math.PI/180;
+        const cosHA = -Math.tan(lat) * Math.tan(decl);
+        const astroMaxSun = cosHA >= 1 ? 0 : cosHA <= -1 ? 24 : (2 * Math.acos(cosHA) * 180/Math.PI) / 15;
+
+        let sun;
+        if (hourly.sunshine_duration) {
+            // Real model data: sum seconds → hours, clamp to astronomical maximum
+            const rawSunH = hourly.sunshine_duration.slice(start, end)
+                .reduce((a, b) => a + (b !== null ? b : 0), 0) / 3600;
+            sun = Math.min(rawSunH, astroMaxSun);
+        } else {
+            // Fallback: scale by cloud cover, cap to today's actual astronomical max
+            sun = (1 - cc/100) * Math.min(astroMaxSun, 11);
+        }
         
         const gustArr = hourly.wind_gusts_10m ? hourly.wind_gusts_10m.slice(start, end).filter(v => v !== null) : [];
         const gust = gustArr.length ? Math.max(...gustArr) : 0;
@@ -678,7 +698,8 @@
             soil: soilTemp,
             gust: gust, 
             cloud: cc, 
-            sun: sun, 
+            sun: sun,
+            astroMax: astroMaxSun,
             label: dateStr 
         });
       }
@@ -716,7 +737,7 @@
       const maxPrecip = Math.max(5, ...daily.map(d => d.precip));
       const mapYPrecip = val => zeroY - (val / maxPrecip) * (zeroY - yP1) * 0.85;
 
-      const maxSun = 12; 
+      const maxSun = Math.ceil(Math.max(12, ...daily.map(d => d.astroMax || 12)));
       const mapYSun = val => yP2 + hP2 - (Math.min(val, maxSun) / maxSun) * hP2;
 
       const maxGust = Math.max(60, ...daily.map(d=>d.gust));
@@ -760,8 +781,9 @@
 
       ctxFc.textAlign = 'right';
       ctxFc.fillStyle = getStyleVar('--text-muted');
-      for(let s=0; s<=maxSun; s+=6) {
-        if(s===0) continue; const y = mapYSun(s);
+      const sunStep = maxSun <= 12 ? 6 : maxSun <= 16 ? 4 : 6;
+      for(let s=sunStep; s<=maxSun; s+=sunStep) {
+        const y = mapYSun(s);
         ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX - labelOffset, y);
       }
       ctxFc.textAlign = 'left';
