@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 Step 2 — Clean, Normalize & QC Pipeline
-Enforces the Strict Winter Mandate (Nov 1 - May 1). Drops summer slop.
-Merges base and summit data while rigorously checking for missing API variables.
-Infers missing sunshine data via WMO weather codes.
+Enforces the Strict Winter Mandate (Nov 1 - May 1).
+Infers missing sunshine data safely without destroying real storm days.
 """
 
 import json
@@ -27,13 +26,11 @@ def extract_daily(raw_json):
     extracted = []
 
     for i, d in enumerate(daily.get("time", [])):
-        # STRICT WINTER MANDATE: Keep only Nov 1 through May 1. Purge the rest.
         d_obj = datetime.strptime(d, "%Y-%m-%d")
         m = d_obj.month
         if m not in [11, 12, 1, 2, 3, 4] and not (m == 5 and d_obj.day == 1):
             continue
 
-        # Bomb-proof array indexing
         def safe_val(key):
             arr = daily.get(key)
             return arr[i] if arr and i < len(arr) else None
@@ -49,17 +46,13 @@ def extract_daily(raw_json):
 
         flags = []
         
-        # Physical Inference 1: 0 precip means mathematically 0 snow
         if precip == 0.0 and snow is None:
             snow = 0.0
             flags.append("snow_inferred")
 
-        # Physical Inference 2: Cure the "All Red Matrix"
-        # If sun is missing OR exactly 0.0, we infer it from raw solar radiation.
-        if not sun:
-            if sw and sw > 2.0:
-                # 1 MJ/m2 is roughly proportional to solar intensity.
-                # Winter clear day = ~12-15 MJ/m2. Overcast = ~2-4 MJ/m2.
+        # Crucial Fix: Only infer if sun is literally missing (None). Allow 0.0 to stay 0.0!
+        if sun is None:
+            if sw is not None and sw > 2.0:
                 est_hours = (sw - 2.5) * 0.8
                 sun = max(0.0, min(est_hours, 12.0)) * 3600.0
                 flags.append("sun_inferred_from_radiation")
@@ -113,11 +106,7 @@ def main():
             })
 
     all_records.sort(key=lambda x: (x["date"], x["resort"]))
-
-    master = {
-        "_meta": {"resorts": RESORTS, "total_records": len(all_records)},
-        "records": all_records,
-    }
+    master = {"_meta": {"resorts": RESORTS, "total_records": len(all_records)}, "records": all_records}
     with open(OUT_DIR / "master_data.json", "w") as f:
         json.dump(master, f, separators=(",", ":"))
 
