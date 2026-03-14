@@ -125,16 +125,6 @@ def powder_bonus(snowfall_cm, gust_kmh):
     else:
         wind_factor = 0.0                               # too windy to call it powder day
     return round(0.15 * snow_factor * wind_factor, 4)
-    """Returns a multiplier 0.3–1.0. Gusts above 50 km/h start hurting."""
-    if gust_kmh is None:
-        return 1.0
-    if gust_kmh <= 30:
-        return 1.0
-    if gust_kmh <= 50:
-        return 1.0 - 0.1 * (gust_kmh - 30) / 20   # mild degradation
-    if gust_kmh <= 80:
-        return 0.9 - 0.4 * (gust_kmh - 50) / 30   # lifts start closing
-    return 0.3  # full storm, most lifts closed
 
 
 def compute_score(record, bounds):
