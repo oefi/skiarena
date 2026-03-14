@@ -13,19 +13,11 @@ OUT_FILE = Path(__file__).parent.parent / "data" / "processed" / "forecast_data.
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
-# Sunshine duration injected into the explicit request payload
 HOURLY_VARS = [
-    "temperature_2m", 
-    "apparent_temperature", 
-    "precipitation", 
-    "rain", 
-    "snowfall", 
-    "weathercode", 
-    "windspeed_10m", 
-    "windgusts_10m", 
-    "visibility", 
-    "freezinglevel_height",
-    "sunshine_duration"
+    "temperature_2m", "apparent_temperature", "precipitation", "rain", 
+    "snowfall", "weathercode", "windspeed_10m", "windgusts_10m", 
+    "visibility", "freezinglevel_height", "soil_temperature_0cm",
+    "soil_temperature_6cm"
 ]
 FORECAST_DAYS = 16
 
