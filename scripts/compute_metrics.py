@@ -51,11 +51,6 @@ def compute_resort_bounds(records):
 
     normalized = {}
     for resort, bd in bounds.items():
-        def safe_range(vals):
-            if not vals:
-                return (0.0, 1.0)
-            return (min(vals), max(vals))
-
         normalized[resort] = {
             "sun":   safe_range(bd["sun_vals"]),
             "depth": safe_range(bd["depth_vals"]),
@@ -70,6 +65,13 @@ def norm(val, lo, hi):
     if hi <= lo:
         return 0.0
     return max(0.0, min(1.0, (val - lo) / (hi - lo)))
+
+
+def safe_range(vals):
+    """Return (min, max) tuple; falls back to (0, 1) if vals is empty."""
+    if not vals:
+        return (0.0, 1.0)
+    return (min(vals), max(vals))
 
 
 def temperature_score(t_max):

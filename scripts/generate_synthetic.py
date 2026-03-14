@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Synthetic data generator — produces realistic ERA5-style daily weather data
-for the Zwei Länder Skiarena, Jan–Apr 2020–2026.
+for the Zwei Länder Skiarena, Nov–Apr seasons 2019/20 through 2025/26.
 
 Grounded in published climatological norms for each resort.
 Replace with real Open-Meteo output once you run fetch_openmeteo.py.
@@ -12,7 +12,6 @@ Output: ../data/raw/{resort}_{base|summit}_raw.json (10 files, same schema as re
 import json
 import random
 import math
-import os
 from pathlib import Path
 from datetime import date, timedelta
 
@@ -23,11 +22,11 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Date range ────────────────────────────────────────────────────────────────
 
 def ski_dates():
-    """All Jan–Apr dates from 2020 to 2026 inclusive."""
+    """All Nov 1 – Apr 30 dates for seasons 2019/20 through 2025/26 inclusive."""
     dates = []
-    for year in range(2020, 2027):
-        d = date(year, 1, 1)
-        end = date(year, 4, 30)
+    for start_year in range(2019, 2026):  # season start years
+        d = date(start_year, 11, 1)
+        end = date(start_year + 1, 4, 30)
         while d <= end:
             dates.append(d)
             d += timedelta(days=1)
@@ -52,48 +51,59 @@ PROFILES = {
     "nauders": {
         # North-facing, high altitude, cold & powder-preserving
         # Base: 1400m  Summit: 2750m
-        1: (-5.5, 8, -14.0, 7, 80,  160, 4.5, 28, 0.28, 14, 0.02),
-        2: (-4.5, 9, -13.0, 7, 100, 185, 5.5, 25, 0.24, 12, 0.03),
-        3: (-1.5, 10, -10.0, 8, 90,  170, 6.5, 27, 0.22, 10, 0.06),
-        4: ( 3.5, 11,  -5.0, 9, 45,  110, 7.0, 24, 0.18,  8, 0.14),
+        11: (-3.0, 8,  -11.0, 7,  30,  80, 3.5, 26, 0.30, 12, 0.01),
+        12: (-5.0, 8,  -13.5, 7,  55, 130, 3.5, 27, 0.29, 13, 0.01),
+        1:  (-5.5, 8,  -14.0, 7,  80, 160, 4.5, 28, 0.28, 14, 0.02),
+        2:  (-4.5, 9,  -13.0, 7, 100, 185, 5.5, 25, 0.24, 12, 0.03),
+        3:  (-1.5, 10, -10.0, 8,  90, 170, 6.5, 27, 0.22, 10, 0.06),
+        4:  ( 3.5, 11,  -5.0, 9,  45, 110, 7.0, 24, 0.18,  8, 0.14),
     },
     "schoeneben": {
         # South-West facing, sun-drenched, warmer base, Lake Resia views
         # Base: 1460m  Summit: 2390m
-        1: (-4.0, 9,  -11.5, 7, 70,  130, 5.5, 22, 0.24, 12, 0.04),
-        2: (-2.5, 10, -10.0, 7, 85,  155, 6.5, 20, 0.20, 10, 0.06),
-        3: ( 1.0, 11,  -6.5, 8, 70,  135, 7.5, 22, 0.18,  9, 0.10),
-        4: ( 5.5, 12,  -1.5, 9, 30,   80, 8.0, 20, 0.14,  7, 0.20),
+        11: (-1.5, 9,   -9.0, 7,  20,  55, 4.5, 21, 0.26, 10, 0.02),
+        12: (-3.5, 9,  -11.0, 7,  45, 105, 4.0, 22, 0.25, 11, 0.02),
+        1:  (-4.0, 9,  -11.5, 7,  70, 130, 5.5, 22, 0.24, 12, 0.04),
+        2:  (-2.5, 10, -10.0, 7,  85, 155, 6.5, 20, 0.20, 10, 0.06),
+        3:  ( 1.0, 11,  -6.5, 8,  70, 135, 7.5, 22, 0.18,  9, 0.10),
+        4:  ( 5.5, 12,  -1.5, 9,  30,  80, 8.0, 20, 0.14,  7, 0.20),
     },
     "watles": {
         # South-facing, consistently sunniest resort in South Tyrol
         # Base: 1500m  Summit: 2550m
-        1: (-3.5, 9,  -11.0, 7, 65,  120, 6.0, 20, 0.22, 11, 0.04),
-        2: (-1.5, 10,  -9.0, 7, 75,  140, 7.0, 18, 0.18,  9, 0.07),
-        3: ( 2.0, 11,  -5.5, 8, 60,  115, 8.0, 19, 0.16,  8, 0.12),
-        4: ( 6.5, 12,  -0.5, 9, 22,   65, 8.5, 17, 0.12,  6, 0.24),
+        11: (-1.0, 9,   -8.5, 7,  18,  45, 5.0, 19, 0.23,  9, 0.02),
+        12: (-3.0, 9,  -10.5, 7,  40,  95, 4.5, 20, 0.23, 10, 0.02),
+        1:  (-3.5, 9,  -11.0, 7,  65, 120, 6.0, 20, 0.22, 11, 0.04),
+        2:  (-1.5, 10,  -9.0, 7,  75, 140, 7.0, 18, 0.18,  9, 0.07),
+        3:  ( 2.0, 11,  -5.5, 8,  60, 115, 8.0, 19, 0.16,  8, 0.12),
+        4:  ( 6.5, 12,  -0.5, 9,  22,  65, 8.5, 17, 0.12,  6, 0.24),
     },
     "sulden": {
         # North-facing, Ortler glacier shadow, highest resort, coldest & deepest snow
         # Base: 1900m  Summit: 3250m
-        1: (-7.5, 8,  -17.0, 8, 110, 220, 4.0, 32, 0.30, 18, 0.01),
-        2: (-6.5, 9,  -16.0, 8, 130, 255, 5.0, 29, 0.26, 15, 0.02),
-        3: (-3.5, 10, -13.0, 9, 120, 235, 6.0, 31, 0.24, 13, 0.04),
-        4: ( 1.0, 11,  -7.5, 9,  75, 165, 6.5, 28, 0.20, 10, 0.10),
+        11: (-5.0, 8,  -14.5, 8,  35,  90, 3.0, 30, 0.32, 14, 0.01),
+        12: (-7.0, 8,  -16.5, 8,  80, 175, 3.5, 31, 0.31, 16, 0.01),
+        1:  (-7.5, 8,  -17.0, 8, 110, 220, 4.0, 32, 0.30, 18, 0.01),
+        2:  (-6.5, 9,  -16.0, 8, 130, 255, 5.0, 29, 0.26, 15, 0.02),
+        3:  (-3.5, 10, -13.0, 9, 120, 235, 6.0, 31, 0.24, 13, 0.04),
+        4:  ( 1.0, 11,  -7.5, 9,  75, 165, 6.5, 28, 0.20, 10, 0.10),
     },
     "trafoi": {
         # NE facing, Stelvio Pass shadow zone, windiest of the five
         # Base: 1540m  Summit: 2800m
-        1: (-5.5, 9,  -14.5, 8, 85,  165, 4.0, 42, 0.28, 15, 0.02),
-        2: (-4.5, 9,  -13.5, 8, 100, 188, 4.8, 39, 0.24, 13, 0.03),
-        3: (-1.5, 10, -10.5, 9, 90,  170, 5.5, 44, 0.22, 11, 0.06),
-        4: ( 3.0, 11,  -5.5, 9, 48,  115, 6.0, 40, 0.18,  8, 0.14),
+        11: (-3.0, 9,  -12.0, 8,  25,  70, 3.0, 40, 0.30, 12, 0.01),
+        12: (-5.0, 9,  -14.0, 8,  65, 140, 3.5, 41, 0.29, 14, 0.01),
+        1:  (-5.5, 9,  -14.5, 8,  85, 165, 4.0, 42, 0.28, 15, 0.02),
+        2:  (-4.5, 9,  -13.5, 8, 100, 188, 4.8, 39, 0.24, 13, 0.03),
+        3:  (-1.5, 10, -10.5, 9,  90, 170, 5.5, 44, 0.22, 11, 0.06),
+        4:  ( 3.0, 11,  -5.5, 9,  48, 115, 6.0, 40, 0.18,  8, 0.14),
     },
 }
 
-# Inter-annual variability factors (2020–2026): simulate known warm/cold years
+# Inter-annual variability factors (2019–2026)
 YEAR_FACTORS = {
     # (temp_offset_c, snow_depth_factor, sunshine_factor)
+    2019: (+0.3,  0.95, 1.02),   # near-average season start
     2020: (+0.5,  0.90, 1.05),   # slightly warm, below avg snow
     2021: (-1.0,  1.25, 0.90),   # cold excellent powder year
     2022: (+1.5,  0.75, 1.15),   # notably warm, poor snow, sunny
@@ -102,6 +112,10 @@ YEAR_FACTORS = {
     2025: (-0.5,  1.15, 0.95),   # good season, average sun
     2026: (-0.2,  1.05, 1.00),   # tracking slightly above avg (partial)
 }
+
+# Month-specific practical sunshine caps at 47°N (Alps)
+# = 82% of astronomical daylight (accounts for terrain shadows and scattering)
+SUN_CAP_HOURS = {11: 7.5, 12: 7.0, 1: 7.5, 2: 8.5, 3: 9.5, 4: 11.0}
 
 # ── WMO weathercode mapping (simplified) ─────────────────────────────────────
 
@@ -118,9 +132,7 @@ def weathercode(snow_cm, rain_mm, sunshine_h, wind_kmh):
         return 0     # clear sky
     if sunshine_h > 3:
         return 2     # partly cloudy
-    if wind_kmh > 60:
-        return 55    # heavy drizzle / fog
-    return 3         # overcast
+    return 3         # overcast (including gusty-clear days — WMO 55 is drizzle, wrong here)
 
 # ── Smooth snow depth with seasonal curve ─────────────────────────────────────
 
@@ -159,11 +171,17 @@ def generate_resort_elevation(resort_name, elevation_label):
     }
 
     prev_depth_m = None
+    prev_date = None
 
     for d in ALL_DATES:
         m = d.month
         doy = d.timetuple().tm_yday
         y = d.year
+
+        # Bug 2 fix: reset snow depth at season boundary (May→Nov gap = summer melt)
+        if prev_date is not None and (d - prev_date).days > 7:
+            prev_depth_m = None
+        prev_date = d
 
         (bt_mean, bt_range, st_mean, st_range,
          b_depth, s_depth,
@@ -197,7 +215,8 @@ def generate_resort_elevation(resort_name, elevation_label):
         if not is_summit and t_max > -1 and random.random() < rain_prob:
             rain_today_mm = max(0, random.gauss(4, 2))
 
-        precip_mm = rain_today_mm + snow_today_cm * 0.9
+        # Bug 1 fix: precipitation_sum is mm SWE; snow height cm → SWE mm = snow / 7
+        precip_mm = rain_today_mm + snow_today_cm / 7
 
         # Snow depth — smooth seasonal curve + fresh snow contribution
         seasonal_mult = snow_depth_seasonal(doy, depth_cm)
@@ -213,9 +232,10 @@ def generate_resort_elevation(resort_name, elevation_label):
             cur_depth_cm = cur_depth_cm * 0.95 + target_depth_cm * 0.05
         prev_depth_m = max(0, cur_depth_cm) / 100
 
-        # Sunshine
+        # Bug 4 fix: use month-specific astronomical sun cap instead of hardcoded 10h
+        sun_cap = SUN_CAP_HOURS[m]
         sun_noise = random.gauss(0, 1.5)
-        sun_hours = max(0, min(10, sun_mean * sun_f + sun_noise))
+        sun_hours = max(0, min(sun_cap, sun_mean * sun_f + sun_noise))
         # Snow days are cloudier
         if snow_today_cm > 10:
             sun_hours = max(0, sun_hours - 2)
