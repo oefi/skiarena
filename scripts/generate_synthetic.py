@@ -23,11 +23,20 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Date range ────────────────────────────────────────────────────────────────
 
 def ski_dates():
-    """All Jan–Apr dates from 2020 to 2026 inclusive."""
+    """All Nov–Apr dates from 2019/20 to 2025/26 inclusive."""
     dates = []
-    for year in range(2020, 2027):
-        d = date(year, 1, 1)
-        end = date(year, 4, 30)
+    # Start in 2019 to generate the 2019/2020 season
+    for year in range(2019, 2026):
+        # Phase 1: Nov 1 to Dec 31
+        d = date(year, 11, 1)
+        end = date(year, 12, 31)
+        while d <= end:
+            dates.append(d)
+            d += timedelta(days=1)
+            
+        # Phase 2: Jan 1 to Apr 30 of the following year
+        d = date(year + 1, 1, 1)
+        end = date(year + 1, 4, 30)
         while d <= end:
             dates.append(d)
             d += timedelta(days=1)
