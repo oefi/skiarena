@@ -58,6 +58,8 @@ jobs:
 
       - name: Refresh data and rebuild
         id: refresh
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           ARGS=""
           if [ -n "${{ github.event.inputs.end_date }}" ]; then
