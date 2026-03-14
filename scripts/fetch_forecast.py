@@ -21,7 +21,11 @@ HOURLY_VARS = [
     "wind_gusts_10m",
     "visibility", "freezing_level_height",
     "cloud_cover",
+    "cloud_cover_low",          # stratus/fog layer — lift closures, whiteout risk
+    "cloud_cover_mid",          # altostratus — diffuse flat light
+    "cloud_cover_high",         # cirrus — harmless, fine skiing
     "sunshine_duration",
+    "direct_radiation",         # W/m² unscattered beam — truest bluebird intensity metric
     "soil_temperature_0cm",
     "snow_depth",               # needed for forecast Bluebird Score (25% weight)
     "precipitation_probability", # essential for trip planning confidence
