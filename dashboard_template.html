@@ -501,6 +501,12 @@
     ].join(';');
     banner.textContent = '⚠ SYNTHETIC DATA — Real Open-Meteo fetch failed. Charts show generated placeholder data, not actual conditions.';
     document.body.insertBefore(banner, document.body.firstChild);
+    // Push the sticky resort tab bar down so it sits below the banner, not under it.
+    const tabBar = document.getElementById('global-resort-header');
+    if (tabBar) {
+      const bh = banner.getBoundingClientRect().height || 36;
+      tabBar.style.top = bh + 'px';
+    }
   })();
 
   // ── TEMPORAL GUILLOTINE ──
