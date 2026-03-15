@@ -3,14 +3,16 @@
 Zwei Länder Skiarena — Open-Meteo Historical Weather Fetcher
 
 Dual-call strategy per elevation:
-  Call A — ERA5 best-match (no elevation param): all daily weather variables.
+  Call A — ERA5 best-match (elevation + models=best_match): all daily weather variables.
             sunshine_duration, shortwave_radiation_sum, snowfall_sum, temperature,
             wind, precipitation, weather_code are all available as daily aggregates.
+            The elevation param triggers Open-Meteo's statistical downscaling so
+            base and summit temperatures/wind reflect their actual altitudes, not
+            the raw ~25 km ERA5 grid cell average.
   Call B — ERA5-Land (elevation + models=era5_land): snow_depth HOURLY.
             snow_depth has NO daily aggregate in the archive API — we request
-            hourly and compute the daily mean ourselves. The elevation param
-            enables altitude-corrected values.
-  Merge  — aggregate hourly snow_depth to daily mean, inject into Call A daily dict.
+            hourly and compute the daily MAX ourselves.
+  Merge  — aggregate hourly snow_depth to daily MAX, inject into Call A daily dict.
 
 Incremental / delta mode (default):
   On each run, inspects the last date already present in each cached raw JSON
@@ -39,7 +41,7 @@ BASE_URL      = "https://archive-api.open-meteo.com/v1/archive"
 START_DATE    = "2019-11-01"
 ERA5_LAG_DAYS = 7
 
-# Call A — ERA5 grid (no elevation). All variables except snow_depth.
+# Call A — ERA5 best-match (elevation param supplied). All variables except snow_depth.
 ERA5_VARS = [
     "temperature_2m_max",
     "temperature_2m_min",
@@ -240,8 +242,8 @@ def fetch_merged(
     elevation_m: int,
 ) -> tuple[dict, int]:
     """
-    Perform Call A (ERA5) + Call B (ERA5-Land snow_depth hourly), merge snow_depth
-    into ERA5 daily dict. Returns (data_dict, n_days_fetched).
+    Perform Call A (ERA5 best-match, elevation-corrected) + Call B (ERA5-Land snow_depth
+    hourly), merge snow_depth into ERA5 daily dict. Returns (data_dict, n_days_fetched).
     Does NOT write to disk — the caller owns save / merge decisions.
     """
     base_params = {
@@ -251,6 +253,8 @@ def fetch_merged(
         "end_date":   end_d,
         "daily":      ",".join(ERA5_VARS),
         "timezone":   "Europe/Berlin",
+        "elevation":  elevation_m,   # triggers lapse-rate downscaling for temp/wind
+        "models":     "best_match",  # explicit; default but documents intent
     }
     depth_params = {
         "latitude":   lat,
@@ -266,7 +270,11 @@ def fetch_merged(
     era5_data  = _get(session, base_params)
     depth_data = _get(session, depth_params)
 
-    # Aggregate hourly snow_depth → daily mean and inject into ERA5 daily dict
+    # Aggregate hourly snow_depth → daily MAX and inject into ERA5 daily dict.
+    # max() is ski-conservative: never understates the snow available at day's end.
+    # A melt day's hourly depths decline through the afternoon; the mean would
+    # overstate usable snow. A snowfall day accumulates through the night; the
+    # max captures what's there when the first chair opens the next morning.
     era5_dates   = era5_data["daily"].get("time", [])
     hourly_times = depth_data["hourly"].get("time", [])
     hourly_depth = depth_data["hourly"].get("snow_depth", [])
@@ -277,7 +285,7 @@ def fetch_merged(
             daily_depth_raw[ts[:10]].append(v)
 
     depth_by_date = {
-        d: sum(vs) / len(vs) for d, vs in daily_depth_raw.items() if vs
+        d: max(vs) for d, vs in daily_depth_raw.items() if vs
     }
 
     if len(era5_dates) != len(depth_by_date):

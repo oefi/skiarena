@@ -5,11 +5,13 @@ Reads master_data.json, computes per-record composite ski scores,
 writes enriched_data.json consumed by build_dashboard.py.
 
 Composite Bluebird Score (0.0–1.0):
-  40%  Sunshine duration (normalized against resort 6-year peak)
-  25%  Summit snow depth  (normalized against resort 6-year max)
-  20%  Base temperature   (optimal range -12°C to -2°C)
-  15%  Wind component     (gusts above 50 km/h degrade score)
-  wind_penalty acts as a global multiplier on the whole composite.
+  45%  Sunshine duration (normalized against resort 6-year peak)
+  30%  Summit snow depth  (capped at per-resort functional optimum — full marks
+       above the cap; punishes no good year for not matching a freak record)
+  25%  Base temperature   (optimal range -12°C to -2°C)
+  ×    Wind penalty multiplier (0.3–1.0): gusts above 50 km/h degrade entire score.
+       Wind is NOT in the additive sum — it acts purely as a global gate so a storm
+       day cannot score well regardless of sun or snow depth.
   +≤15% Powder day bonus  (summit snowfall > 10 cm + gusts < 50 km/h)
 """
 
@@ -18,6 +20,18 @@ from pathlib import Path
 
 IN_FILE  = Path(__file__).parent.parent / "data" / "processed" / "master_data.json"
 OUT_FILE = Path(__file__).parent.parent / "data" / "processed" / "enriched_data.json"
+
+# Per-resort functional snow depth cap (cm at summit).
+# Anything AT or ABOVE this gets a perfect depth score.
+# Based on climatological peak expectations, NOT historical maxima —
+# so no freak season can devalue every subsequent good season.
+OPTIMAL_DEPTH_CM = {
+    "nauders":    150,   # 2750 m summit, cold-aspect powder trap
+    "schoeneben": 130,   # 2390 m, south-west facing, sun-exposed
+    "watles":     120,   # 2550 m, consistently sunniest of the five
+    "sulden":     200,   # 3250 m, Ortler glacier shadow, deepest snowpack
+    "trafoi":     160,   # 2800 m, NE facing, Stelvio wind slab prone
+}
 
 
 # ── Per-resort normalization bounds (computed from full dataset) ──────────────
@@ -148,16 +162,22 @@ def compute_score(record, bounds):
         return {"score": None, "metrics": {"fSun": 0, "fDepth": 0, "fTemp": 0, "windMult": 1, "powderBonus": 0}}
 
     sun_range   = rb.get("sun",   (0, 1))
-    depth_range = rb.get("depth", (0, 1))
 
     f_sun   = norm(sun   if sun   is not None else 0, *sun_range)
-    f_depth = norm(depth if depth is not None else 0, *depth_range)
+    # Depth: cap at per-resort optimum so a freak record year doesn't
+    # devalue every subsequent good season. depth is stored in metres.
+    opt_cm  = OPTIMAL_DEPTH_CM.get(resort, 150)
+    f_depth = min(1.0, (depth * 100) / opt_cm) if depth is not None else 0.0
     f_temp  = temperature_score(t_max)
     w_mult  = wind_penalty(gust)
     p_bonus = powder_bonus(fresh, gust)
 
-    # Weighted composite: wind is a global multiplier; powder is an additive bonus
-    raw = (0.40 * f_sun) + (0.25 * f_depth) + (0.20 * f_temp) + (0.15 * w_mult)
+    # Additive composite (sun/depth/temp sum to 1.0).
+    # Wind is a pure global multiplier — not in the additive sum — so a storm
+    # day cannot score well regardless of how good sun or snow depth look.
+    # Powder bonus is applied before the wind multiply so moderate-wind powder
+    # days still get partial credit (powder_bonus already returns 0 above 50 km/h).
+    raw   = (0.45 * f_sun) + (0.30 * f_depth) + (0.25 * f_temp)
     score = round(max(0.0, min(1.0, (raw + p_bonus) * w_mult)), 4)
 
     return {
@@ -198,7 +218,8 @@ def main():
         "_meta": {
             **master["_meta"],
             "scored_records": scored,
-            "score_weights": {"sun": 0.40, "depth": 0.25, "temp": 0.20, "wind_mult": 0.15, "powder_bonus": "≤0.15 additive"},
+            "score_weights": {"sun": 0.45, "depth": 0.30, "temp": 0.25, "wind_mult": "global multiplier 0.3–1.0", "powder_bonus": "≤0.15 additive"},
+            "depth_caps_cm": OPTIMAL_DEPTH_CM,
         },
         "records": enriched,
     }
