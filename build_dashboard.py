@@ -4,33 +4,30 @@ build_dashboard.py — injects JSON data into dashboard_template.html
 Output: nauders_dashboard.html (renamed to index.html in GitHub Actions)
 """
 from pathlib import Path
-import sys
+import json, sys
 
 BASE     = Path(__file__).parent
 TMPL     = BASE / "dashboard_template.html"
-# Rerouted from the dead enriched_data.json to the raw normalized output
-DATA     = BASE / "data" / "processed" / "master_data.json"
+DATA     = BASE / "data" / "processed" / "enriched_data.json"
 FORECAST = BASE / "data" / "processed" / "forecast_data.json"
 OUT      = BASE / "nauders_dashboard.html"
 
 def main():
     print("Building dashboard…")
     template = TMPL.read_text(encoding="utf-8")
-
+    
     if "__SKI_DATA_PLACEHOLDER__" not in template:
         sys.exit("ERROR: __SKI_DATA_PLACEHOLDER__ not found in template")
 
-    # Inject History
-    if not DATA.exists():
-        sys.exit(f"ERROR: {DATA.name} missing. Run clean_normalize.py first.")
-
-    data_str = DATA.read_text(encoding="utf-8")
+    # Round-trip through json to guarantee valid, properly escaped JSON —
+    # guards against any corrupt byte or accidental </script> in string fields.
+    data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8")))
     html = template.replace("__SKI_DATA_PLACEHOLDER__", data_str)
 
     # Inject Forecast
     if "__FORECAST_DATA_PLACEHOLDER__" in html:
         if FORECAST.exists():
-            fc_str = FORECAST.read_text(encoding="utf-8")
+            fc_str = json.dumps(json.loads(FORECAST.read_text(encoding="utf-8")))
             html = html.replace("__FORECAST_DATA_PLACEHOLDER__", fc_str)
             print("  ✓ Injected high-res forecast data")
         else:
@@ -38,7 +35,10 @@ def main():
             html = html.replace("__FORECAST_DATA_PLACEHOLDER__", '{"error": "no forecast generated"}')
 
     OUT.write_text(html, encoding="utf-8")
-    print(f"  ✓ Dashboard baked to {OUT.name}")
+
+    size_kb = OUT.stat().st_size / 1024
+    print(f"  → {OUT.name}  ({size_kb:.0f} KB)")
+    print("Done.")
 
 if __name__ == "__main__":
     main()
