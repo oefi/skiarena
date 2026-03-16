@@ -413,70 +413,105 @@
 
 <section style="max-width:1440px; margin: 0 auto 0; padding: 0 1rem 2rem;">
   <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-    <h2 style="margin-top:0; color:var(--brand); border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; letter-spacing:-0.02em; font-size:1rem;">📋 What this dashboard actually is</h2>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.75rem; margin-top:1rem;">
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🛰 Historical data</div>
-        ERA5-Seamless is a climate reanalysis — physics model output constrained by real observations, not station measurements. Grid resolution: ~9 km. Base and summit elevations within the same resort typically fall in the same grid cell; temperature differences are lapse-rate corrections, not independent readings. Accuracy: roughly ±1–2°C for temperature, ±20% for sunshine duration.
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:1rem;">
+      <h2 style="margin:0; color:var(--brand); letter-spacing:-0.02em; font-size:1rem;">📋 What this dashboard actually is</h2>
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <button id="info-prev" style="background:none; border:1px solid var(--border-color); border-radius:4px; padding:0.1rem 0.4rem; cursor:pointer; color:var(--text-muted); font-size:0.8rem; line-height:1.4;">◀</button>
+        <span id="info-dots" style="display:flex; gap:4px;"></span>
+        <button id="info-next" style="background:none; border:1px solid var(--border-color); border-radius:4px; padding:0.1rem 0.4rem; cursor:pointer; color:var(--text-muted); font-size:0.8rem; line-height:1.4;">▶</button>
       </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">☀ Clear sky hours</div>
-        Sunshine duration (ERA5) corrected by actual surface shortwave radiation vs theoretical clear-sky: <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">sun × √(srad / Ra)</code>. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5. Temperature and wind are shown separately on the same chart.
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🔵 Bluebird Score</div>
-        Weights (sun 45%, depth 30%, temp 25%) are not derived from empirical data. The powder bonus threshold, wind multiplier breakpoints, and per-resort depth caps were estimated from general knowledge of ski terrain. The formula is fully documented and reproducible, which puts it ahead of most commercial ski condition ratings. That is a low bar.
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">📡 Forecast</div>
-        Days 1–3: useful. Days 4–7: synoptic signal present, details uncertain. Days 8–16: the ECMWF ensemble spread for Alpine precipitation at this range covers most outcomes. Projected scores beyond day 5 indicate a plausible weather pattern, not a confirmed one. The confidence multiplier narrows the displayed scores; it does not narrow the atmosphere.
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🗂 Which model, where</div>
-        <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
-          <tr style="border-bottom:1px solid var(--border-color);">
-            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Heatmap · Daily table · Snowpack · Season Overview</td>
-            <td style="padding:0.25rem 0;">ERA5-Seamless (Call A) + ERA5-Land (Call B for snow depth). Reanalysis, ~9 km, ~6-day lag.</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border-color);">
-            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Forecast canvas · Tactical cards · Best-days strip</td>
-            <td style="padding:0.25rem 0;"><code style="font-size:0.7rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">best_match</code> — Open-Meteo's auto-blend: ICON-D2/AROME for days 1–5 (~2 km), ECMWF IFS + GFS beyond. 16 days, summit elevation only.</td>
-          </tr>
-          <tr>
-            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Village temps in forecast</td>
-            <td style="padding:0.25rem 0;">Not fetched. Derived from summit data using a standard environmental lapse rate of 6.5°C per 1000 m. Labelled "(est.)" accordingly.</td>
-          </tr>
-        </table>
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">❄ Snow depth — a special case</div>
-        Snow depth exists only in ERA5-Land (Call B). It is fetched hourly and the daily maximum is taken — a conservative choice for ski purposes. ERA5-Land snow depth is notoriously imprecise in steep Alpine terrain; the model's snowpack depends heavily on wind redistribution and aspect, neither of which the ~9 km grid resolves. The values are directionally correct. Treat centimetre-level precision as decorative.
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">⏱ Data freshness</div>
-        Historical pipeline runs every 6 hours via GitHub Actions. ERA5-Seamless has an ~6-day publishing lag; the most recent days in the Heatmap and Daily table are therefore always 6 days behind today. The forecast payload is fetched at the same interval and is current to the last pipeline run. The countdown in the header shows time to the next scheduled refresh, not time since last data update.
-      </div>
-
-      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
-        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">📐 Presentational choices</div>
-        The clear-sky-hours axis is capped at 8 h — a good alpine day, not the theoretical maximum. The Bluebird Score heatmap is normalised per resort against that resort's own historical peak, so a 70% score means the same thing in Nauders and Sulden even though Sulden is 500 m higher. The 7-day temperature smoothing default reduces noise; switching to Raw shows the underlying daily variance ERA5 actually produces.
-      </div>
-
+    </div>
+    <div style="overflow:hidden; position:relative;">
+      <div id="info-track" style="display:flex; gap:0.75rem; transition:transform 0.45s cubic-bezier(0.4,0,0.2,1); will-change:transform;"></div>
     </div>
     <p style="font-size:0.72rem; color:var(--text-muted); margin:1rem 0 0; font-style:italic; line-height:1.6;">ERA5 is the dataset used to study 100-year climate trends. It is also what drives the bar chart above. This is fine.</p>
   </div>
 </section>
 
-<footer style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 0;">
-  Zwei Länder Skiarena · Open-Meteo ERA5-Seamless + ECMWF/ICON/GFS · Refreshed every 6 hours
-</footer>
+<script>
+(function() {
+  const CARDS = [
+    { title: '🛰 Historical data',
+      body:  'ERA5-Seamless is a climate reanalysis — physics model output constrained by real observations, not station measurements. Grid resolution: ~9 km. Base and summit elevations within the same resort typically fall in the same grid cell; temperature differences are lapse-rate corrections, not independent readings. Accuracy: roughly ±1–2°C for temperature, ±20% for sunshine duration.' },
+    { title: '☀ Clear sky hours',
+      body:  'Sunshine duration (ERA5) corrected by actual surface shortwave radiation vs theoretical clear-sky: <code style="font-size:0.72rem;background:rgba(0,0,0,0.06);padding:0 3px;border-radius:2px;">sun × √(srad / Ra)</code>. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5. Temperature and wind are shown separately on the same chart.' },
+    { title: '🔵 Bluebird Score',
+      body:  'Weights (sun 45%, depth 30%, temp 25%) are not derived from empirical data. The powder bonus threshold, wind multiplier breakpoints, and per-resort depth caps were estimated from general knowledge of ski terrain. The formula is fully documented and reproducible, which puts it ahead of most commercial ski condition ratings. That is a low bar.' },
+    { title: '📡 Forecast',
+      body:  'Days 1–3: useful. Days 4–7: synoptic signal present, details uncertain. Days 8–16: the ECMWF ensemble spread for Alpine precipitation at this range covers most outcomes. Projected scores beyond day 5 indicate a plausible weather pattern, not a confirmed one. The confidence multiplier narrows the displayed scores; it does not narrow the atmosphere.' },
+    { title: '🗂 Which model, where',
+      body:  '<dl style="margin:0;display:flex;flex-direction:column;gap:0.45rem;font-size:0.75rem;"><div><dt style="font-weight:700;color:var(--text-main);margin-bottom:0.1rem;">Heatmap · Daily · Snowpack · Season Overview</dt><dd style="margin:0;color:var(--text-muted)">ERA5-Seamless (Call A) + ERA5-Land (Call B for snow depth). Reanalysis, ~9 km, ~6-day publishing lag.</dd></div><div><dt style="font-weight:700;color:var(--text-main);margin-bottom:0.1rem;">Forecast canvas · Tactical cards · Best-days strip</dt><dd style="margin:0;color:var(--text-muted)"><code style="font-size:0.7rem;background:rgba(0,0,0,0.06);padding:0 3px;border-radius:2px">best_match</code> — ICON-D2/AROME days 1–5 (~2 km), ECMWF IFS + GFS beyond day 5. 16 days, summit elevation only.</dd></div><div><dt style="font-weight:700;color:var(--text-main);margin-bottom:0.1rem;">Village temps in forecast</dt><dd style="margin:0;color:var(--text-muted)">Not fetched. Derived from summit data via standard lapse rate 6.5°C / 1000 m. Labelled "(est.)" in the UI.</dd></div></dl>' },
+    { title: '❄ Snow depth — a special case',
+      body:  'Snow depth exists only in ERA5-Land (Call B). It is fetched hourly and the daily maximum is taken — a conservative choice for ski purposes. ERA5-Land snow depth is notoriously imprecise in steep Alpine terrain; the model\'s snowpack depends heavily on wind redistribution and aspect, neither of which the ~9 km grid resolves. The values are directionally correct. Treat centimetre-level precision as decorative.' },
+    { title: '⏱ Data freshness',
+      body:  'Historical pipeline runs every 6 hours via GitHub Actions. ERA5-Seamless has an ~6-day publishing lag; the most recent days in the Heatmap and Daily table are therefore always 6 days behind today. The forecast payload is fetched at the same interval and is current to the last pipeline run. The countdown in the header shows time to the next scheduled refresh, not time since last data update.' },
+    { title: '📐 Presentational choices',
+      body:  'The clear-sky-hours axis is capped at 8 h — a good alpine day, not the theoretical maximum. The Bluebird Score heatmap is normalised per resort against that resort\'s own historical peak, so a 70% score means the same thing in Nauders and Sulden even though Sulden is 500 m higher. The 3-day temperature smoothing default reduces noise; switching to Raw shows the underlying daily variance ERA5 actually produces.' },
+  ];
+
+  const VISIBLE = 4;
+  const track  = document.getElementById('info-track');
+  const dots   = document.getElementById('info-dots');
+  const btnP   = document.getElementById('info-prev');
+  const btnN   = document.getElementById('info-next');
+  let   offset = 0;
+  let   timer  = null;
+
+  // Build cards
+  CARDS.forEach(c => {
+    const el = document.createElement('div');
+    el.style.cssText = 'flex:0 0 calc(25% - 0.57rem);min-width:220px;font-size:0.78rem;color:var(--text-muted);line-height:1.65;padding:0.75rem;background:var(--bg-main);border-radius:6px;border:1px solid var(--border-color);box-sizing:border-box;';
+    el.innerHTML = `<div style="font-weight:700;color:var(--text-main);margin-bottom:0.3rem;">${c.title}</div>${c.body}`;
+    track.appendChild(el);
+  });
+
+  // Build dots — one per "page" of 4
+  const pages = CARDS.length - VISIBLE + 1; // 5 stops: 0,1,2,3,4
+  for (let i = 0; i < pages; i++) {
+    const d = document.createElement('span');
+    d.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--border-color);transition:background 0.3s;cursor:pointer;';
+    d.addEventListener('click', () => { stopAuto(); go(i); });
+    dots.appendChild(d);
+  }
+
+  function updateDots() {
+    Array.from(dots.children).forEach((d, i) => {
+      d.style.background = i === offset ? 'var(--brand)' : 'var(--border-color)';
+    });
+    btnP.disabled = offset === 0;
+    btnN.disabled = offset === pages - 1;
+    btnP.style.opacity = offset === 0 ? '0.3' : '1';
+    btnN.style.opacity = offset === pages - 1 ? '0.3' : '1';
+  }
+
+  function go(n) {
+    offset = Math.max(0, Math.min(pages - 1, n));
+    // Each card is 25% of track width + gap. Compute pixel offset from card width.
+    const cardW = track.parentElement.offsetWidth;
+    const step  = (cardW - 0.75 * 16 * (VISIBLE - 1)) / VISIBLE + 0.75 * 16;
+    track.style.transform = `translateX(-${offset * step}px)`;
+    updateDots();
+  }
+
+  function startAuto() {
+    timer = setInterval(() => go(offset < pages - 1 ? offset + 1 : 0), 30000);
+  }
+  function stopAuto() { clearInterval(timer); timer = null; }
+
+  btnP.addEventListener('click', () => { stopAuto(); go(offset - 1); });
+  btnN.addEventListener('click', () => { stopAuto(); go(offset + 1); });
+
+  // Pause on hover
+  track.parentElement.addEventListener('mouseenter', stopAuto);
+  track.parentElement.addEventListener('mouseleave', startAuto);
+
+  // Recalculate on resize
+  window.addEventListener('resize', () => go(offset));
+
+  go(0);
+  startAuto();
+})();
+</script>
 
 <script>
   // ── CONSTANTS & COLOR UTILITIES ──
@@ -2023,14 +2058,16 @@
       if (atmosSeasonIdx > 0) { atmosSeasonIdx--; window.repaintAtmosCanvas(); }
     });
 
+    // ── helper: compute dynamic left pad (mirrors draw function) ──────────────
+    const _atmosPX = () => cvsA.clientWidth < 500 ? 56 : ATMOS_PAD_X;
+
     window.repaintAtmosCanvas = () => {
       if(!cvsA) return;
-      ctxA.clearRect(0,0,cvsA.width,cvsA.height); 
+      ctxA.clearRect(0,0,cvsA.width,cvsA.height);
       const rd = byResort[window.GLOBAL_RESORT]; if(!rd) return;
 
       const seasons = getSeasonYears(rd);
       if (seasons.length === 0) return;
-      // Clamp idx in case resort switch has fewer seasons
       atmosSeasonIdx = Math.min(atmosSeasonIdx, seasons.length - 1);
       const curYear = seasons[atmosSeasonIdx];
       lblSeason.innerText = `Season: ${curYear}/${String(curYear+1).slice(2)}`;
@@ -2039,62 +2076,50 @@
       const atmosData = new Array(ATMOS_DAYS + 1).fill(null);
       rd.forEach(r => {
         const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7)), day = parseInt(r.date.slice(8,10));
-        if (m > 4 && m < 11) return; 
+        if (m > 4 && m < 11) return;
         const startYear = m >= 11 ? y : y - 1;
-        if (startYear !== curYear) return; 
-
+        if (startYear !== curYear) return;
         const start = Date.UTC(startYear, 10, 1), current = Date.UTC(y, m-1, day);
         const off = Math.floor((current - start) / 86400000);
-        if (off < 0 || off > 182) return; 
-
+        if (off < 0 || off > 182) return;
         atmosData[off] = {
           date:  r.date,
-          sTMax: r.summit?.temperature_2m_max       ?? null,
-          sTMin: r.summit?.temperature_2m_min       ?? null,
-          apMax: r.summit?.apparent_temperature_max ?? null,
-          apMin: r.summit?.apparent_temperature_min ?? null,
+          sTMax: r.summit?.temperature_2m_max        ?? null,
+          sTMin: r.summit?.temperature_2m_min        ?? null,
+          apMax: r.summit?.apparent_temperature_max  ?? null,
+          apMin: r.summit?.apparent_temperature_min  ?? null,
           sunH:  ((r.summit?.sunshine_duration ?? r.base?.sunshine_duration ?? r.sunshine_duration) ?? 0) / 3600,
-          srad:  r.base?.shortwave_radiation_sum     ?? r.shortwave_radiation_sum ?? null,
-          snow:  r.summit?.snowfall_sum             ?? r.snowfall_sum         ?? 0,
-          gust:  r.summit?.wind_gusts_10m_max       ?? r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0,
-          // Village temp kept for tooltip only
-          vMax:  r.base?.temperature_2m_max         ?? null,
-          vMin:  r.base?.temperature_2m_min         ?? null,
+          srad:  r.base?.shortwave_radiation_sum      ?? r.shortwave_radiation_sum ?? null,
+          snow:  r.summit?.snowfall_sum              ?? r.snowfall_sum         ?? 0,
+          gust:  r.summit?.wind_gusts_10m_max        ?? r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0,
+          vMax:  r.base?.temperature_2m_max          ?? null,
+          vMin:  r.base?.temperature_2m_min          ?? null,
         };
       });
 
-      // ── Clear sky hours ────────────────────────────────────────────────────
-      // Sunshine duration (ERA5) corrected by actual surface radiation vs
-      // theoretical clear-sky. √ softens the penalty for patchy cloud.
-      // Temperature and wind are shown separately — not factored in here.
+      // ── Clear sky hours: sun × √(srad/Ra) ─────────────────────────────────
       for (let i = 0; i <= ATMOS_DAYS; i++) {
-        const d = atmosData[i];
-        if (!d) continue;
+        const d = atmosData[i]; if (!d) continue;
         const doy = Math.floor((new Date(d.date) - new Date(new Date(d.date).getFullYear(), 0, 0)) / 86400000);
-        const dr   = 1 + 0.033 * Math.cos(2 * Math.PI * doy / 365);
-        const decl = 0.409 * Math.sin(2 * Math.PI * doy / 365 - 1.39);
-        const lat  = 47 * Math.PI / 180;
-        const cosWs = Math.max(-1, Math.min(1, -Math.tan(lat) * Math.tan(decl)));
-        const ws   = Math.acos(cosWs);
-        const Ra   = 37.6 * dr * (ws * Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.sin(ws));
-        const radClear = Ra * 0.75;
-        const ccF = (d.srad !== null && radClear > 0)
-          ? Math.sqrt(Math.min(1, d.srad / radClear))
-          : 1.0;
+        const dr = 1 + 0.033*Math.cos(2*Math.PI*doy/365);
+        const decl = 0.409*Math.sin(2*Math.PI*doy/365 - 1.39);
+        const lat = 47*Math.PI/180;
+        const ws = Math.acos(Math.max(-1, Math.min(1, -Math.tan(lat)*Math.tan(decl))));
+        const Ra = 37.6*dr*(ws*Math.sin(lat)*Math.sin(decl) + Math.cos(lat)*Math.cos(decl)*Math.sin(ws));
+        const ccF = (d.srad !== null && Ra*0.75 > 0) ? Math.sqrt(Math.min(1, d.srad/(Ra*0.75))) : 1.0;
         d.bbH = +(d.sunH * ccF).toFixed(2);
       }
 
-      // ── Moving average (applies ONLY to temperature series) ────────────────
+      // ── Moving average — temperature series only ───────────────────────────
       const maSmooth = (key, win) => {
         if (win <= 1) return i => atmosData[i]?.[key] ?? null;
-        const half = Math.floor(win / 2);
+        const half = Math.floor(win/2);
         return i => {
-          let sum = 0, cnt = 0;
-          for (let j = Math.max(0, i-half); j <= Math.min(ATMOS_DAYS, i+half); j++) {
-            const v = atmosData[j]?.[key];
-            if (v !== null && v !== undefined) { sum += v; cnt++; }
+          let sum=0, cnt=0;
+          for (let j=Math.max(0,i-half); j<=Math.min(ATMOS_DAYS,i+half); j++) {
+            const v = atmosData[j]?.[key]; if (v !== null && v !== undefined) { sum+=v; cnt++; }
           }
-          return cnt > 0 ? sum / cnt : null;
+          return cnt > 0 ? sum/cnt : null;
         };
       };
       const smSTMax = maSmooth('sTMax', atmosMAWindow);
@@ -2102,247 +2127,352 @@
       const smApMax = maSmooth('apMax', atmosMAWindow);
       const smApMin = maSmooth('apMin', atmosMAWindow);
 
-      const pX = cvsA.clientWidth < 500 ? 56 : ATMOS_PAD_X, pY = 40, w = cvsA.width-pX*2, h = cvsA.height-pY*2 - 40;
-      const topH = Math.round(h * 0.55);
-      const divY = pY + topH + 6;
-      const botY0 = divY + 6;
-      const botH = h - topH - 12;
-      const mapX = x => pX + (x / ATMOS_DAYS) * w;
+      // ── Geometry ───────────────────────────────────────────────────────────
+      const pX    = _atmosPX();
+      const pY    = 20;                     // top pad — zone header lives here
+      const pRight = pX;
+      const pBot  = 28;                     // bottom pad — month labels
+      const w     = cvsA.width  - pX - pRight;
+      const h     = cvsA.height - pY - pBot;
+      const topH  = Math.round(h * 0.56);   // temperature zone
+      const divY  = pY + topH;
+      const botY0 = divY + 1;               // bar zone starts immediately below divider
+      const botH  = h - topH - 1;
+      const mapX  = x => pX + (x / ATMOS_DAYS) * w;
 
       const validTemps = atmosData.filter(Boolean);
 
-      // Temperature axis: driven by summit + apparent range
+      // ── Temperature axis ───────────────────────────────────────────────────
       const allTMax = validTemps.map(d => Math.max(d.sTMax ?? -999, d.apMax ?? -999)).filter(v => v > -999);
-      const allTMin = validTemps.map(d => Math.min(d.sTMin ?? 999,  d.apMin ?? 999)).filter(v => v < 999);
+      const allTMin = validTemps.map(d => Math.min(d.sTMin ??  999, d.apMin ??  999)).filter(v => v < 999);
       const rawTMax = allTMax.length ? Math.max(...allTMax) : 20;
       const rawTMin = allTMin.length ? Math.min(...allTMin) : -30;
-      const tMaxLimit = Math.max(20,  Math.ceil((rawTMax + 3) / 5) * 5);
-      const tMinLimit = Math.min(-20, Math.floor((rawTMin - 3) / 5) * 5);
+      const tMaxLimit = Math.max(20,  Math.ceil( (rawTMax+3)/5)*5);
+      const tMinLimit = Math.min(-20, Math.floor((rawTMin-3)/5)*5);
       const tRange    = tMaxLimit - tMinLimit;
       const mapTempY  = t => (pY + topH) - ((t - tMinLimit) / tRange) * topH;
 
-      // Condition zone axes
-      const rawMaxBB   = validTemps.length ? Math.max(...validTemps.map(d => d.bbH))  : 8;
+      // ── Bar zone axes ──────────────────────────────────────────────────────
       const rawMaxSnow = validTemps.length ? Math.max(...validTemps.map(d => d.snow)) : 30;
       const rawMaxGust = validTemps.length ? Math.max(...validTemps.map(d => d.gust)) : 120;
-      const atmBBMax   = 8;  // capped — 8h is an excellent alpine day; shows realistic scale
-      const atmSnowMax = Math.ceil(Math.max(30, rawMaxSnow + 5) / 10) * 10;
-      const atmGustMax = Math.ceil(Math.max(120, rawMaxGust + 10) / 20) * 20;
-      const mapBBY   = s => botY0 + botH - (Math.min(s, atmBBMax)   / atmBBMax)   * botH;
-      const mapSnY   = s => botY0 + botH - (Math.min(s, atmSnowMax) / atmSnowMax) * botH;
-      const mapGustY = g => botY0 + botH - (Math.min(g, atmGustMax) / atmGustMax) * botH;
+      const atmBBMax   = 8;
+      const atmSnowMax = Math.ceil(Math.max(30, rawMaxSnow+5)/10)*10;
+      const atmGustMax = Math.ceil(Math.max(120, rawMaxGust+10)/20)*20;
+      const mapBBY    = s => botY0 + botH - (Math.min(s, atmBBMax)   / atmBBMax)   * botH;
+      const mapSnY    = s => botY0 + botH - (Math.min(s, atmSnowMax) / atmSnowMax) * botH;
+      const mapGustY  = g => botY0 + botH - (Math.min(g, atmGustMax) / atmGustMax) * botH;
 
-      const fonts = getResponsiveCanvasFonts(cvsA, 14, 16);
+      const fonts = getResponsiveCanvasFonts(cvsA, 13, 14);
+      const sc    = cvsA.width / (cvsA.clientWidth || 1000);  // buffer scale
       const barW  = (w / ATMOS_DAYS) * 0.82;
 
-      // ── Week bands (alternating faint bg, both zones) ───────────────────────
-      for (let week = 0; week * 7 <= ATMOS_DAYS; week++) {
+      // ── 1. Week bands ──────────────────────────────────────────────────────
+      for (let week = 0; week*7 <= ATMOS_DAYS; week++) {
         if (week % 2 === 0) continue;
-        const x0 = mapX(week * 7), x1 = mapX(Math.min((week + 1) * 7, ATMOS_DAYS));
-        ctxA.fillStyle = 'rgba(0,0,0,0.022)';
-        ctxA.fillRect(x0, pY, x1 - x0, botY0 + botH - pY);
+        const x0 = mapX(week*7), x1 = mapX(Math.min((week+1)*7, ATMOS_DAYS));
+        ctxA.fillStyle = 'rgba(0,0,0,0.018)';
+        ctxA.fillRect(x0, pY, x1-x0, botY0+botH-pY);
       }
 
-      // ── Month markers — heavier, with column-spanning lines ─────────────────
-      ctxA.font = fonts.axis; ctxA.textAlign = 'center'; ctxA.textBaseline = 'top';
+      // ── 2. Month separators (full height, bold label below chart) ──────────
+      const boldFont = `bold ${Math.max(11, Math.floor(13*sc))}px system-ui`;
+      ctxA.strokeStyle = 'rgba(0,0,0,0.13)'; ctxA.lineWidth = 1.5;
       monthMarkers.forEach(m => {
-        const x = mapX(m.off);
-        if (x > pX + w) return;
-        // Heavier line through both zones
-        ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, botY0 + botH);
-        ctxA.strokeStyle = 'rgba(0,0,0,0.12)'; ctxA.lineWidth = 1.5; ctxA.stroke();
-        // Bold month label
-        ctxA.fillStyle = getStyleVar('--text-main');
-        ctxA.font = `bold ${Math.max(12, Math.floor(14 * (cvsA.width / (cvsA.clientWidth || 1000))))}px system-ui`;
-        ctxA.fillText(m.label, x, botY0 + botH + 10);
-        ctxA.font = fonts.axis;
+        const x = mapX(m.off); if (x > pX+w) return;
+        ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, botY0+botH); ctxA.stroke();
+        ctxA.font = boldFont; ctxA.fillStyle = getStyleVar('--text-main');
+        ctxA.textAlign = 'center'; ctxA.textBaseline = 'top';
+        ctxA.fillText(m.label, x, botY0+botH+6);
       });
-      // Week tick marks (small, unlabeled)
-      ctxA.strokeStyle = 'rgba(0,0,0,0.07)'; ctxA.lineWidth = 1;
-      for (let d = 7; d <= ATMOS_DAYS; d += 7) {
-        const isMonthBound = monthMarkers.some(m => Math.abs(m.off - d) < 4);
-        if (isMonthBound) continue;
+      // Week ticks — small nubs at bottom of chart only, no full lines
+      ctxA.strokeStyle = 'rgba(0,0,0,0.08)'; ctxA.lineWidth = 1;
+      for (let d=7; d<=ATMOS_DAYS; d+=7) {
+        if (monthMarkers.some(m => Math.abs(m.off-d) < 4)) continue;
         const x = mapX(d);
-        ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, botY0 + botH); ctxA.stroke();
+        ctxA.beginPath(); ctxA.moveTo(x, botY0+botH-6); ctxA.lineTo(x, botY0+botH); ctxA.stroke();
       }
 
-      // ── Temperature zone — clipped ─────────────────────────────────────────
+      // ── 3. Temperature zone — clipped ─────────────────────────────────────
       ctxA.save();
       ctxA.beginPath(); ctxA.rect(pX, pY, w, topH); ctxA.clip();
 
-      // °C grid lines
-      ctxA.strokeStyle = getStyleVar('--grid-line'); ctxA.fillStyle = getStyleVar('--text-muted');
+      // Temp grid lines + left-axis tick labels
       ctxA.font = fonts.axis; ctxA.textBaseline = 'middle'; ctxA.textAlign = 'right';
       for (let t = Math.ceil(tMinLimit/10)*10; t <= tMaxLimit; t += 10) {
-        const y = mapTempY(t);
-        if (y < pY || y > pY + topH) continue;
-        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
-        ctxA.lineWidth = t === 0 ? 2 : 1; ctxA.stroke();
-        ctxA.fillText(`${t}°C`, pX - 8, y);
+        const y = mapTempY(t); if (y < pY || y > pY+topH) continue;
+        ctxA.strokeStyle = t === 0 ? 'rgba(30,64,175,0.3)' : getStyleVar('--grid-line');
+        ctxA.lineWidth   = t === 0 ? 2 : 1;
+        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y); ctxA.stroke();
+        ctxA.fillStyle = t === 0 ? 'rgba(30,64,175,0.8)' : getStyleVar('--text-muted');
+        ctxA.fillText(`${t}°C`, pX-6, y);
       }
-      // 0°C emphasis
+      // 0°C label inside chart — explicit callout
       if (tMinLimit <= 0 && tMaxLimit >= 0) {
-        const zeroY = mapTempY(0);
-        ctxA.beginPath(); ctxA.moveTo(pX, zeroY); ctxA.lineTo(pX+w, zeroY);
-        ctxA.lineWidth = 2.5; ctxA.strokeStyle = 'rgba(30,64,175,0.35)'; ctxA.stroke();
-        ctxA.strokeStyle = getStyleVar('--grid-line');
+        const zy = mapTempY(0);
+        ctxA.font = `bold ${Math.max(10, Math.floor(11*sc))}px system-ui`;
+        ctxA.fillStyle = 'rgba(30,64,175,0.75)';
+        ctxA.textAlign = 'left'; ctxA.textBaseline = 'bottom';
+        ctxA.fillText('0°C — freezing', pX+4, zy-3);
+        ctxA.font = fonts.axis;
       }
 
-      // Apparent temp band (dashed, drawn first so mountain band sits on top)
+      // Apparent band (dashed, behind)
       const hasApparent = validTemps.some(d => d.apMax !== null);
       if (hasApparent) {
-        ctxA.beginPath(); let apStart = false;
-        for (let i = 0; i <= ATMOS_DAYS; i++) { const v = smApMax(i); if (v !== null) { if (!apStart) { ctxA.moveTo(mapX(i), mapTempY(v)); apStart = true; } else { ctxA.lineTo(mapX(i), mapTempY(v)); } } else { apStart = false; } }
-        for (let i = ATMOS_DAYS; i >= 0; i--) { const v = smApMin(i); if (v !== null) ctxA.lineTo(mapX(i), mapTempY(v)); }
-        ctxA.closePath();
-        ctxA.fillStyle = 'rgba(148,163,184,0.12)'; ctxA.fill();
-        // Dashed border lines for apparent band
-        const drawApLine = (fn, color) => {
-          ctxA.beginPath(); let drawing = false;
-          for (let i = 0; i <= ATMOS_DAYS; i++) {
-            const v = fn(i);
-            if (v !== null) { if (!drawing) { ctxA.moveTo(mapX(i), mapTempY(v)); drawing = true; } else { ctxA.lineTo(mapX(i), mapTempY(v)); } } else { drawing = false; }
-          }
-          ctxA.strokeStyle = color; ctxA.lineWidth = 1.5; ctxA.setLineDash([6, 5]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.beginPath(); let apS = false;
+        for (let i=0; i<=ATMOS_DAYS; i++) { const v=smApMax(i); if(v!==null){if(!apS){ctxA.moveTo(mapX(i),mapTempY(v));apS=true;}else{ctxA.lineTo(mapX(i),mapTempY(v));}}else{apS=false;} }
+        for (let i=ATMOS_DAYS; i>=0; i--) { const v=smApMin(i); if(v!==null) ctxA.lineTo(mapX(i),mapTempY(v)); }
+        ctxA.closePath(); ctxA.fillStyle='rgba(148,163,184,0.10)'; ctxA.fill();
+        const drawAp = (fn, col) => {
+          ctxA.beginPath(); let dr=false;
+          for(let i=0;i<=ATMOS_DAYS;i++){const v=fn(i);if(v!==null){if(!dr){ctxA.moveTo(mapX(i),mapTempY(v));dr=true;}else{ctxA.lineTo(mapX(i),mapTempY(v));}}else{dr=false;}}
+          ctxA.strokeStyle=col; ctxA.lineWidth=1.5; ctxA.setLineDash([6,5]); ctxA.stroke(); ctxA.setLineDash([]);
         };
-        drawApLine(smApMax, 'rgba(239,68,68,0.45)');
-        drawApLine(smApMin, 'rgba(59,130,246,0.45)');
+        drawAp(smApMax,'rgba(239,68,68,0.42)'); drawAp(smApMin,'rgba(59,130,246,0.42)');
       }
 
-      // Mountain temp band (solid, on top)
-      ctxA.beginPath(); let mtnStart = false;
-      for (let i = 0; i <= ATMOS_DAYS; i++) { const v = smSTMax(i); if (v !== null) { if (!mtnStart) { ctxA.moveTo(mapX(i), mapTempY(v)); mtnStart = true; } else { ctxA.lineTo(mapX(i), mapTempY(v)); } } else { mtnStart = false; } }
-      for (let i = ATMOS_DAYS; i >= 0; i--) { const v = smSTMin(i); if (v !== null) ctxA.lineTo(mapX(i), mapTempY(v)); }
+      // Mountain band (solid, on top)
+      ctxA.beginPath(); let mS=false;
+      for(let i=0;i<=ATMOS_DAYS;i++){const v=smSTMax(i);if(v!==null){if(!mS){ctxA.moveTo(mapX(i),mapTempY(v));mS=true;}else{ctxA.lineTo(mapX(i),mapTempY(v));}}else{mS=false;}}
+      for(let i=ATMOS_DAYS;i>=0;i--){const v=smSTMin(i);if(v!==null)ctxA.lineTo(mapX(i),mapTempY(v));}
       ctxA.closePath();
-      const grad = ctxA.createLinearGradient(0, pY, 0, pY + topH);
-      grad.addColorStop(0, 'rgba(239,68,68,0.22)'); grad.addColorStop(1, 'rgba(59,130,246,0.22)');
-      ctxA.fillStyle = grad; ctxA.fill();
-      const drawMtnLine = (fn, color) => {
-        ctxA.beginPath(); let drawing = false;
-        for (let i = 0; i <= ATMOS_DAYS; i++) {
-          const v = fn(i);
-          if (v !== null) { if (!drawing) { ctxA.moveTo(mapX(i), mapTempY(v)); drawing = true; } else { ctxA.lineTo(mapX(i), mapTempY(v)); } } else { drawing = false; }
-        }
-        ctxA.strokeStyle = color; ctxA.lineWidth = 2.5; ctxA.setLineDash([]); ctxA.stroke();
+      const tGrad = ctxA.createLinearGradient(0,pY,0,pY+topH);
+      tGrad.addColorStop(0,'rgba(239,68,68,0.22)'); tGrad.addColorStop(1,'rgba(59,130,246,0.22)');
+      ctxA.fillStyle = tGrad; ctxA.fill();
+      const drawMtn = (fn, col) => {
+        ctxA.beginPath(); let dr=false;
+        for(let i=0;i<=ATMOS_DAYS;i++){const v=fn(i);if(v!==null){if(!dr){ctxA.moveTo(mapX(i),mapTempY(v));dr=true;}else{ctxA.lineTo(mapX(i),mapTempY(v));}}else{dr=false;}}
+        ctxA.strokeStyle=col; ctxA.lineWidth=2.5; ctxA.setLineDash([]); ctxA.stroke();
       };
-      drawMtnLine(smSTMax, '#ef4444');
-      drawMtnLine(smSTMin, '#3b82f6');
+      drawMtn(smSTMax,'#ef4444'); drawMtn(smSTMin,'#3b82f6');
 
-      ctxA.restore(); // end temperature clip
+      // Inline end-of-chart annotations: "T max" on red line, "T min" on blue line
+      // Find rightmost non-null value for each
+      let annIdx = ATMOS_DAYS;
+      while (annIdx > 0 && (smSTMax(annIdx) === null || smSTMin(annIdx) === null)) annIdx--;
+      if (annIdx > 0) {
+        const annX = mapX(annIdx);
+        const annYMax = mapTempY(smSTMax(annIdx));
+        const annYMin = mapTempY(smSTMin(annIdx));
+        ctxA.font = `bold ${Math.max(10, Math.floor(11*sc))}px system-ui`;
+        ctxA.textBaseline = 'middle'; ctxA.textAlign = 'left';
+        ctxA.fillStyle = '#ef4444'; ctxA.fillText('T max', annX+4, annYMax);
+        ctxA.fillStyle = '#3b82f6'; ctxA.fillText('T min', annX+4, annYMin);
+        if (hasApparent) {
+          const aMax = smApMax(annIdx), aMin = smApMin(annIdx);
+          if (aMax !== null) { ctxA.fillStyle='rgba(239,68,68,0.55)'; ctxA.fillText('Feels max', annX+4, mapTempY(aMax)); }
+          if (aMin !== null) { ctxA.fillStyle='rgba(59,130,246,0.55)'; ctxA.fillText('Feels min', annX+4, mapTempY(aMin)); }
+        }
+        ctxA.font = fonts.axis;
+      }
 
-      // ── Divider ─────────────────────────────────────────────────────────────
+      ctxA.restore(); // end temp clip
+
+      // ── 4. Zone header labels (drawn over clip, inside each zone) ──────────
+      const hdrFont = `bold ${Math.max(11, Math.floor(12*sc))}px system-ui`;
+      ctxA.font = hdrFont; ctxA.textBaseline = 'top'; ctxA.textAlign = 'left';
+      ctxA.fillStyle = getStyleVar('--text-muted');
+      ctxA.fillText(`⛰ Mountain temperature  ·  ${curYear}/${String(curYear+1).slice(2)}`, pX+6, pY+4);
+      ctxA.fillText('☀ Clear sky hrs   ❄ New snow cm   💨 Peak gust km/h', pX+6, botY0+5);
+      ctxA.font = fonts.axis;
+
+      // ── 5. Divider ─────────────────────────────────────────────────────────
       ctxA.beginPath(); ctxA.moveTo(pX, divY); ctxA.lineTo(pX+w, divY);
       ctxA.lineWidth = 1.5; ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.stroke();
-      ctxA.fillStyle = getStyleVar('--text-muted'); ctxA.font = fonts.axis;
-      ctxA.textAlign = 'right'; ctxA.textBaseline = 'bottom';
-      ctxA.fillText('Mountain °C', pX - 4, divY - 4);
-      ctxA.textBaseline = 'top';
-      ctxA.fillText('Clear sky hrs · Snow · Gust', pX - 4, divY + 4);
 
-      // ── Bar zone axes (right side) ──────────────────────────────────────────
-      ctxA.textAlign = 'left'; ctxA.textBaseline = 'top';
-      ctxA.fillStyle = 'rgba(180,120,0,0.85)';
-      ctxA.fillText(`8h ☀ max`, pX+w+8, botY0);
-      ctxA.fillStyle = 'rgba(59,130,246,0.8)';
-      ctxA.fillText(`${atmSnowMax}cm`, pX+w+8, botY0 + botH*0.32);
-      ctxA.fillStyle = 'rgba(200,50,50,0.8)';
-      ctxA.fillText(`${atmGustMax}km/h`, pX+w+8, botY0 + botH*0.64);
+      // ── 6. Bar zone grid lines — full width, labeled left ──────────────────
+      ctxA.font = fonts.axis; ctxA.textAlign = 'right'; ctxA.textBaseline = 'middle';
 
-      // ── Bars: bluebird (amber) behind, snow (blue) in front ─────────────────
-      for (let i = 0; i <= ATMOS_DAYS; i++) {
+      // Sun: 2h, 4h, 6h, 8h
+      [2, 4, 6, 8].forEach(h => {
+        if (h > atmBBMax) return;
+        const y = mapBBY(h);
+        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
+        ctxA.strokeStyle = h === 6 ? 'rgba(180,120,0,0.30)' : 'rgba(180,120,0,0.12)';
+        ctxA.lineWidth = h === 6 ? 1.5 : 1; ctxA.setLineDash(h===6?[5,4]:[]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.fillStyle = 'rgba(150,100,0,0.7)';
+        ctxA.fillText(`${h}h`, pX-6, y);
+      });
+
+      // Snow: half-scale + full-scale
+      [Math.round(atmSnowMax/2), atmSnowMax].forEach(v => {
+        const y = mapSnY(v);
+        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
+        ctxA.strokeStyle = 'rgba(59,130,246,0.12)'; ctxA.lineWidth = 1; ctxA.stroke();
+      });
+
+      // Gust: every 40 km/h
+      for (let g=40; g<=atmGustMax; g+=40) {
+        const y = mapGustY(g);
+        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
+        ctxA.strokeStyle = g===65 ? 'rgba(239,68,68,0.28)' : 'rgba(239,68,68,0.10)';
+        ctxA.lineWidth = g===65 ? 1.5 : 1; ctxA.setLineDash(g===65?[5,4]:[]); ctxA.stroke(); ctxA.setLineDash([]);
+      }
+
+      // ── 7. Right-side axis labels — anchored to actual data positions ───────
+      ctxA.textAlign = 'left'; ctxA.textBaseline = 'middle';
+      // Sun axis: label at 8h top and 4h mid
+      ctxA.fillStyle = 'rgba(150,100,0,0.85)';
+      ctxA.fillText('8h sun ☀', pX+w+6, mapBBY(8));
+      ctxA.fillText('4h', pX+w+6, mapBBY(4));
+      // Snow axis: at half and full
+      ctxA.fillStyle = 'rgba(37,99,235,0.85)';
+      ctxA.fillText(`${atmSnowMax}cm ❄`, pX+w+6, mapSnY(atmSnowMax));
+      ctxA.fillText(`${Math.round(atmSnowMax/2)}cm`, pX+w+6, mapSnY(Math.round(atmSnowMax/2)));
+      // Gust axis: at full max and 65
+      ctxA.fillStyle = 'rgba(200,50,50,0.85)';
+      ctxA.fillText(`${atmGustMax} km/h 💨`, pX+w+6, mapGustY(atmGustMax));
+      if (atmGustMax > 65) { ctxA.fillText('65 ⚠ lifts', pX+w+6, mapGustY(65)); }
+
+      // ── 8. Bars ─────────────────────────────────────────────────────────────
+      for (let i=0; i<=ATMOS_DAYS; i++) {
         if (!atmosData[i]) continue;
         const d = atmosData[i];
         if (d.bbH > 0) {
-          // Color bars by quality: deep amber ≥ 6h, mid amber ≥ 3h, pale below
-          const frac = Math.min(1, d.bbH / Math.max(atmBBMax, 1));
-          const alpha = 0.25 + 0.55 * frac;
-          ctxA.fillStyle = `rgba(217,163,0,${alpha.toFixed(2)})`;
+          const frac = Math.min(1, d.bbH / atmBBMax);
+          ctxA.fillStyle = `rgba(217,163,0,${(0.22+0.58*frac).toFixed(2)})`;
           const sy = mapBBY(d.bbH);
-          ctxA.fillRect(mapX(i) - barW, sy, barW, botY0 + botH - sy);
+          ctxA.fillRect(mapX(i)-barW, sy, barW, botY0+botH-sy);
         }
         if (d.snow > 0) {
           ctxA.fillStyle = getStyleVar('--snow-yield');
           const sny = mapSnY(d.snow);
-          ctxA.fillRect(mapX(i), sny, barW * 0.7, botY0 + botH - sny);
+          ctxA.fillRect(mapX(i), sny, barW*0.7, botY0+botH-sny);
         }
       }
 
-      // ── Wind gust line ───────────────────────────────────────────────────────
-      ctxA.beginPath(); let drawingG = false;
-      for (let i = 0; i <= ATMOS_DAYS; i++) {
-        if (atmosData[i]) {
-          const y = mapGustY(atmosData[i].gust);
-          if (!drawingG) { ctxA.moveTo(mapX(i), y); drawingG = true; } else { ctxA.lineTo(mapX(i), y); }
-        } else { drawingG = false; }
+      // ── 9. Wind gust line ───────────────────────────────────────────────────
+      ctxA.beginPath(); let dG=false;
+      for(let i=0;i<=ATMOS_DAYS;i++){
+        if(atmosData[i]){const y=mapGustY(atmosData[i].gust);if(!dG){ctxA.moveTo(mapX(i),y);dG=true;}else{ctxA.lineTo(mapX(i),y);}}else{dG=false;}
       }
-      ctxA.strokeStyle = 'rgba(239,68,68,0.65)'; ctxA.lineWidth = 1.5; ctxA.setLineDash([4, 4]); ctxA.stroke(); ctxA.setLineDash([]);
+      ctxA.strokeStyle='rgba(239,68,68,0.65)'; ctxA.lineWidth=1.5; ctxA.setLineDash([4,4]); ctxA.stroke(); ctxA.setLineDash([]);
 
-      // ── Bar zone reference lines ─────────────────────────────────────────────
-      ctxA.save(); ctxA.font = fonts.axis; ctxA.lineWidth = 1;
-      if (atmBBMax > 6) {
+      // ── 10. "6h good" full-width label above the gridline (not over bars) ───
+      if (atmBBMax >= 6) {
         const ry = mapBBY(6);
-        ctxA.beginPath(); ctxA.moveTo(pX, ry); ctxA.lineTo(pX + w * 0.4, ry);
-        ctxA.strokeStyle = 'rgba(180,120,0,0.3)'; ctxA.setLineDash([3,3]); ctxA.stroke(); ctxA.setLineDash([]);
-        ctxA.fillStyle = 'rgba(150,100,0,0.6)'; ctxA.textAlign = 'left'; ctxA.textBaseline = 'bottom';
-        ctxA.fillText('6h good', pX + 3, ry - 2);
+        ctxA.font = `${Math.max(10, Math.floor(11*sc))}px system-ui`;
+        ctxA.fillStyle = 'rgba(140,90,0,0.55)';
+        ctxA.textAlign = 'left'; ctxA.textBaseline = 'bottom';
+        ctxA.fillText('▸ 6h = good day', pX+4, ry-2);
+        ctxA.font = fonts.axis;
       }
-      if (atmGustMax > 65) {
-        const gy = mapGustY(65);
-        ctxA.beginPath(); ctxA.moveTo(pX + w * 0.6, gy); ctxA.lineTo(pX + w, gy);
-        ctxA.strokeStyle = 'rgba(239,68,68,0.35)'; ctxA.setLineDash([3,3]); ctxA.stroke(); ctxA.setLineDash([]);
-        ctxA.fillStyle = 'rgba(200,50,50,0.6)'; ctxA.textAlign = 'right'; ctxA.textBaseline = 'bottom';
-        ctxA.fillText('65 lift', pX + w - 3, gy - 2);
-      }
-      ctxA.restore();
 
+      // ── 11. Hover tooltip ───────────────────────────────────────────────────
       if (atmosHoverDay !== null && atmosHoverDay >= 0 && atmosHoverDay <= ATMOS_DAYS && atmosData[atmosHoverDay]) {
         const d = atmosData[atmosHoverDay]; const hx = mapX(atmosHoverDay);
-        ctxA.beginPath(); ctxA.moveTo(hx, pY); ctxA.lineTo(hx, botY0+botH);
-        ctxA.strokeStyle = getStyleVar('--text-main'); ctxA.lineWidth = 2; ctxA.setLineDash([5,5]); ctxA.stroke(); ctxA.setLineDash([]);
 
-        const scale   = cvsA.width / (cvsA.clientWidth || 1000);
+        // crosshair
+        ctxA.beginPath(); ctxA.moveTo(hx, pY); ctxA.lineTo(hx, botY0+botH);
+        ctxA.strokeStyle=getStyleVar('--text-main'); ctxA.lineWidth=2; ctxA.setLineDash([5,5]); ctxA.stroke(); ctxA.setLineDash([]);
+
         const hasAp   = d.apMax !== null || d.apMin !== null;
         const hasVill = d.vMax !== null;
-        const rowCnt  = 3 + (hasAp ? 1 : 0) + (hasVill ? 1 : 0) + 2; // date + mtn + ap? + vill? + bb + gust+snow
-        const boxW    = 220 * scale, boxH = (20 + rowCnt * 22) * scale, padding = 14 * scale;
-        const hoverInBot = hx > pX && mapGustY(d.gust || 0) > divY;
-        let boxX = hx + padding;
-        let boxY = hoverInBot ? Math.max(botY0 + 2*scale, botY0 + botH - boxH - padding) : pY + 4*scale;
-        if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
 
+        // Count real rows
+        const rows = [
+          d.date,
+          `⛰ ${(STATIC_METADATA[window.GLOBAL_RESORT]||{summit:'?'}).summit}m  T max / T min`,
+          hasAp    ? '🧤 Feels-like  max / min' : null,
+          hasVill  ? '🏘 Village  max / min'    : null,
+          `☀ Clear sky  ${d.bbH.toFixed(1)} h`,
+          `❄ New snow  ${d.snow.toFixed(1)} cm`,
+          `💨 Peak gust  ${d.gust.toFixed(0)} km/h`,
+        ].filter(Boolean);
+
+        const rowH   = 22 * sc;
+        const pad    = 13 * sc;
+        const boxW   = 240 * sc;
+        const boxH   = pad*2 + rows.length * rowH;
+
+        // X: prefer right of cursor, flip left if overflowing, clamp to chart
+        let boxX = hx + pad;
+        if (boxX + boxW > pX+w) boxX = hx - boxW - pad;
+        boxX = Math.max(pX, Math.min(pX+w-boxW, boxX));
+
+        // Y: top half → anchor to top of temp zone; bottom half → anchor above bottom
+        const hoverInTop = hx > pX && (d.sTMax === null || mapTempY(d.sTMax) > pY);
+        let boxY;
+        if (isAtmosTouch) {
+          boxY = pY + 2*sc; // always top on touch
+        } else {
+          boxY = pY + 4*sc; // default: top of chart
+          // if cursor is in bar zone and box would overlap data there, push down
+          if (atmosHoverDay !== null) {
+            const cursorCanvasX = hx;
+            const cursorFraction = (cursorCanvasX - pX) / w;
+            if (cursorFraction > 0 && cursorFraction < 1) {
+              // tooltip in top zone unless it'd clip — always fine there
+            }
+          }
+        }
+        // Hard clamp: never overflow bottom of canvas
+        if (boxY + boxH > botY0+botH) boxY = botY0+botH - boxH - pad;
+        if (boxY < pY) boxY = pY;
+
+        // Draw box
         ctxA.fillStyle = getStyleVar('--bg-header');
         ctxA.fillRect(boxX, boxY, boxW, boxH);
         ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.strokeRect(boxX, boxY, boxW, boxH);
-        ctxA.textAlign = 'left'; ctxA.textBaseline = 'top'; ctxA.font = fonts.tooltip;
 
-        const elev = STATIC_METADATA[window.GLOBAL_RESORT] || { base: '?', summit: '?' };
+        ctxA.textAlign = 'left'; ctxA.textBaseline = 'top';
+        ctxA.font = fonts.tooltip;
+
+        const elev = STATIC_METADATA[window.GLOBAL_RESORT] || {base:'?', summit:'?'};
         let row = 0;
-        const ln = (txt, color) => {
-          ctxA.fillStyle = color || getStyleVar('--text-main');
-          ctxA.fillText(txt, boxX + padding, boxY + padding + row++ * 22 * scale);
+        const ln = (txt, col) => {
+          ctxA.fillStyle = col || getStyleVar('--text-main');
+          ctxA.fillText(txt, boxX+pad, boxY+pad + row++*rowH);
         };
-        ln(d.date, getStyleVar('--text-muted'));
-        ln(`⛰ ${elev.summit}m  ${d.sTMax !== null ? d.sTMax.toFixed(1) : '—'} / ${d.sTMin !== null ? d.sTMin.toFixed(1) : '—'}°C`);
-        if (hasAp) ln(`🧤 Feels-like  ${d.apMax !== null ? d.apMax.toFixed(1) : '—'} / ${d.apMin !== null ? d.apMin.toFixed(1) : '—'}°C`, 'rgba(100,116,139,0.9)');
-        if (hasVill) ln(`🏘 ${elev.base}m  ${d.vMax !== null ? d.vMax.toFixed(1) : '—'} / ${d.vMin !== null ? d.vMin.toFixed(1) : '—'}°C`, getStyleVar('--text-muted'));
-        ln(`☀ Clear sky  ${d.bbH.toFixed(1)} h  (${d.sunH.toFixed(1)}h sun × cloud correction)`, 'rgba(180,120,0,0.9)');
-        ln(`❄ New snow  ${d.snow.toFixed(1)} cm`, '#2563eb');
-        ln(`💨 Peak gust  ${d.gust.toFixed(0)} km/h${d.gust > 65 ? '  ⚠ lifts' : ''}`, '#ef4444');
 
-        // Dot markers on temperature lines
-        if (d.sTMax !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(smSTMax(atmosHoverDay) ?? d.sTMax), 5, 0, 2*Math.PI); ctxA.fillStyle='#ef4444'; ctxA.fill(); }
-        if (d.sTMin !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(smSTMin(atmosHoverDay) ?? d.sTMin), 5, 0, 2*Math.PI); ctxA.fillStyle='#3b82f6'; ctxA.fill(); }
-        if (hasAp && d.apMax !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(smApMax(atmosHoverDay) ?? d.apMax), 4, 0, 2*Math.PI); ctxA.fillStyle='rgba(239,68,68,0.45)'; ctxA.fill(); }
-        if (hasAp && d.apMin !== null) { ctxA.beginPath(); ctxA.arc(hx, mapTempY(smApMin(atmosHoverDay) ?? d.apMin), 4, 0, 2*Math.PI); ctxA.fillStyle='rgba(59,130,246,0.45)'; ctxA.fill(); }
+        ln(d.date, getStyleVar('--text-muted'));
+        ln(`⛰ ${elev.summit}m   ${d.sTMax!==null?d.sTMax.toFixed(1):'—'} / ${d.sTMin!==null?d.sTMin.toFixed(1):'—'}°C   (max/min)`);
+        if (hasAp) ln(`🧤 Feels-like   ${d.apMax!==null?d.apMax.toFixed(1):'—'} / ${d.apMin!==null?d.apMin.toFixed(1):'—'}°C`, 'rgba(100,116,139,0.9)');
+        if (hasVill) ln(`🏘 ${elev.base}m   ${d.vMax!==null?d.vMax.toFixed(1):'—'} / ${d.vMin!==null?d.vMin.toFixed(1):'—'}°C`, getStyleVar('--text-muted'));
+        ln(`☀ Clear sky   ${d.bbH.toFixed(1)} h   (${d.sunH.toFixed(1)}h sun × cloud correction)`, 'rgba(160,100,0,0.9)');
+        ln(`❄ New snow   ${d.snow.toFixed(1)} cm`, '#2563eb');
+        ln(`💨 Peak gust   ${d.gust.toFixed(0)} km/h${d.gust>65?' — ⚠ lift holds likely':''}`, d.gust>65?'#ef4444':'var(--text-main)');
+
+        // Dot markers
+        if (d.sTMax!==null){ctxA.beginPath();ctxA.arc(hx,mapTempY(smSTMax(atmosHoverDay)??d.sTMax),5,0,2*Math.PI);ctxA.fillStyle='#ef4444';ctxA.fill();}
+        if (d.sTMin!==null){ctxA.beginPath();ctxA.arc(hx,mapTempY(smSTMin(atmosHoverDay)??d.sTMin),5,0,2*Math.PI);ctxA.fillStyle='#3b82f6';ctxA.fill();}
+        if (hasAp&&d.apMax!==null){ctxA.beginPath();ctxA.arc(hx,mapTempY(smApMax(atmosHoverDay)??d.apMax),4,0,2*Math.PI);ctxA.fillStyle='rgba(239,68,68,0.5)';ctxA.fill();}
+        if (hasAp&&d.apMin!==null){ctxA.beginPath();ctxA.arc(hx,mapTempY(smApMin(atmosHoverDay)??d.apMin),4,0,2*Math.PI);ctxA.fillStyle='rgba(59,130,246,0.5)';ctxA.fill();}
       }
     };
 
-    cvsA.addEventListener('mousemove', (e) => { isAtmosTouch = false; const rect = cvsA.getBoundingClientRect(); atmosHoverDay = Math.round((((e.clientX - rect.left) * (cvsA.width / rect.width)) - ATMOS_PAD_X) / (cvsA.width - ATMOS_PAD_X*2) * ATMOS_DAYS); window.repaintAtmosCanvas(); });
+    // ── Event listeners — use _atmosPX() for consistent hit-testing ──────────
+    const _atmosHitX = (clientX) => {
+      const rect = cvsA.getBoundingClientRect();
+      const pX   = _atmosPX();
+      const cvsW = cvsA.width;
+      const cssW = rect.width;
+      const bufX = (clientX - rect.left) * (cvsW / cssW);
+      return Math.round((bufX - pX) / (cvsW - pX*2) * ATMOS_DAYS);
+    };
+
+    cvsA.addEventListener('mousemove', (e) => {
+      isAtmosTouch = false;
+      atmosHoverDay = _atmosHitX(e.clientX);
+      if (atmosHoverDay < 0 || atmosHoverDay > ATMOS_DAYS) atmosHoverDay = null;
+      window.repaintAtmosCanvas();
+    });
     cvsA.addEventListener('mouseleave', () => { atmosHoverDay = null; window.repaintAtmosCanvas(); });
-    cvsA.addEventListener('touchmove', (e) => { if (e.touches.length > 0) { e.preventDefault(); isAtmosTouch = true; const rect = cvsA.getBoundingClientRect(); atmosHoverDay = Math.round((((e.touches[0].clientX - rect.left) * (cvsA.width / rect.width)) - ATMOS_PAD_X) / (cvsA.width - ATMOS_PAD_X*2) * ATMOS_DAYS); window.repaintAtmosCanvas(); } }, {passive: false});
+    cvsA.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        e.preventDefault(); isAtmosTouch = true;
+        atmosHoverDay = _atmosHitX(e.touches[0].clientX);
+        if (atmosHoverDay < 0 || atmosHoverDay > ATMOS_DAYS) atmosHoverDay = null;
+        window.repaintAtmosCanvas();
+      }
+    }, {passive: false});
     window.addEventListener('resize', () => { setupHiDPI(cvsA, 2000, 600); window.repaintAtmosCanvas(); });
     setTimeout(window.repaintAtmosCanvas, 100);
   });
 </script>
+
+<footer style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 0;">
+  Zwei Länder Skiarena · Open-Meteo ERA5-Seamless + ECMWF/ICON/GFS · Refreshed every 6 hours
+</footer>
 </body>
 </html>
