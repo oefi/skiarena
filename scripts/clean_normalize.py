@@ -13,6 +13,12 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+RAW_DIR  = Path(__file__).parent.parent / "data" / "raw"
+OUT_DIR  = Path(__file__).parent.parent / "data" / "processed"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+RESORTS = ["nauders", "schoeneben", "watles", "sulden", "trafoi"]
+
 
 def load_raw(resort, elevation):
     path = RAW_DIR / f"{resort}_{elevation}_raw.json"
