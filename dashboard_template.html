@@ -2134,7 +2134,7 @@
       const pBot  = 28;                     // bottom pad — month labels
       const w     = cvsA.width  - pX - pRight;
       const h     = cvsA.height - pY - pBot;
-      const topH  = Math.round(h * 0.56);   // temperature zone
+      const topH  = Math.round(h * 0.70);   // temperature zone — ~70%
       const divY  = pY + topH;
       const botY0 = divY + 1;               // bar zone starts immediately below divider
       const botH  = h - topH - 1;
@@ -2155,11 +2155,13 @@
       // ── Bar zone axes ──────────────────────────────────────────────────────
       const rawMaxSnow = validTemps.length ? Math.max(...validTemps.map(d => d.snow)) : 30;
       const rawMaxGust = validTemps.length ? Math.max(...validTemps.map(d => d.gust)) : 120;
-      const atmBBMax   = 8;
+      const atmBBMax   = 12;  // natural max daylight at 47°N in late Apr ≈ 13.5h; 12h is the practical cap
       const atmSnowMax = Math.ceil(Math.max(30, rawMaxSnow+5)/10)*10;
       const atmGustMax = Math.ceil(Math.max(120, rawMaxGust+10)/20)*20;
       const mapBBY    = s => botY0 + botH - (Math.min(s, atmBBMax)   / atmBBMax)   * botH;
-      const mapSnY    = s => botY0 + botH - (Math.min(s, atmSnowMax) / atmSnowMax) * botH;
+      // Snow bars mapped to lower 35% of bar zone — new snowfall is a secondary signal;
+      // constraining its height prevents it from visually competing with the sun bars.
+      const mapSnY    = s => botY0 + botH - (Math.min(s, atmSnowMax) / atmSnowMax) * (botH * 0.35);
       const mapGustY  = g => botY0 + botH - (Math.min(g, atmGustMax) / atmGustMax) * botH;
 
       const fonts = getResponsiveCanvasFonts(cvsA, 13, 14);
@@ -2273,56 +2275,68 @@
       ctxA.font = hdrFont; ctxA.textBaseline = 'top'; ctxA.textAlign = 'left';
       ctxA.fillStyle = getStyleVar('--text-muted');
       ctxA.fillText(`⛰ Mountain temperature  ·  ${curYear}/${String(curYear+1).slice(2)}`, pX+6, pY+4);
-      ctxA.fillText('☀ Clear sky hrs   ❄ New snow cm   💨 Peak gust km/h', pX+6, botY0+5);
+      ctxA.fillText('☀ Clear sky hours (left axis, h)   ❄ New snowfall (cm)   💨 Peak gust (right axis, km/h)', pX+6, botY0+5);
       ctxA.font = fonts.axis;
 
       // ── 5. Divider ─────────────────────────────────────────────────────────
       ctxA.beginPath(); ctxA.moveTo(pX, divY); ctxA.lineTo(pX+w, divY);
       ctxA.lineWidth = 1.5; ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.stroke();
 
-      // ── 6. Bar zone grid lines — full width, labeled left ──────────────────
+      // ── 6. Bar zone grid lines + left axis (sun hours) ─────────────────────
+      // Left axis: sun hours only — primary series, amber, evenly spaced at 3h intervals
       ctxA.font = fonts.axis; ctxA.textAlign = 'right'; ctxA.textBaseline = 'middle';
 
-      // Sun: 2h, 4h, 6h, 8h
-      [2, 4, 6, 8].forEach(h => {
-        if (h > atmBBMax) return;
-        const y = mapBBY(h);
+      [3, 6, 9, 12].forEach(v => {
+        const y = mapBBY(v);
         ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
-        ctxA.strokeStyle = h === 6 ? 'rgba(180,120,0,0.30)' : 'rgba(180,120,0,0.12)';
-        ctxA.lineWidth = h === 6 ? 1.5 : 1; ctxA.setLineDash(h===6?[5,4]:[]); ctxA.stroke(); ctxA.setLineDash([]);
-        ctxA.fillStyle = 'rgba(150,100,0,0.7)';
-        ctxA.fillText(`${h}h`, pX-6, y);
+        ctxA.strokeStyle = v === 6 ? 'rgba(180,120,0,0.28)' : 'rgba(180,120,0,0.10)';
+        ctxA.lineWidth = v === 6 ? 1.5 : 1;
+        ctxA.setLineDash(v === 6 ? [5,4] : []); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.fillStyle = 'rgba(140,90,0,0.75)';
+        ctxA.fillText(`${v}h`, pX - 6, y);
       });
 
-      // Snow: half-scale + full-scale
-      [Math.round(atmSnowMax/2), atmSnowMax].forEach(v => {
-        const y = mapSnY(v);
-        ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
-        ctxA.strokeStyle = 'rgba(59,130,246,0.12)'; ctxA.lineWidth = 1; ctxA.stroke();
-      });
-
-      // Gust: every 40 km/h
-      for (let g=40; g<=atmGustMax; g+=40) {
+      // Gust reference lines (no left labels — gust is on right axis)
+      for (let g = 40; g <= atmGustMax; g += 40) {
         const y = mapGustY(g);
         ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y);
-        ctxA.strokeStyle = g===65 ? 'rgba(239,68,68,0.28)' : 'rgba(239,68,68,0.10)';
-        ctxA.lineWidth = g===65 ? 1.5 : 1; ctxA.setLineDash(g===65?[5,4]:[]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.strokeStyle = g === 65 ? 'rgba(239,68,68,0.25)' : 'rgba(239,68,68,0.08)';
+        ctxA.lineWidth = g === 65 ? 1.5 : 1;
+        ctxA.setLineDash(g === 65 ? [5,4] : []); ctxA.stroke(); ctxA.setLineDash([]);
       }
 
-      // ── 7. Right-side axis labels — anchored to actual data positions ───────
-      ctxA.textAlign = 'left'; ctxA.textBaseline = 'middle';
-      // Sun axis: label at 8h top and 4h mid
-      ctxA.fillStyle = 'rgba(150,100,0,0.85)';
-      ctxA.fillText('8h sun ☀', pX+w+6, mapBBY(8));
-      ctxA.fillText('4h', pX+w+6, mapBBY(4));
-      // Snow axis: at half and full
-      ctxA.fillStyle = 'rgba(37,99,235,0.85)';
-      ctxA.fillText(`${atmSnowMax}cm ❄`, pX+w+6, mapSnY(atmSnowMax));
-      ctxA.fillText(`${Math.round(atmSnowMax/2)}cm`, pX+w+6, mapSnY(Math.round(atmSnowMax/2)));
-      // Gust axis: at full max and 65
+      // ── 7. Right-side axis labels — each anchored to its own scale ──────────
+      // Three series, three colors, right margin. Font slightly smaller to avoid overlap.
+      const rFont = `${Math.max(9, Math.floor(11*sc))}px system-ui`;
+      ctxA.font = rFont; ctxA.textAlign = 'left'; ctxA.textBaseline = 'middle';
+
+      // Sun: top label only (12h) — left axis already has the tick marks
+      ctxA.fillStyle = 'rgba(140,90,0,0.85)';
+      ctxA.fillText('12h ☀', pX+w+5, mapBBY(12));
+
+      // Gust: right axis — anchored to actual gridlines
       ctxA.fillStyle = 'rgba(200,50,50,0.85)';
-      ctxA.fillText(`${atmGustMax} km/h 💨`, pX+w+6, mapGustY(atmGustMax));
-      if (atmGustMax > 65) { ctxA.fillText('65 ⚠ lifts', pX+w+6, mapGustY(65)); }
+      for (let g = 40; g <= atmGustMax; g += 40) {
+        const y = mapGustY(g);
+        const lbl = g === 65 ? '65⚠' : `${g}`;
+        ctxA.fillText(lbl, pX+w+5, y);
+      }
+      if (atmGustMax >= 65 && ![40,80,120,160].includes(65)) {
+        // 65 km/h is not on a 40-step grid — add explicit label if not already there
+        ctxA.fillText('65⚠', pX+w+5, mapGustY(65));
+      }
+      // "km/h" unit label at the very top of gust scale, smaller, muted
+      ctxA.fillStyle = 'rgba(200,50,50,0.55)';
+      ctxA.font = `${Math.max(8, Math.floor(9*sc))}px system-ui`;
+      ctxA.textBaseline = 'bottom';
+      ctxA.fillText('km/h', pX+w+5, mapGustY(atmGustMax) - 2);
+
+      // Snow: single label at scale maximum, right side, blue, small
+      ctxA.font = rFont; ctxA.textBaseline = 'middle';
+      ctxA.fillStyle = 'rgba(37,99,235,0.80)';
+      ctxA.fillText(`❄ ${atmSnowMax}cm`, pX+w+5, mapSnY(atmSnowMax));
+
+      ctxA.font = fonts.axis; // restore
 
       // ── 8. Bars ─────────────────────────────────────────────────────────────
       for (let i=0; i<=ATMOS_DAYS; i++) {
@@ -2348,13 +2362,13 @@
       }
       ctxA.strokeStyle='rgba(239,68,68,0.65)'; ctxA.lineWidth=1.5; ctxA.setLineDash([4,4]); ctxA.stroke(); ctxA.setLineDash([]);
 
-      // ── 10. "6h good" full-width label above the gridline (not over bars) ───
-      if (atmBBMax >= 6) {
+      // ── 10. "6h good" label — at the 6h gridline, left side, above the line ─
+      {
         const ry = mapBBY(6);
-        ctxA.font = `${Math.max(10, Math.floor(11*sc))}px system-ui`;
-        ctxA.fillStyle = 'rgba(140,90,0,0.55)';
+        ctxA.font = `${Math.max(9, Math.floor(10*sc))}px system-ui`;
+        ctxA.fillStyle = 'rgba(130,85,0,0.50)';
         ctxA.textAlign = 'left'; ctxA.textBaseline = 'bottom';
-        ctxA.fillText('▸ 6h = good day', pX+4, ry-2);
+        ctxA.fillText('▸ 6h = good ski day', pX+4, ry - 2);
         ctxA.font = fonts.axis;
       }
 
