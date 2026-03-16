@@ -137,14 +137,14 @@
   .atmos-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* ── HEATMAP ── */
-  .hm-season-row { display: grid; grid-template-columns: 70px 1fr; gap: 0.5rem; align-items: center; font-size: 0.8rem; margin-bottom: 0.75rem; }
+  .hm-season-row { display: grid; grid-template-columns: 80px 1fr; gap: 0.5rem; align-items: start; font-size: 0.8rem; margin-bottom: 0.3rem; }
   .hm-season-row.hm-current-season { border-left: 3px solid var(--brand); padding-left: 0.4rem; margin-left: -0.4rem; }
-  .hm-master-row { display: grid; grid-template-columns: 70px 1fr; gap: 0.5rem; align-items: center; font-size: 0.8rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 2px solid var(--border-color); }
-  .hm-master-row .hm-grid { height: 32px; }
-  .hm-months-container { display: flex; gap: 4px; width: 100%; }
+  .hm-master-row { display: grid; grid-template-columns: 80px 1fr; gap: 0.5rem; align-items: center; font-size: 0.8rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 2px solid var(--border-color); }
+  .hm-master-row .hm-grid { height: 28px; }
+  .hm-months-container { display: flex; gap: 3px; width: 100%; }
   .hm-month-block { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
-  .hm-month-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 2px; text-align: center; letter-spacing: 0.05em; }
-  .hm-grid { display: flex; gap: 2px; height: 28px; width: 100%; }
+  .hm-month-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 2px; text-align: center; letter-spacing: 0.05em; height: 14px; overflow: hidden; }
+  .hm-grid { display: flex; gap: 1px; height: 26px; width: 100%; }
   .hm-cell { flex-grow: 1; height: 100%; border-radius: 2px; position: relative; cursor: crosshair; transition: background 0.3s ease; overflow: hidden; min-width: 8px; touch-action: manipulation; }
   .hm-cell:hover { opacity: 0.7; }
   .hm-cell-future {
@@ -306,20 +306,18 @@
 
   <!-- ── HEATMAP (COMPOSITE SCORE ENGINE) ── -->
   <section id="heatmap">
-    <div class="flex-between" style="margin-bottom: 1rem; align-items: flex-end;">
-      <div>
-        <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Best Time to Go 📅</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Historical ski quality by week — <span style="color:#16a34a;font-weight:600;">■ epic</span> <span style="color:#f59e0b;font-weight:600;">■ average</span> <span style="color:#ef4444;font-weight:600;">■ poor</span> · hover any cell for breakdown · <span style="opacity:0.7;">faded = shoulder season</span> · <span style="background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);padding:0 3px;border-radius:2px;">striped = peak holiday week</span></p>
-      </div>
-      <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
-        <button class="control-btn" data-res="1">1 Day</button>
-        <button class="control-btn" data-res="3">3 Days</button>
-        <button class="control-btn active" data-res="7">7 Days</button>
-      </div>
+    <div style="margin-bottom: 1rem;">
+      <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Best Time to Go 📅</h2>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+        6 seasons of daily ski conditions — hover any bar to see that day &nbsp;·&nbsp;
+        <span style="display:inline-flex;align-items:center;gap:3px;vertical-align:middle;">
+          <span style="display:inline-block;width:32px;height:8px;border-radius:2px;background:linear-gradient(to right,#ef4444,#eab308,#84cc16,#16a34a);"></span>
+        </span>&nbsp; poor → great
+        &nbsp;·&nbsp; <span style="opacity:0.65;">faded = lifts not running</span>
+        &nbsp;·&nbsp; <span style="display:inline-block;width:12px;height:8px;vertical-align:middle;background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);border-radius:1px;"></span> school holidays
+      </p>
     </div>
-
-    <div id="heatmap-container" style="display: flex; flex-direction: column; gap: 2rem; margin-top: 1rem;"></div>
-    <!-- Mobile tap detail panel — hidden on desktop, populated on cell tap -->
+    <div id="heatmap-container" style="display:flex;flex-direction:column;gap:0;margin-top:0.5rem;"></div>
     <div id="hm-detail-panel" style="display:none; margin-top:0.75rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:1rem; font-size:0.85rem;"></div>
   </section>
 
@@ -1825,312 +1823,315 @@
 
     renderTable(dp.value);
 
-    let hmRes = 7;
     const hc = document.getElementById('heatmap-container');
-    
-    const targetMonths = [ {m: 11, name: 'Nov', d: 30}, {m: 12, name: 'Dec', d: 31}, {m: 1, name: 'Jan', d: 31}, {m: 2, name: 'Feb', d: 29}, {m: 3, name: 'Mar', d: 31}, {m: 4, name: 'Apr', d: 30} ];
-    
-    document.querySelectorAll('#heatmap-controls .control-btn').forEach(btn => {
-      btn.onclick = (e) => {
-        document.querySelectorAll('#heatmap-controls .control-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active'); hmRes = parseInt(e.target.dataset.res); renderHeatmaps();
-      };
-    });
+    const SEASON_DAYS = 182;  // Nov 1 – Apr 30
+    // Month boundaries (offset from Nov 1)
+    const MONTH_OFFSETS = [
+      {off:0,  label:'Nov'}, {off:30, label:'Dec'}, {off:61, label:'Jan'},
+      {off:92, label:'Feb'}, {off:120,label:'Mar'}, {off:151,label:'Apr'},
+    ];
 
     const getSeasonYears = (resortData) => {
-      const years = new Set(resortData.map(r => { const y = parseInt(r.date.slice(0,4)); const m = parseInt(r.date.slice(5,7)); return m >= 11 ? y : y - 1; }));
+      const years = new Set(resortData.map(r => {
+        const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7));
+        return m >= 11 ? y : y - 1;
+      }));
       return Array.from(years).sort().reverse();
     };
 
-    // ── School holiday peak weeks (Reschenpass catchment) ─────────────────────
-    // Bavaria, Austria (Tirol), South Tyrol, Baden-Württemberg.
-    // Dates are approximate — exact dates shift ±1 week per year.
-    // Stored as [MM-DD, MM-DD] inclusive ranges (season-agnostic — matched by month/day only).
-    const PEAK_HOLIDAY_RANGES = [
-      // Christmas/New Year: always packed
-      ['12-23', '01-06'],
-      // Carnival / Faschingsferien: Bavaria late Jan–Feb, Austria varies
-      ['02-01', '02-09'],   // typical Bavaria Fasching week 1
-      ['02-10', '02-18'],   // typical Bavaria Fasching week 2 + Austria
-      // Easter: varies, approx late Mar–mid Apr
-      ['03-28', '04-14'],
-    ];
-
-    // Returns true if a date string YYYY-MM-DD falls inside any peak range
-    const isPeakHoliday = (dateStr) => {
-      const mmdd = dateStr.slice(5); // MM-DD
-      const mo   = parseInt(dateStr.slice(5,7));
-      return PEAK_HOLIDAY_RANGES.some(([lo, hi]) => {
-        const loMo = parseInt(lo.slice(0,2)), hiMo = parseInt(hi.slice(0,2));
-        // Handle year-wrap (e.g. Dec 23 – Jan 6)
-        if (loMo > hiMo) {
-          return mmdd >= lo || mmdd <= hi;
-        }
-        return mmdd >= lo && mmdd <= hi;
+    // Build score-per-day array for one season
+    const buildSeasonScores = (startYear, rData, dataMap, bounds) => {
+      const arr = new Array(SEASON_DAYS + 1).fill(null);
+      const seasonStart = Date.UTC(startYear, 10, 1); // Nov 1
+      rData.forEach(r => {
+        const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7));
+        const rSeason = m >= 11 ? y : y - 1;
+        if (rSeason !== startYear) return;
+        const off = Math.floor((Date.UTC(y, m-1, parseInt(r.date.slice(8,10))) - seasonStart) / 86400000);
+        if (off < 0 || off > SEASON_DAYS) return;
+        const scoreData = (r.score !== null && r.score !== undefined && r.metrics)
+          ? { score: r.score, metrics: r.metrics }
+          : computeDynamicScore(r, bounds);
+        arr[off] = { score: scoreData.score, metrics: scoreData.metrics, date: r.date, raw: r };
       });
+      return arr;
     };
 
-    // Returns true if a date chunk has established base (any day with depth > 40cm)
-    const chunkHasBase = (chunkDays, dataMap) =>
-      chunkDays.some(d => {
-        const r = dataMap[d]; if (!r) return false;
-        const dep = r.summit?.snow_depth ?? r.snow_depth ?? 0;
-        return dep >= 0.40;
-      });
+    // Is day-offset a shoulder period?
+    const isShoulder = off => off < 30 || off >= 166; // Nov = 0–29; Apr 15+ = 166–182
+
+    // Is date a peak holiday?
+    const isPeakOff = off => {
+      // Christmas (Dec 23 – Jan 6) = approx off 52–66
+      if (off >= 52 && off <= 66) return true;
+      // Carnival (Feb 1–18) = approx off 92–109
+      if (off >= 92 && off <= 109) return true;
+      // Easter (Mar 28 – Apr 14) = approx off 147–165
+      if (off >= 147 && off <= 165) return true;
+      return false;
+    };
+
+    // HSL color from 0-1 score (mirrors getColor but returns [r,g,b])
+    const scoreToRGB = (score) => {
+      if (score === null) return [230, 235, 241]; // null → light grey
+      const h = score * 120; // 0=red, 60=yellow, 120=green
+      // hsl to rgb inline
+      const s = 0.75, l = score < 0.15 ? 0.48 : 0.40;
+      const c = (1 - Math.abs(2*l - 1)) * s;
+      const x = c * (1 - Math.abs((h/60)%2 - 1));
+      const m = l - c/2;
+      let r1,g1,b1;
+      if      (h < 60)  { r1=c; g1=x; b1=0; }
+      else if (h < 120) { r1=x; g1=c; b1=0; }
+      else              { r1=0; g1=c; b1=x; }
+      return [Math.round((r1+m)*255), Math.round((g1+m)*255), Math.round((b1+m)*255)];
+    };
 
     window.renderHeatmaps = () => {
-      const bounds = window.getResortBounds(window.GLOBAL_RESORT);
       hc.innerHTML = '';
-
       const rData = byResort[window.GLOBAL_RESORT];
       if (!rData) {
-        hc.innerHTML = `<div style="color:#ef4444;padding:1rem;border:1px dashed #ef4444;border-radius:6px;">No historical telemetry found for ${window.GLOBAL_RESORT}.</div>`;
+        hc.innerHTML = `<div style="color:#ef4444;padding:1rem;border:1px dashed #ef4444;border-radius:6px;">No data for ${window.GLOBAL_RESORT}.</div>`;
         return;
       }
-
       const dataMap = {};
       rData.forEach(r => dataMap[r.date] = r);
-
-      // Format YYYY-MM-DD -> "Mon D"
-      const fmtDate = iso => {
-        const d = new Date(iso + 'T12:00:00Z');
-        return d.toLocaleDateString('en-GB', {month:'short', day:'numeric'});
-      };
-
       const seasons = getSeasonYears(rData);
       const latestSeasonYear = seasons[0];
-      const blocksBySeason = [];   // [si][mi][bi] — for master-row aggregation
+      const bounds = window.getResortBounds(window.GLOBAL_RESORT);
 
-      let html = `<div><h3 style="margin:0 0 0.5rem 0;font-size:1.2rem;text-transform:capitalize;color:var(--brand);">${window.GLOBAL_RESORT}</h3>`;
+      // Pre-build all season score arrays
+      const seasonData = seasons.map(yr => ({
+        year: yr,
+        scores: buildSeasonScores(yr, rData, dataMap, bounds),
+      }));
 
-      seasons.forEach((startYear, si) => {
-        const ss = `${startYear}/${String(startYear+1).slice(2)}`;
-        const isCurrent = startYear === latestSeasonYear;
+      // Compute historical average per day (exclude current season, shoulder excluded from avg)
+      const avgScores = new Array(SEASON_DAYS + 1).fill(null);
+      for (let d = 0; d <= SEASON_DAYS; d++) {
+        if (isShoulder(d)) continue;
+        const vals = seasonData
+          .filter(s => s.year !== latestSeasonYear && s.scores[d] !== null)
+          .map(s => s.scores[d].score);
+        if (vals.length) avgScores[d] = vals.reduce((a,b) => a+b,0) / vals.length;
+      }
 
-        // Season-level powder badge
-        let powderDays = 0;
-        rData.forEach(r => {
-          const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7));
-          const rSeason = m >= 11 ? y : y - 1;
-          if (rSeason !== startYear) return;
-          const fresh = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
-          const gust  = r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 999;
-          if (fresh > 10 && gust < 50) powderDays++;
+      // Shared tooltip element
+      const tip = document.getElementById('global-tooltip');
+
+      // ── WRAPPER ───────────────────────────────────────────────────────────
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'font-size:0.78rem;';
+
+      // ── RESORT LABEL + MONTH HEADER ───────────────────────────────────────
+      // Month header row — fixed pixel positions based on SEASON_DAYS
+      const headerRow = document.createElement('div');
+      headerRow.style.cssText = 'display:grid;grid-template-columns:72px 1fr;gap:4px;margin-bottom:3px;';
+      headerRow.innerHTML = '<div></div><div id="hm-month-header" style="position:relative;height:14px;"></div>';
+      wrap.appendChild(headerRow);
+
+      // Build month header after sizing (uses ResizeObserver below)
+      const drawMonthHeader = () => {
+        const el = document.getElementById('hm-month-header');
+        if (!el) return;
+        const W = el.offsetWidth;
+        if (!W) return;
+        el.innerHTML = '';
+        MONTH_OFFSETS.forEach(({off, label}) => {
+          const pct = off / SEASON_DAYS * 100;
+          const span = document.createElement('span');
+          span.textContent = label;
+          span.style.cssText = `position:absolute;left:${pct}%;font-size:0.6rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;transform:translateX(-2px);`;
+          el.appendChild(span);
         });
-        const powderBadge = powderDays > 0
-          ? `<span title="${powderDays} days >10cm fresh snow & manageable wind" style="font-size:0.6rem;background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);color:#60a5fa;border-radius:3px;padding:0.1rem 0.3rem;margin-left:0.4rem;font-weight:700;cursor:help;">❄️${powderDays}d</span>`
-          : '';
-        const currentBadge = isCurrent
-          ? `<span style="font-size:0.6rem;background:rgba(30,64,175,0.1);border:1px solid rgba(30,64,175,0.25);color:var(--brand);border-radius:3px;padding:0.1rem 0.3rem;margin-left:0.4rem;">current</span>`
-          : '';
+      };
 
-        html += `<div class="hm-season-row${isCurrent ? ' hm-current-season' : ''}">` +
-                `<div style="text-align:right;font-weight:bold;color:var(--text-muted);">${ss}${currentBadge}${powderBadge}</div>` +
-                `<div class="hm-months-container">`;
+      // ── SEASON ROWS ───────────────────────────────────────────────────────
+      const canvases = []; // track for resize
 
-        const seasonBlocks = [];
+      const makeRow = (sd, isAvg) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:72px 1fr;gap:4px;align-items:center;margin-bottom:2px;';
 
-        targetMonths.forEach((mo, mi) => {
-          const y = mo.m >= 11 ? startYear : startYear + 1;
-          const daysInMonth = mo.m === 2 ? new Date(y, 2, 0).getDate() : mo.d;
+        // Label cell
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'text-align:right;font-size:0.72rem;font-weight:700;color:var(--text-muted);white-space:nowrap;padding-right:4px;';
+        if (isAvg) {
+          lbl.innerHTML = `<span style="color:var(--brand);font-size:0.7rem;font-weight:800;">🏆 6-yr avg</span>`;
+        } else {
+          const yr = sd.year;
+          const ss = `${yr}/${String(yr+1).slice(2)}`;
+          const isCur = yr === latestSeasonYear;
+          lbl.innerHTML = isCur
+            ? `<span style="color:var(--brand);">${ss}</span><br><span style="font-size:0.58rem;color:var(--brand);opacity:0.75;">current</span>`
+            : ss;
+        }
+        row.appendChild(lbl);
 
-          const blocks = [];
-          for (let day = 1; day <= daysInMonth; day += hmRes) {
-            const chunkDays = [];
-            for (let i = 0; i < hmRes && (day+i) <= daysInMonth; i++)
-              chunkDays.push(`${y}-${String(mo.m).padStart(2,'0')}-${String(day+i).padStart(2,'0')}`);
+        // Canvas cell
+        const canvasWrap = document.createElement('div');
+        canvasWrap.style.cssText = 'position:relative;width:100%;';
+        const cvs = document.createElement('canvas');
+        cvs.style.cssText = `width:100%;height:${isAvg ? 22 : 18}px;display:block;border-radius:3px;cursor:crosshair;border:none;background:transparent;`;
+        cvs.height = isAvg ? 44 : 36; // 2× DPR
+        canvasWrap.appendChild(cvs);
+        row.appendChild(canvasWrap);
+        canvases.push({ cvs, sd, isAvg });
 
-            const startStr = chunkDays[0], endStr = chunkDays[chunkDays.length-1];
-            const isFuture = startStr > latestDataDate;
+        // ── Draw function ───────────────────────────────────────────────────
+        const drawBar = () => {
+          const W = cvs.offsetWidth;
+          if (!W) return;
+          cvs.width = W * 2; // HiDPI
+          const ctx = cvs.getContext('2d');
+          const H = cvs.height;
+          const scores = isAvg ? avgScores.map(s => s !== null ? { score: s } : null) : sd.scores;
 
-            const vs = chunkDays.map(d => {
-              if (!dataMap[d]) return null;
-              const rec = dataMap[d];
-              const scoreData = (rec.score !== null && rec.score !== undefined && rec.metrics)
-                ? { score: rec.score, metrics: rec.metrics }
-                : computeDynamicScore(rec, bounds);
-              return {
-                scoreData,
-                precipHours: dataMap[d].base?.precipitation_hours ?? dataMap[d].precipitation_hours ?? 0,
-                snowSum:     dataMap[d].summit?.snowfall_sum ?? dataMap[d].snowfall_sum ?? 0,
-                precipSum:   dataMap[d].base?.precipitation_sum ?? dataMap[d].precipitation_sum ?? 0,
-              };
-            }).filter(s => s !== null && s.scoreData.score !== null);
-
-            const snowTot        = vs.reduce((a,c) => a + c.snowSum, 0);
-            const precipTot      = vs.reduce((a,c) => a + c.precipSum, 0);
-            const precipHoursTot = vs.reduce((a,c) => a + c.precipHours, 0);
-            let avgScoreObj = null, scoreAvg = null;
-            if (vs.length > 0) {
-              const n = vs.length;
-              scoreAvg = vs.reduce((a,c) => a + c.scoreData.score, 0) / n;
-              avgScoreObj = { score: scoreAvg, metrics: {
-                fSun:       vs.reduce((a,c) => a+c.scoreData.metrics.fSun,       0)/n,
-                fDepth:     vs.reduce((a,c) => a+c.scoreData.metrics.fDepth,     0)/n,
-                fTemp:      vs.reduce((a,c) => a+c.scoreData.metrics.fTemp,      0)/n,
-                windMult:   vs.reduce((a,c) => a+c.scoreData.metrics.windMult,   0)/n,
-                powderBonus:vs.reduce((a,c) => a+(c.scoreData.metrics.powderBonus||0),0)/n,
-              }};
-            }
-
-            const dayNum     = parseInt(startStr.slice(8,10));
-            const isShoulder = mo.m === 11 || (mo.m === 4 && dayNum >= 15);
-            const isPeak     = chunkDays.some(d => isPeakHoliday(d));
-            const hasBase    = chunkHasBase(chunkDays, dataMap);
-            const epicDays        = vs.filter(v => v.scoreData.score >= 0.85).length;
-            const washoutDays     = vs.filter(v => v.scoreData.score  < 0.40).length;
-            const powderCellDays  = chunkDays.filter(d => {
-              const r = dataMap[d]; if (!r) return false;
-              const fresh = r.summit?.snowfall_sum ?? r.snowfall_sum ?? 0;
-              const gust  = r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 999;
-              return fresh >= 15 && gust < 60;
-            }).length;
-
-            // Human-readable date range label
-            const dateLabel = startStr === endStr
-              ? fmtDate(startStr)
-              : `${fmtDate(startStr)} \u2013 ${fmtDate(endStr)}`;
-
-            blocks.push({ d: dateLabel, sObj: avgScoreObj, s: scoreAvg,
-              f: snowTot, pH: precipHoursTot, pS: precipTot,
-              isFuture, isShoulder, isPeak, hasBase,
-              epicDays, washoutDays, powderCellDays, total: vs.length });
+          // Draw each day as a vertical strip
+          for (let d = 0; d <= SEASON_DAYS; d++) {
+            const x1 = Math.floor(d / SEASON_DAYS * W) * 2;
+            const x2 = Math.floor((d+1) / SEASON_DAYS * W) * 2;
+            const entry = scores[d];
+            let [r,g,b] = scoreToRGB(entry ? entry.score : null);
+            const shoulder = isShoulder(d);
+            if (shoulder) { r=Math.round(r*0.5+200*0.5); g=Math.round(g*0.5+210*0.5); b=Math.round(b*0.5+220*0.5); }
+            // Future days: light stipple
+            const startDate = `${d < 30 ? sd?.year ?? 2025 : (sd?.year ?? 2025)+1}-${String(d < 30 ? 11 : d < 61 ? 12 : d < 92 ? 1 : d < 120 ? 2 : d < 151 ? 3 : 4).padStart(2,'0')}-01`;
+            if (entry === null && !shoulder) { r=225; g=230; b=238; }
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x1, 0, Math.max(1, x2-x1), H);
           }
 
-          seasonBlocks[mi] = blocks;
+          // Month separator lines
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 1;
+          MONTH_OFFSETS.forEach(({off}) => {
+            if (off === 0) return;
+            const x = Math.floor(off / SEASON_DAYS * W) * 2;
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+          });
 
-          html += `<div class="hm-month-block"><div class="hm-month-label">${mo.name}</div><div class="hm-grid">` +
-            blocks.map(w => {
-              if (w.isFuture) return `<div class="hm-cell hm-cell-future has-tooltip"><div class="tt-data-node"><div>Future: ${w.d}</div></div></div>`;
+          // Holiday striping overlay
+          for (let d = 0; d <= SEASON_DAYS; d++) {
+            if (!isPeakOff(d)) continue;
+            const x1 = Math.floor(d / SEASON_DAYS * W) * 2;
+            const x2 = Math.floor((d+1) / SEASON_DAYS * W) * 2;
+            ctx.fillStyle = 'rgba(0,0,0,0.10)';
+            // diagonal stripe — draw small diagonal lines
+            ctx.save();
+            ctx.beginPath(); ctx.rect(x1,0,Math.max(1,x2-x1),H); ctx.clip();
+            ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=1;
+            for (let s=-H; s<(x2-x1)+H; s+=4) {
+              ctx.beginPath(); ctx.moveTo(x1+s,0); ctx.lineTo(x1+s+H,H); ctx.stroke();
+            }
+            ctx.restore();
+          }
 
-              let emojiHtml = '';
-              if (w.pH > 0) {
-                if (w.f > 0) emojiHtml = `<div class="hm-cell-content"><span class="hm-emoji">\u2744\uFE0F</span><span class="hm-hours">${Math.round(w.pH)}h</span></div>`;
-                else if (w.pS > 0) emojiHtml = `<div class="hm-cell-content"><span class="hm-emoji">\uD83C\uDF27\uFE0F</span><span class="hm-hours">${Math.round(w.pH)}h</span></div>`;
+          // "Data lag" marker — light vertical line at latestDataDate
+          if (!isAvg && sd.year === latestSeasonYear && latestDataDate) {
+            try {
+              const lagD = Math.floor((new Date(latestDataDate+'T12:00:00Z') - new Date(`${sd.year}-11-01T12:00:00Z`)) / 86400000);
+              if (lagD >= 0 && lagD <= SEASON_DAYS) {
+                const lx = Math.floor(lagD / SEASON_DAYS * W) * 2;
+                ctx.strokeStyle = 'rgba(30,64,175,0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4,4]);
+                ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,H); ctx.stroke();
+                ctx.setLineDash([]);
               }
+            } catch(e) {}
+          }
+        };
 
-              const ex =
-                `<div style="font-size:0.75rem;color:var(--text-main);margin-bottom:0.4rem;display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">` +
-                `<span>\u2744\uFE0F Snowfall: <b style="color:#2563eb">${w.f.toFixed(1)}cm</b></span>` +
-                `<span>\uD83C\uDF27\uFE0F Precip: <b>${Math.round(w.pH)}h</b></span>` +
-                (w.total > 0 ? `<span>\uD83D\uDFE2 Epic: <b style="color:#16a34a">${w.epicDays}/${w.total}</b></span>` : '') +
-                (w.total > 0 ? `<span>\uD83D\uDD34 Washouts: <b style="color:#ef4444">${w.washoutDays}/${w.total}</b></span>` : '') +
-                (w.powderCellDays > 0 ? `<span style="grid-column:span 2">\uD83C\uDF28\uFE0F Powder days: <b style="color:#2563eb">${w.powderCellDays}</b></span>` : '') +
-                (!w.hasBase && !w.isShoulder ? `<span style="grid-column:span 2;color:#d97706;font-weight:600;">\u26A0 Base &lt;40cm \u2014 snow not established</span>` : '') +
-                (w.isPeak ? `<span style="grid-column:span 2;color:#b45309;font-weight:600;">\u26F7 Peak holiday week \u2014 expect crowds</span>` : '') +
-                `</div>`;
+        // ── Hover tooltip ───────────────────────────────────────────────────
+        const fmtDate = iso => new Date(iso+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+        cvs.addEventListener('mousemove', e => {
+          const rect = cvs.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          const dayOff = Math.max(0, Math.min(SEASON_DAYS, Math.floor(pct * SEASON_DAYS)));
+          const scores = isAvg ? avgScores : sd?.scores;
+          const entry = scores ? scores[dayOff] : null;
+          const sc = entry ? entry.score : null;
+          const shoulder = isShoulder(dayOff);
+          const peak = isPeakOff(dayOff);
 
-              const tHtml = generateRichTooltipHTML(w.d, w.sObj, w.s, ex);
+          // Compute actual date from offset
+          const seasonStartMs = Date.UTC(isAvg ? latestSeasonYear : sd.year, 10, 1);
+          const dateMs = seasonStartMs + dayOff * 86400000;
+          const dateStr = new Date(dateMs).toISOString().slice(0,10);
 
-              let overlayHtml = emojiHtml;
-              if (w.powderCellDays >= 2 && !w.isShoulder)
-                overlayHtml += `<div class="hm-cell-content" style="justify-content:flex-end;align-items:flex-start;padding:1px;"><span style="font-size:0.5rem;line-height:1;">\uD83C\uDF28</span></div>`;
+          let body = '';
+          if (!isAvg && entry && entry.metrics) {
+            const m = entry.metrics;
+            const sC = m.fSun >= 0.8 ? '#b45309' : 'var(--text-main)';
+            const dC = m.fDepth >= 0.6 ? '#2563eb' : 'var(--text-main)';
+            const tC = m.fTemp >= 0.8 ? '#15803d' : m.fTemp <= 0.3 ? '#ef4444' : 'var(--text-main)';
+            const wC = m.windMult <= 0.5 ? '#ef4444' : m.windMult <= 0.8 ? '#d97706' : '#15803d';
+            body = `<div class="tt-grid" style="margin-top:0.35rem;">
+              <span style="color:var(--text-muted)">☀️ Sunshine</span><span class="tt-val" style="color:${sC}">${(m.fSun*100).toFixed(0)}%</span>
+              <span style="color:var(--text-muted)">❄️ Base depth</span><span class="tt-val" style="color:${dC}">${(m.fDepth*100).toFixed(0)}%</span>
+              <span style="color:var(--text-muted)">🌡️ Snow quality</span><span class="tt-val" style="color:${tC}">${(m.fTemp*100).toFixed(0)}%</span>
+              <span style="color:var(--text-muted)">💨 Wind</span><span class="tt-val" style="color:${wC}">${(m.windMult*100).toFixed(0)}%</span>
+              ${(m.powderBonus||0)>0 ? `<span style="color:var(--text-muted)">🌨️ Powder</span><span class="tt-val" style="color:#2563eb">+${((m.powderBonus||0)*100).toFixed(0)}%</span>` : ''}
+            </div>`;
+          } else if (isAvg && sc !== null) {
+            body = `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem;">Average across all recorded seasons for this date.</div>`;
+          }
 
-              // Point 4: no-base = suppress whole cell visually (overrides all other indicators)
-              const noBaseStyle = (!w.hasBase && !w.isShoulder && !w.isFuture && w.s !== null)
-                ? 'filter:grayscale(0.85) brightness(1.1);opacity:0.30;'
-                : '';
-              const peakBg = (w.isPeak && !noBaseStyle)
-                ? 'background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 6px);'
-                : '';
-
-              // Serialise for mobile panel
-              const cellData = JSON.stringify({
-                d:w.d, s:w.s?Math.round(w.s*100):null,
-                epic:w.epicDays, wash:w.washoutDays, powder:w.powderCellDays,
-                total:w.total, snow:w.f.toFixed(1),
-                hasBase:w.hasBase, isPeak:w.isPeak, isShoulder:w.isShoulder,
-              }).replace(/'/g,"&#39;");
-
-              return `<div class="hm-cell has-tooltip${w.isShoulder ? ' hm-cell-shoulder' : ''}" ` +
-                `style="background:${getColor(w.s)};border:1px solid ${w.s===null?'var(--border-color)':'transparent'};${peakBg}${noBaseStyle}" ` +
-                `data-cell='${cellData}'>` +
-                `${overlayHtml}${tHtml}</div>`;
-            }).join('') +
-            `</div></div>`;
+          tip.innerHTML = `
+            <div style="font-weight:800;color:var(--brand);margin-bottom:0.15rem;">${fmtDate(dateStr)}</div>
+            ${shoulder ? '<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.2rem;">⛷ Lifts typically not running</div>' : ''}
+            ${peak ? '<div style="font-size:0.7rem;color:#b45309;margin-bottom:0.2rem;">⛷ School holiday week</div>' : ''}
+            ${sc !== null
+              ? `<div style="font-weight:800;font-size:1.1rem;color:${sc>=0.75?'#16a34a':sc>=0.5?'#d97706':'#ef4444'};">${Math.round(sc*100)}%
+                 <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);">${sc>=0.85?'great skiing':sc>=0.65?'good day':sc>=0.45?'average':sc>=0.25?'poor':'avoid'}</span></div>`
+              : `<div style="color:var(--text-muted);font-size:0.8rem;">No data${latestDataDate && dateStr > latestDataDate ? ' — future' : ''}</div>`}
+            ${body}`;
+          tip.style.display = 'block';
+          // Position tooltip
+          const tipW = 210, tipH = tip.offsetHeight || 120;
+          let tx = e.clientX + 12, ty = e.clientY - 10;
+          if (tx + tipW > window.innerWidth - 16) tx = e.clientX - tipW - 12;
+          if (ty + tipH > window.innerHeight - 16) ty = e.clientY - tipH - 10;
+          tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
         });
+        cvs.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
 
-        html += `</div></div>`;
-        blocksBySeason[si] = seasonBlocks;
-      });
+        drawBar._cvs = cvs;
+        cvs._draw = drawBar;
+        return row;
+      };
 
-      // ── 6-Year Average Master Row ─────────────────────────────────────────
-      let masterHtml = `<div class="hm-master-row">` +
-        `<div style="text-align:right;font-weight:800;font-size:0.7rem;color:var(--brand);line-height:1.3;">\uD83C\uDFC6 Historical<br>Average</div>` +
-        `<div class="hm-months-container">`;
+      // Add resort label
+      const resortH3 = document.createElement('h3');
+      resortH3.style.cssText = 'margin:0 0 0.4rem 0;font-size:1.1rem;text-transform:capitalize;color:var(--brand);';
+      resortH3.textContent = window.GLOBAL_RESORT.charAt(0).toUpperCase() + window.GLOBAL_RESORT.slice(1);
+      wrap.appendChild(resortH3);
+      wrap.appendChild(headerRow);
 
-      targetMonths.forEach((mo, mi) => {
-        const maxCols = Math.max(...blocksBySeason.map(s => (s[mi]||[]).length), 0);
-        masterHtml += `<div class="hm-month-block"><div class="hm-month-label" style="visibility:hidden;">${mo.name}</div><div class="hm-grid">`;
+      // Season rows
+      seasonData.forEach(sd => wrap.appendChild(makeRow(sd, false)));
 
-        for (let bi = 0; bi < maxCols; bi++) {
-          const colBlocks = blocksBySeason
-            .map(s => (s[mi]||[])[bi])
-            .filter(b => b && !b.isFuture && !b.isShoulder && b.s !== null);
+      // Separator
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;background:var(--border-color);margin:6px 0 4px;grid-column:1/-1;';
+      wrap.appendChild(sep);
 
-          if (!colBlocks.length) { masterHtml += `<div class="hm-cell" style="background:transparent;"></div>`; continue; }
+      // Average row
+      wrap.appendChild(makeRow(null, true));
 
-          const avgScore  = colBlocks.reduce((a,c) => a+c.s, 0) / colBlocks.length;
-          const totEpic   = colBlocks.reduce((a,c) => a+c.epicDays, 0);
-          const totWash   = colBlocks.reduce((a,c) => a+c.washoutDays, 0);
-          const totPowder = colBlocks.reduce((a,c) => a+c.powderCellDays, 0);
-          const totDays   = colBlocks.reduce((a,c) => a+c.total, 0);
-          const pctEpic   = totDays > 0 ? Math.round(totEpic/totDays*100) : 0;
-          const pctWash   = totDays > 0 ? Math.round(totWash/totDays*100) : 0;
-          const allIsPeak = colBlocks.some(b => b.isPeak);
-          const label     = colBlocks[0].d;
-          const nSeasons  = colBlocks.length;
-          const peakBgM   = allIsPeak ? 'background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 6px);' : '';
+      hc.appendChild(wrap);
 
-          masterHtml +=
-            `<div class="hm-cell has-tooltip" style="background:${getColor(avgScore)};border:1px solid transparent;${peakBgM}">` +
-            `<div class="tt-data-node">` +
-            `<div style="font-weight:800;color:var(--brand);margin-bottom:0.3rem;">${label}</div>` +
-            `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem;">${nSeasons} seasons combined</div>` +
-            `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.25rem;font-size:0.75rem;">` +
-            `<span>Avg score</span><span style="font-weight:700;color:var(--brand);">${Math.round(avgScore*100)}%</span>` +
-            `<span>\uD83D\uDFE2 Epic days</span><span style="color:#16a34a;font-weight:700;">${pctEpic}%</span>` +
-            `<span>\uD83D\uDD34 Washouts</span><span style="color:#ef4444;font-weight:700;">${pctWash}%</span>` +
-            `<span>\uD83C\uDF28\uFE0F Powder</span><span style="color:#2563eb;font-weight:700;">${totPowder}d</span>` +
-            (allIsPeak ? `<span style="grid-column:span 2;color:#b45309;font-weight:600;">\u26F7 Peak holiday week</span>` : '') +
-            `</div></div></div>`;
-        }
-        masterHtml += `</div></div>`;
-      });
-      masterHtml += `</div></div>`;
-      html += masterHtml;
+      // Draw all bars (deferred so layout is complete)
+      const drawAll = () => {
+        drawMonthHeader();
+        canvases.forEach(({ cvs }) => cvs._draw && cvs._draw());
+      };
+      requestAnimationFrame(() => requestAnimationFrame(drawAll));
 
-      hc.innerHTML += html + `</div>`;
-
-      // ── Mobile tap detail panel ───────────────────────────────────────────
-      const detailPanel = document.getElementById('hm-detail-panel');
-      let activeCell = null;
-      hc.addEventListener('click', e => {
-        const cell = e.target.closest('.hm-cell[data-cell]');
-        if (!cell) { if (detailPanel) { detailPanel.style.display='none'; activeCell=null; } return; }
-        if (activeCell) activeCell.style.outline = '';
-        if (activeCell === cell) { detailPanel.style.display='none'; activeCell=null; return; }
-        activeCell = cell;
-        cell.style.outline = '2px solid var(--brand)';
-        cell.style.outlineOffset = '1px';
-        try {
-          const w = JSON.parse(cell.dataset.cell.replace(/&#39;/g, "'"));
-          if (!detailPanel) return;
-          detailPanel.style.display = 'block';
-          detailPanel.innerHTML =
-            `<div style="font-weight:700;color:var(--brand);margin-bottom:0.5rem;font-size:0.95rem;">${w.d}</div>` +
-            `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem;">` +
-            `<span style="color:var(--text-muted);">Score</span><span style="font-weight:800;color:var(--brand);">${w.s !== null ? w.s+'%' : '\u2014'}</span>` +
-            `<span style="color:var(--text-muted);">\uD83D\uDFE2 Epic days</span><span style="font-weight:700;color:#16a34a;">${w.epic} / ${w.total}</span>` +
-            `<span style="color:var(--text-muted);">\uD83D\uDD34 Washouts</span><span style="font-weight:700;color:#ef4444;">${w.wash} / ${w.total}</span>` +
-            `<span style="color:var(--text-muted);">\uD83C\uDF28\uFE0F Powder days</span><span style="font-weight:700;color:#2563eb;">${w.powder}</span>` +
-            `<span style="color:var(--text-muted);">\u2744\uFE0F Snowfall</span><span style="font-weight:700;">${w.snow} cm</span>` +
-            (!w.hasBase && !w.isShoulder ? `<span style="grid-column:span 2;color:#d97706;font-weight:600;">\u26A0 Base &lt;40cm \u2014 snow not established</span>` : '') +
-            (w.isPeak ? `<span style="grid-column:span 2;color:#b45309;font-weight:600;">\u26F7 Peak holiday week \u2014 high crowds</span>` : '') +
-            `</div>` +
-            `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.5rem;">Tap again or tap elsewhere to dismiss.</div>`;
-        } catch(err) { if (detailPanel) detailPanel.style.display='none'; }
-      });
+      // Redraw on resize
+      const ro = new ResizeObserver(() => { drawAll(); });
+      ro.observe(hc);
     };
     renderHeatmaps();
 
