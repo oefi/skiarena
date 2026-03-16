@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Zwei Länder Skiarena — Historical ski conditions dashboard. Nov–Apr 2019/20–2024/25.">
+<meta name="description" content="Zwei Länder Skiarena — Ski conditions dashboard for 5 resorts across Reschenpass (AUT/ITA). Nov–Apr 2019/20–2025/26 · ERA5-Seamless · updated every 6 hours.">
 <title>Zwei Länder Skiarena · Ski Conditions</title>
 
 <meta name="author" content="Zwei Länder Skiarena Dashboard">
@@ -125,11 +125,11 @@
   #best-days-strip { display: flex; gap: 0.4rem; flex-wrap: nowrap; overflow-x: auto; padding: 0.75rem 0 0.5rem; scrollbar-width: thin; }
   .fc-day-chip { flex: 0 0 auto; min-width: 72px; padding: 0.5rem 0.4rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; display: flex; flex-direction: column; gap: 0.15rem; cursor: default; transition: transform 0.1s; }
   .fc-day-chip:hover { transform: translateY(-2px); }
-  .fc-day-chip--top { border-color: #22c55e; box-shadow: 0 0 0 1px rgba(34,197,94,0.3); }
-  .fc-day-chip--top3-1 { border-color: #fbbf24; box-shadow: 0 0 0 1px rgba(251,191,36,0.4); }
+  .fc-day-chip--top { border: 2px solid #16a34a; box-shadow: 0 0 0 1px rgba(22,163,74,0.25); }
+  .fc-day-chip--top3-1 { border: 2px solid #d97706; box-shadow: 0 0 0 1px rgba(217,119,6,0.25); }
 
   /* ── AVALANCHE WARNING ── */
-  .avl-warning { font-size: 0.75rem; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 3px; padding: 0.2rem 0.4rem; margin-top: 0.3rem; display: inline-block; }
+  .avl-warning { font-size: 0.75rem; font-weight: 700; color: #b45309; background: rgba(180,83,9,0.08); border: 1px solid rgba(180,83,9,0.25); border-radius: 3px; padding: 0.2rem 0.4rem; margin-top: 0.3rem; display: inline-block; }
 
   /* ── ATMOS SEASON NAV ── */
   .atmos-nav-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.6rem; font-size: 0.85rem; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -237,8 +237,8 @@
   <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; flex-wrap: wrap; color: var(--text-muted);">
     <span id="status-badge" style="display: flex; align-items: center; font-weight: 600; font-size: 0.8rem;">Checking...</span>
     <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border-color); font-weight: 600; font-size: 0.75rem;">
-      <span style="color: var(--brand);">⏱</span>
-      <span id="cd-timer" style="font-variant-numeric: tabular-nums; letter-spacing: 0.05em;">--:--</span>
+      <span style="color: var(--text-muted); font-weight: 400;">Next refresh:</span>
+      <span id="cd-timer" style="font-variant-numeric: tabular-nums; letter-spacing: 0.05em; color: var(--brand);">--:--</span>
     </span>
     <span id="update-time" style="font-size: 0.75rem; border-left: 1px solid var(--border-color); padding-left: 0.75rem; white-space: nowrap;"></span>
   </div>
@@ -403,7 +403,7 @@
 </main>
 
 <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 2rem;">
-  Zwei Länder Skiarena · Open-Meteo ERA5 + ERA5-Land · Refreshed every 6 hours
+  Zwei Länder Skiarena · Open-Meteo ERA5-Seamless + ECMWF/ICON/GFS · Refreshed every 6 hours
 </footer>
 
 <script>
@@ -517,7 +517,7 @@
 
   // Tooltip engine — shows .tt-data-node contents in #global-tooltip on .has-tooltip hover.
   const gTooltip = document.getElementById('global-tooltip');
-  document.addEventListener('mouseover', (e) => {
+  document.addEventListener('mouseenter', (e) => {
     const node = e.target.closest('.has-tooltip');
     if (node) {
       const dataNode = node.querySelector('.tt-data-node');
@@ -528,7 +528,7 @@
         setTimeout(() => gTooltip.style.opacity = '1', 10);
       }
     }
-  });
+  }, true);
   document.addEventListener('mousemove', (e) => {
     if (gTooltip.style.display === 'block') {
       let x = e.pageX + 15; let y = e.pageY + 15;
@@ -538,9 +538,10 @@
       gTooltip.style.left = `${x}px`; gTooltip.style.top = `${y}px`;
     }
   });
-  document.addEventListener('mouseout', (e) => {
-    if (e.target.closest('.has-tooltip')) gTooltip.style.display = 'none';
-  });
+  document.addEventListener('mouseleave', (e) => {
+    const node = e.target.closest('.has-tooltip');
+    if (node && !node.contains(e.relatedTarget)) gTooltip.style.display = 'none';
+  }, true);
 
   // ── DPI-AWARE TYPOGRAPHY SCALER ──
   const getResponsiveCanvasFonts = (cvs, baseAxisPt, baseTooltipPt) => {
@@ -573,7 +574,7 @@
 
     // ── GLOBAL RESORT STATE ──
     const globalResorts = Object.keys(STATIC_METADATA);
-    window.GLOBAL_RESORT = globalResorts.includes('schoeneben') ? 'schoeneben' : globalResorts[0];
+    window.GLOBAL_RESORT = globalResorts.includes('nauders') ? 'nauders' : globalResorts[0];
 
     const glbHeader = document.getElementById('global-resort-header');
     globalResorts.forEach(r => {
@@ -723,11 +724,15 @@
       const villTMax = mtnTMax !== null ? +(mtnTMax + lapseOffset).toFixed(1) : null;
       const villTMin = mtnTMin !== null ? +(mtnTMin + lapseOffset).toFixed(1) : null;
       const fcSnowDepthCm = hourly?.snow_depth?.[0] != null ? (hourly.snow_depth[0] * 100).toFixed(0) : null;
+      const fcDay0Date = hourly?.time?.[0] ? new Date(hourly.time[0]).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : null;
       const tColor = t => t === null ? 'var(--text-muted)' : t > 2 ? '#ef4444' : t > -5 ? '#f97316' : t > -12 ? 'var(--text-main)' : '#3b82f6';
       const tStr   = (mx, mn) => mx !== null ? `${mx > 0 ? '+' : ''}${mx.toFixed(1)} / ${mn !== null ? (mn > 0 ? '+' : '') + mn.toFixed(1) : '—'}°C` : '—';
       const profileHtml = `
         <div class="fc-card" style="grid-column:span 2; min-width:260px;">
-          <div style="color:var(--text-muted);font-size:0.75rem;font-weight:bold;text-transform:uppercase;margin-bottom:0.6rem;letter-spacing:0.05em;">Altitude Profile ↕️</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.6rem;">
+            <div style="color:var(--text-muted);font-size:0.75rem;font-weight:bold;text-transform:uppercase;letter-spacing:0.05em;">Altitude Profile ↕️</div>
+            ${fcDay0Date ? `<div style="font-size:0.7rem;color:var(--text-muted);">Today · ${fcDay0Date}</div>` : ''}
+          </div>
           <div style="display:flex;gap:0.75rem;">
             <div style="width:9px;background:linear-gradient(to bottom,#3b82f6,#94a3b8,#ef4444);border-radius:4px;min-height:72px;flex-shrink:0;"></div>
             <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:0.25rem;">
@@ -892,9 +897,9 @@
         const dayLabel  = d.dt.toLocaleDateString('en-US', {weekday:'short'});
         const dateLabel = d.dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
         const snowStr   = d.freshCm > 0.5 ? `❄️${d.freshCm.toFixed(0)}cm` : '';
-        const probStr   = d.probMax !== null && d.probMax > 20 ? `P(precip) ${Math.round(d.probMax)}%` : '';
+        const probStr   = d.probMax !== null && d.probMax > 20 ? `☔ ${Math.round(d.probMax)}%` : '';
         const bestMark  = isBest ? '⭐' : isTop ? '✓' : '';
-        return `<div class="${chipClass}" title="${dayLabel} ${dateLabel} · Bluebird ${(d.score*100).toFixed(0)}% · ${d.tMax !== null ? 'T max '+d.tMax.toFixed(0)+'°C' : ''} · ${d.freshCm > 0 ? d.freshCm.toFixed(0)+' cm snow' : 'no new snow'} · gust ${d.gustMax !== null ? d.gustMax.toFixed(0)+' km/h' : '—'}">'
+        return `<div class="${chipClass}" title="${dayLabel} ${dateLabel} · Bluebird ${(d.score*100).toFixed(0)}% · ${d.tMax !== null ? 'T max '+d.tMax.toFixed(0)+'°C' : ''} · ${d.freshCm > 0 ? d.freshCm.toFixed(0)+' cm snow' : 'no new snow'} · gust ${d.gustMax !== null ? d.gustMax.toFixed(0)+' km/h' : '—'}">
           <div style="font-size:0.6rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:flex;justify-content:space-between;">
             <span>${dayLabel}</span><span style="color:${isTop?'#fbbf24':'var(--text-muted)'};">${bestMark}</span>
           </div>
@@ -1468,10 +1473,10 @@
       if (finalSc === null) return `<div class="tt-data-node"><div>Data unavailable for ${title}</div></div>`;
       
       const m = dScore.metrics;
-      const sC = m.fSun >= 0.8 ? 'var(--sun-yield)' : 'var(--text-main)';
-      const tC = m.fTemp >= 0.8 ? '#22c55e' : m.fTemp <= 0.3 ? '#ef4444' : 'var(--text-main)';
-      const dC = m.fDepth >= 0.6 ? '#60a5fa' : 'var(--text-main)';
-      const wC = m.windMult <= 0.5 ? '#ef4444' : m.windMult <= 0.8 ? '#f59e0b' : '#22c55e';
+      const sC = m.fSun >= 0.8 ? '#b45309' : 'var(--text-main)';
+      const tC = m.fTemp >= 0.8 ? '#15803d' : m.fTemp <= 0.3 ? '#ef4444' : 'var(--text-main)';
+      const dC = m.fDepth >= 0.6 ? '#2563eb' : 'var(--text-main)';
+      const wC = m.windMult <= 0.5 ? '#ef4444' : m.windMult <= 0.8 ? '#d97706' : '#15803d';
       const pC = (m.powderBonus || 0) >= 0.10 ? '#22c55e' : (m.powderBonus || 0) > 0 ? '#60a5fa' : 'var(--text-muted)';
       const powderRow = (m.powderBonus || 0) > 0
         ? `<span style="color:var(--text-muted)">🌨️ Powder bonus</span> <span class="tt-val" style="color:${pC}">+${((m.powderBonus||0)*100).toFixed(0)}%</span>`
@@ -1757,7 +1762,7 @@
       ctx.clearRect(0,0,cvs.width,cvs.height); 
       const rd = byResort[window.GLOBAL_RESORT]; if(!rd) return;
       
-      const linesRaw = {}, linesBaseRaw = {}; let maxD = 100;
+      const linesRaw = {}; let maxD = 100;
       
       rd.forEach(r => {
         const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7)), day = parseInt(r.date.slice(8,10));
@@ -1770,14 +1775,11 @@
         const rawDep = r.summit?.snow_depth ?? r.snow_depth;
         if (!linesRaw[ss]) linesRaw[ss] = []; 
         linesRaw[ss].push({x:off, y: (rawDep !== null && rawDep !== undefined) ? rawDep*100 : null});
-        const rawDepB = r.base?.snow_depth ?? null;
-        if (!linesBaseRaw[ss]) linesBaseRaw[ss] = [];
-        linesBaseRaw[ss].push({x:off, y: (rawDepB !== null) ? rawDepB*100 : null});
       });
       
       const seasonKeys = Object.keys(linesRaw).sort();
       const currentSeason = seasonKeys[seasonKeys.length - 1];
-      const lines = {}, linesBase = {};
+      const lines = {};
 
       seasonKeys.forEach(ss => {
         const dense = new Array(SNOW_DAYS+1).fill(null).map((_, i) => ({x: i, y: null}));
@@ -1785,10 +1787,6 @@
         const smoothed = applyMA(dense, maWindow);
         smoothed.forEach(pt => { if (pt.y !== null && pt.y > maxD) maxD = pt.y; });
         lines[ss] = smoothed;
-
-        const denseB = new Array(SNOW_DAYS+1).fill(null).map((_, i) => ({x: i, y: null}));
-        (linesBaseRaw[ss] || []).forEach(pt => { if(pt.x >= 0 && pt.x <= SNOW_DAYS) denseB[pt.x].y = pt.y; });
-        linesBase[ss] = applyMA(denseB, maWindow);
       });
       maxD = Math.ceil(maxD/50)*50;
       
@@ -1810,7 +1808,7 @@
       if (showHistoricalAvg) legendHtml += `<div class="legend-item"><div class="legend-color legend-dotted"></div>Hist. Mean</div>`;
       legend.innerHTML = legendHtml;
 
-      const pX = SNOW_PAD_X, pY = 80, w = cvs.width-pX*2, h = cvs.height-pY*2 - 40; 
+      const pX = SNOW_PAD_X, pY = 50, w = cvs.width-pX*2, h = cvs.height-pY*2 - 40; 
       const mapX = x => pX+(x/SNOW_DAYS)*w, mapY = y => pY+h-(y/maxD)*h;
       const fonts = getResponsiveCanvasFonts(cvs, 14, 16);
 
@@ -1877,11 +1875,10 @@
         
         const readouts = [];
         seasonKeys.forEach((ss, idx) => {
-          const pt    = lines[ss][hoverDayOffset];
-          const ptB   = (linesBase[ss] || [])[hoverDayOffset];
+          const pt = lines[ss][hoverDayOffset];
           if (pt && pt.y !== null) {
             const c = ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
-            readouts.push({ s: ss, yMtn: pt.y, yBase: (ptB && ptB.y !== null) ? ptB.y : null, c });
+            readouts.push({ s: ss, yMtn: pt.y, c });
             ctx.beginPath(); ctx.arc(hx, mapY(pt.y), 6, 0, 2*Math.PI); ctx.fillStyle = getStyleVar('--bg-main'); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = c; ctx.stroke();
           }
         });
@@ -1957,7 +1954,7 @@
       lblSeason.innerText = `Season: ${curYear}/${String(curYear+1).slice(2)}`;
       updateAtmosNavBtns(seasons);
 
-      const atmosData = new Array(183).fill(null);
+      const atmosData = new Array(ATMOS_DAYS + 1).fill(null);
       rd.forEach(r => {
         const y = parseInt(r.date.slice(0,4)), m = parseInt(r.date.slice(5,7)), day = parseInt(r.date.slice(8,10));
         if (m > 4 && m < 11) return; 
@@ -1980,7 +1977,7 @@
         };
       });
 
-      const pX = ATMOS_PAD_X, pY = 40, w = cvsA.width-pX*2, h = cvsA.height-pY*2 - 40;
+      const pX = cvsA.clientWidth < 500 ? 56 : ATMOS_PAD_X, pY = 40, w = cvsA.width-pX*2, h = cvsA.height-pY*2 - 40;
       const topH = Math.round(h * 0.60);
       const divY = pY + topH + 6;
       const botY0 = divY + 6;
@@ -1998,7 +1995,7 @@
       const rawMaxSun  = validTemps.length ? Math.max(...validTemps.map(d => d.sun))  : 12;
       const rawMaxSnow = validTemps.length ? Math.max(...validTemps.map(d => d.snow)) : 30;
       const rawMaxGust = validTemps.length ? Math.max(...validTemps.map(d => d.gust)) : 120;
-      const atmSunMax  = Math.ceil(Math.max(12, rawMaxSun  + 1));
+      const atmSunMax  = Math.ceil((rawMaxSun  + 1) / 2) * 2;
       const atmSnowMax = Math.ceil(Math.max(30, rawMaxSnow + 5) / 10) * 10;
       const atmGustMax = Math.ceil(Math.max(120, rawMaxGust + 10) / 20) * 20;
 
@@ -2008,7 +2005,9 @@
 
       const fonts = getResponsiveCanvasFonts(cvsA, 14, 16);
 
-      // ── Temperature zone (top 60%) ──────────────────────────────────────────
+      // ── Temperature zone (top 60%) — clipped to prevent bleed into bar zone ─
+      ctxA.save();
+      ctxA.beginPath(); ctxA.rect(pX, pY, w, topH); ctxA.clip();
       ctxA.strokeStyle = getStyleVar('--grid-line'); ctxA.fillStyle = getStyleVar('--text-muted');
       ctxA.font = fonts.axis; ctxA.textBaseline = 'middle'; ctxA.textAlign = 'right';
       for (let t = Math.ceil(tMinLimit/10)*10; t <= tMaxLimit; t += 10) {
@@ -2025,6 +2024,26 @@
         ctxA.lineWidth = 2; ctxA.strokeStyle = 'rgba(30,64,175,0.4)'; ctxA.stroke();
         ctxA.strokeStyle = getStyleVar('--grid-line');
       }
+      // Temperature lines — Village solid, Mountain dashed (clipped to top zone)
+      ctxA.beginPath(); let hasStart = false;
+      for (let i = 0; i <= ATMOS_DAYS; i++) { if (atmosData[i] && atmosData[i].tMax !== null) { if (!hasStart) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i].tMax)); hasStart = true; } else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMax)); } } }
+      for (let i = ATMOS_DAYS; i >= 0; i--) { if (atmosData[i] && atmosData[i].tMin !== null) { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMin)); } }
+      ctxA.closePath();
+      const gradient = ctxA.createLinearGradient(0, pY, 0, pY+topH);
+      gradient.addColorStop(0, 'rgba(239,68,68,0.18)'); gradient.addColorStop(1, 'rgba(59,130,246,0.18)');
+      ctxA.fillStyle = gradient; ctxA.fill();
+      const drawTLine = (key, color, dashed = false) => {
+        ctxA.beginPath(); let drawing = false;
+        for (let i = 0; i <= ATMOS_DAYS; i++) {
+          if (atmosData[i] && atmosData[i][key] !== null) { if (!drawing) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i][key])); drawing = true; } else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i][key])); } } else { drawing = false; }
+        }
+        ctxA.strokeStyle = color; ctxA.lineWidth = dashed ? 2 : 3;
+        if (dashed) ctxA.setLineDash([8, 6]); else ctxA.setLineDash([]);
+        ctxA.stroke(); ctxA.setLineDash([]);
+      };
+      drawTLine('tMax', '#ef4444'); drawTLine('tMin', '#3b82f6');
+      drawTLine('sTMax', 'rgba(239,68,68,0.55)', true); drawTLine('sTMin', 'rgba(59,130,246,0.55)', true);
+      ctxA.restore(); // end clip
 
       // ── Divider between zones ───────────────────────────────────────────────
       ctxA.beginPath(); ctxA.moveTo(pX, divY); ctxA.lineTo(pX+w, divY);
@@ -2061,33 +2080,32 @@
         if (atmosData[i].snow > 0) { ctxA.fillStyle = getStyleVar('--snow-yield'); const sny = mapSnY(atmosData[i].snow); ctxA.fillRect(mapX(i),        sny, barW, botY0+botH - sny); }
       }
 
-      // ── Village (base) temp band — filled + solid lines ────────────────────
-      ctxA.beginPath(); let hasStart = false;
-      for (let i = 0; i <= ATMOS_DAYS; i++) { if (atmosData[i] && atmosData[i].tMax !== null) { if (!hasStart) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i].tMax)); hasStart = true; } else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMax)); } } }
-      for (let i = ATMOS_DAYS; i >= 0; i--) { if (atmosData[i] && atmosData[i].tMin !== null) { ctxA.lineTo(mapX(i), mapTempY(atmosData[i].tMin)); } }
-      ctxA.closePath();
-      const gradient = ctxA.createLinearGradient(0, pY, 0, pY+topH);
-      gradient.addColorStop(0, 'rgba(239,68,68,0.18)'); gradient.addColorStop(1, 'rgba(59,130,246,0.18)');
-      ctxA.fillStyle = gradient; ctxA.fill();
-
-      const drawTLine = (key, color, dashed = false) => {
-        ctxA.beginPath(); let drawing = false;
-        for (let i = 0; i <= ATMOS_DAYS; i++) {
-          if (atmosData[i] && atmosData[i][key] !== null) { if (!drawing) { ctxA.moveTo(mapX(i), mapTempY(atmosData[i][key])); drawing = true; } else { ctxA.lineTo(mapX(i), mapTempY(atmosData[i][key])); } } else { drawing = false; }
-        }
-        ctxA.strokeStyle = color; ctxA.lineWidth = dashed ? 2 : 3;
-        if (dashed) ctxA.setLineDash([8, 6]); else ctxA.setLineDash([]);
-        ctxA.stroke(); ctxA.setLineDash([]);
-      };
-      drawTLine('tMax', '#ef4444'); drawTLine('tMin', '#3b82f6');
-      drawTLine('sTMax', 'rgba(239,68,68,0.55)', true); drawTLine('sTMin', 'rgba(59,130,246,0.55)', true);
-
       // ── Wind gust line in bar zone ──────────────────────────────────────────
       ctxA.beginPath(); let drawingG = false;
       for (let i = 0; i <= ATMOS_DAYS; i++) {
         if (atmosData[i] && atmosData[i].gust !== null) { if (!drawingG) { ctxA.moveTo(mapX(i), mapGustY(atmosData[i].gust)); drawingG = true; } else { ctxA.lineTo(mapX(i), mapGustY(atmosData[i].gust)); } } else { drawingG = false; }
       }
       ctxA.strokeStyle = 'rgba(239,68,68,0.7)'; ctxA.lineWidth = 1.5; ctxA.setLineDash([4, 4]); ctxA.stroke(); ctxA.setLineDash([]);
+
+      // ── Bar zone reference lines ────────────────────────────────────────────
+      ctxA.save(); ctxA.font = fonts.axis; ctxA.textBaseline = 'bottom'; ctxA.lineWidth = 1;
+      // 6h sun reference
+      if (atmSunMax > 6) {
+        const ry = mapSunY(6);
+        ctxA.beginPath(); ctxA.moveTo(pX, ry); ctxA.lineTo(pX + w * 0.35, ry);
+        ctxA.strokeStyle = 'rgba(217,163,0,0.35)'; ctxA.setLineDash([3,3]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.fillStyle = 'rgba(180,130,0,0.6)'; ctxA.textAlign = 'left';
+        ctxA.fillText('6h', pX + 3, ry - 2);
+      }
+      // 65 km/h lift-closure wind reference (Fix 21)
+      if (atmGustMax > 65) {
+        const gy = mapGustY(65);
+        ctxA.beginPath(); ctxA.moveTo(pX + w * 0.65, gy); ctxA.lineTo(pX + w, gy);
+        ctxA.strokeStyle = 'rgba(239,68,68,0.45)'; ctxA.setLineDash([3,3]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.fillStyle = 'rgba(200,50,50,0.65)'; ctxA.textAlign = 'right';
+        ctxA.fillText('65 lift', pX + w - 3, gy - 2);
+      }
+      ctxA.restore();
 
       if (atmosHoverDay !== null && atmosHoverDay >= 0 && atmosHoverDay <= ATMOS_DAYS && atmosData[atmosHoverDay]) {
         const d = atmosData[atmosHoverDay]; const hx = mapX(atmosHoverDay);
@@ -2096,9 +2114,12 @@
         
         const scale = cvsA.width / (cvsA.clientWidth || 1000);
         const hasSummitT = d.sTMax !== null || d.sTMin !== null;
-        const boxW = 210 * scale, boxH = (hasSummitT ? 180 : 150) * scale, padding = 15 * scale; 
-        let boxX = hx + padding, boxY = pY;
-        if (isAtmosTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
+        const boxW = 210 * scale, boxH = (hasSummitT ? 180 : 150) * scale, padding = 15 * scale;
+        // Tooltip follows cursor: if hovering bar zone place tooltip near top of bars, else near top
+        const hoverInBarZone = atmosHoverDay !== null && mapGustY(d.gust || 0) > divY;
+        let boxX = hx + padding;
+        let boxY = hoverInBarZone ? Math.max(botY0, mapSunY(d.sun || 0) - boxH - padding) : pY;
+        if (isAtmosTouch) { boxY = pY; }
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
         
         ctxA.fillRect(boxX, boxY, boxW, boxH); ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.strokeRect(boxX, boxY, boxW, boxH);
