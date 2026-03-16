@@ -125,7 +125,10 @@
   @media (max-width: 900px) { #forecast-wrapper { grid-template-columns: 1fr; } }
 
   /* ── BEST-DAYS STRIP ── */
-  #best-days-strip { display: flex; gap: 0.4rem; flex-wrap: nowrap; overflow-x: auto; padding: 0.75rem 0 0.5rem; scrollbar-width: thin; }
+  #best-days-strip { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: hidden; padding: 0; }
+  #best-days-strip .fc-day-chip { flex: 1 1 0; min-width: 0; border-radius: 0; border-right-width: 0; }
+  #best-days-strip .fc-day-chip:first-child { border-radius: 6px 0 0 6px; }
+  #best-days-strip .fc-day-chip:last-child  { border-radius: 0 6px 6px 0; border-right-width: 1px; }
   .fc-day-chip { flex: 0 0 auto; min-width: 72px; padding: 0.5rem 0.4rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; display: flex; flex-direction: column; gap: 0.15rem; cursor: default; transition: transform 0.1s; }
   .fc-day-chip:hover { transform: translateY(-2px); }
   .fc-day-chip--top { border: 2px solid #16a34a; box-shadow: 0 0 0 1px rgba(22,163,74,0.25); }
@@ -291,15 +294,15 @@
           <canvas id="forecast-canvas" width="2000" height="760"></canvas>
         </div>
 
-      </div>
-    </div>
+        <!-- Best ski days — aligned to canvas left/right padding (pX=72px desktop, 48px mobile) -->
+        <div style="padding: 0.5rem 72px 0; box-sizing: border-box;">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+            Best Ski Days — Next 16 Days <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;color:var(--text-muted);" title="Projected ski quality score based on forecast snow, sunshine, temperature and wind. Scores are weighted by precipitation probability.">⭐ best day &nbsp;·&nbsp; ✓ top 3 picks</span>
+          </div>
+          <div id="best-days-strip"><div style="color:var(--text-muted); font-style:italic; font-size:0.85rem;">Awaiting forecast…</div></div>
+        </div>
 
-    <!-- ── BEST FORECAST DAYS STRIP ── -->
-    <div style="margin-top: 0.25rem;">
-      <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">
-        Best Ski Days — Next 16 Days <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;color:var(--text-muted);" title="Projected ski quality score based on forecast snow, sunshine, temperature and wind. Scores are weighted by precipitation probability — less certain forecasts score lower.">⭐ best day &nbsp;·&nbsp; ✓ top 3 picks</span>
       </div>
-      <div id="best-days-strip"><div style="color:var(--text-muted); font-style:italic; font-size:0.85rem;">Awaiting forecast…</div></div>
     </div>
   </section>
 
@@ -928,7 +931,7 @@
           </div>
         </div>`;
 
-      fcBoard.innerHTML = snow24Card + snowWeekCard + rainWeekCard + tempTodayCard + liveCard;
+      fcBoard.innerHTML = snowWeekCard + liveCard;
     };
 
     if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
