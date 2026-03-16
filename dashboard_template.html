@@ -148,6 +148,11 @@
     background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.04) 4px, rgba(0,0,0,0.04) 8px) !important;
     border: 1px solid var(--grid-line); opacity: 0.5; cursor: not-allowed;
   }
+  .hm-cell-shoulder {
+    /* Nov + last 2 weeks Apr: lifts typically not running */
+    opacity: 0.45;
+    filter: saturate(0.4);
+  }
   
   .hm-cell-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
   .hm-emoji { font-size: 0.65rem; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
@@ -301,7 +306,7 @@
     <div class="flex-between" style="margin-bottom: 1rem; align-items: flex-end;">
       <div>
         <h2 style="margin:0; border:none; padding:0; border-bottom: none;">Bluebird Matrix 🔥</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Composite Bluebird Score per day-bucket — normalised against each resort's historical peak.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">Bluebird Score per day-bucket · piste-optimised · <span style="opacity:0.7;">faded cells = shoulder season (lifts typically not running)</span></p>
       </div>
       <div id="heatmap-controls" style="display: flex; gap: 0.5rem;">
         <button class="control-btn" data-res="1">1 Day</button>
@@ -436,7 +441,7 @@
     { title: '☀ Clear sky hours',
       body:  'Sunshine duration (ERA5) corrected by actual surface shortwave radiation vs theoretical clear-sky: <code style="font-size:0.72rem;background:rgba(0,0,0,0.06);padding:0 3px;border-radius:2px;">sun × √(srad / Ra)</code>. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5. Temperature and wind are shown separately on the same chart.' },
     { title: '🔵 Bluebird Score',
-      body:  'Weights (sun 45%, depth 30%, temp 25%) are not derived from empirical data. The powder bonus threshold, wind multiplier breakpoints, and per-resort depth caps were estimated from general knowledge of ski terrain. The formula is fully documented and reproducible, which puts it ahead of most commercial ski condition ratings. That is a low bar.' },
+      body:  'Optimised for piste skiers (groomed trails, ~80% of resort visitors). Normal weights: sun 45%, snow depth 30%, temperature 25%, wind as a global multiplier. Depth uses a sigmoid curve — 50cm scores 80%, not 40%, because a groomed 50cm base skis identically to 200cm. Temperature is date-aware: +6°C is penalised in January but correct in April (Firn skiing). Powder override: when fresh snow ≥ 15cm and gust &lt; 60 km/h, sunshine weight drops to 0% and depth/intensity carry the score — a 30cm storm day now scores 0.90+, not 0.65.' },
     { title: '📡 Forecast',
       body:  'Days 1–3: useful. Days 4–7: synoptic signal present, details uncertain. Days 8–16: the ECMWF ensemble spread for Alpine precipitation at this range covers most outcomes. Projected scores beyond day 5 indicate a plausible weather pattern, not a confirmed one. The confidence multiplier narrows the displayed scores; it does not narrow the atmosphere.' },
     { title: '🗂 Which model, where',
@@ -912,21 +917,38 @@
     // maxSun: resort's historical peak sunshine hours from getResortBounds — normalises forecast
     //         sun hours onto the same scale as historical bounds. Falls back to 10h.
     // probPct: precipitation probability 0–100; low probability lowers score confidence.
-    const computeForecastDayScore = (tMax, tMin, sunH, depthM, gustKmh, freshCm, probPct, maxSun) => {
+    const computeForecastDayScore = (tMax, tMin, sunH, depthM, gustKmh, freshCm, probPct, maxSun, dateStr) => {
       const sunPeak = (maxSun && maxSun > 0) ? maxSun : 10;
       const fSun  = Math.min(1, sunH / sunPeak);
-      const optDepth = OPTIMAL_DEPTH_M[window.GLOBAL_RESORT] || 1.50;
-      const fDepth= Math.min(1, (depthM || 0) / optDepth);
+
+      // Sigmoid depth — piste-optimised (mirrors compute_metrics.py)
+      let fDepth = 0;
+      if (depthM !== null && depthM !== undefined) {
+        const cm = (depthM || 0) * 100;
+        if      (cm <= 0)  fDepth = 0;
+        else if (cm <= 20) fDepth = 0.20 * (cm / 20);
+        else if (cm <= 50) fDepth = 0.20 + 0.60 * ((cm - 20) / 30);
+        else               fDepth = Math.min(1.0, 0.80 + 0.20 * Math.log(1 + (cm-50)/50) / Math.log(3));
+      }
+
+      // Date-aware temperature bands
+      const ds = dateStr || new Date().toISOString().slice(0,10);
+      const month = parseInt(ds.slice(5,7)), day = parseInt(ds.slice(8,10));
+      let optLo, optHi, tooWarm;
+      if (month >= 11 || month <= 2)     { optLo=-12; optHi=-2; tooWarm=15; }
+      else if (month===3 && day<=20)     { optLo=-6;  optHi= 2; tooWarm=18; }
+      else                               { optLo=-2;  optHi= 8; tooWarm=22; }
+
       let fTemp = 0.5;
       if (tMax !== null) {
-        if      (tMax <= -20) fTemp = 0.3;
-        else if (tMax <= -12) fTemp = 0.7 + 0.3*(tMax+20)/8;
-        else if (tMax <=  -2) fTemp = 1.0;
-        else if (tMax <=   5) fTemp = 1.0 - 0.5*(tMax+2)/7;
-        else if (tMax <=  15) fTemp = 0.5 - 0.4*(tMax-5)/10;
-        else                  fTemp = 0.05;
+        if      (tMax <= -20)      fTemp = 0.3;
+        else if (tMax <= optLo)    fTemp = 0.7 + 0.3*(tMax-(-20))/(optLo-(-20));
+        else if (tMax <= optHi)    fTemp = 1.0;
+        else if (tMax <= tooWarm)  fTemp = 1.0 - 0.6*(tMax-optHi)/(tooWarm-optHi);
+        else                       fTemp = 0.05;
         fTemp = Math.max(0, Math.min(1, fTemp));
       }
+
       let wMult = 1.0;
       if (gustKmh !== null) {
         if      (gustKmh <= 30) wMult = 1.0;
@@ -934,19 +956,28 @@
         else if (gustKmh <= 80) wMult = 0.9 - 0.4*(gustKmh-50)/30;
         else                    wMult = 0.3;
       }
+
       let pBonus = 0;
       if (freshCm > 10) {
         const sf = Math.min(1,(freshCm-10)/20);
-        const wf = (gustKmh === null || gustKmh <= 30) ? 1 : gustKmh <= 50 ? 1-(gustKmh-30)/20 : 0;
+        const wf = (gustKmh===null||gustKmh<=30)?1 : gustKmh<=50?1-(gustKmh-30)/20 : 0;
         pBonus = 0.15 * sf * wf;
       }
-      // Confidence factor: low precip probability on a forecast snow day = lower confidence.
-      // Clamped at 0.3 minimum so a low-prob day still gets partial credit.
-      // Applied to the entire score (not just pBonus) to reflect forecast uncertainty.
-      const probFactor = probPct !== null ? Math.min(1, 0.3 + (probPct / 100) * 0.7) : 1.0;
-      const raw = 0.45*fSun + 0.30*fDepth + 0.25*fTemp;
+
+      const probFactor = probPct !== null ? Math.min(1, 0.3 + (probPct/100)*0.7) : 1.0;
+
+      // Powder override
+      let raw;
+      if (freshCm >= 15 && (gustKmh === null || gustKmh < 60)) {
+        const powderIntensity = Math.min(1.0, freshCm / 40);
+        raw = 0.60*fDepth + 0.25*fTemp + 0.15*powderIntensity;
+        pBonus = 0;
+      } else {
+        raw = 0.45*fSun + 0.30*fDepth + 0.25*fTemp;
+      }
+
       const score = Math.max(0, Math.min(1, (raw + pBonus) * wMult * probFactor));
-      return { score: Math.round(score * 1000) / 1000, fSun, fDepth, fTemp, wMult, pBonus, probFactor };
+      return { score: Math.round(score*1000)/1000, fSun, fDepth, fTemp, wMult, pBonus, probFactor };
     };
 
     window.renderBestDaysStrip = () => {
@@ -983,7 +1014,7 @@
         const probArr= slice('precipitation_probability');
         const probMax= probArr.length ? Math.max(...probArr) : null;
         const dt     = hourly.time ? new Date(hourly.time[s]) : new Date(localNow.getTime()+i*86400000);
-        const scored = computeForecastDayScore(tMax, tMin, sunH, depthM, gustMax, freshCm, probMax, maxSun);
+        const scored = computeForecastDayScore(tMax, tMin, sunH, depthM, gustMax, freshCm, probMax, maxSun, dt.toISOString().slice(0,10));
         const dayWmo = hourly.weather_code ? (hourly.weather_code.slice(s,e).filter(v=>v!==null)[12] || null) : null;
         const wmoEmoji = dayWmo === null ? '🌤️' : dayWmo === 0 ? '☀️' : dayWmo <= 2 ? '🌤️' : dayWmo === 3 ? '☁️' :
                          dayWmo <= 48 ? '🌫️' : dayWmo <= 57 ? '🌧️' : dayWmo <= 67 ? '🌨️' :
@@ -1526,6 +1557,7 @@
       const gust   = r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? null;
       const sunSec = r.base?.sunshine_duration  ?? r.sunshine_duration  ?? null;
       const fresh  = r.summit?.snowfall_sum     ?? r.snowfall_sum       ?? null;
+      const dateStr = r.date || '2000-01-01';
 
       if (tMax === null && depth === null) {
         return { score: null, metrics: { fSun:0, fDepth:0, fTemp:0, windMult:1, powderBonus:0 } };
@@ -1537,18 +1569,31 @@
         : 0;
       fSun = Math.max(0, Math.min(1, fSun));
 
-      const fDepth = depth !== null
-        ? Math.min(1, depth / (OPTIMAL_DEPTH_M[r.resort] || 1.50))
-        : 0;
+      // Sigmoid depth curve — piste-optimised (50cm = 0.80, not 0.33)
+      let fDepth = 0;
+      if (depth !== null) {
+        const cm = depth * 100;
+        if      (cm <= 0)  fDepth = 0;
+        else if (cm <= 20) fDepth = 0.20 * (cm / 20);
+        else if (cm <= 50) fDepth = 0.20 + 0.60 * ((cm - 20) / 30);
+        else               fDepth = Math.min(1.0, 0.80 + 0.20 * Math.log(1 + (cm-50)/50) / Math.log(3));
+      }
+
+      // Date-aware temperature bands
+      const month = parseInt(dateStr.slice(5, 7));
+      const day   = parseInt(dateStr.slice(8, 10));
+      let optLo, optHi, tooWarm;
+      if (month >= 11 || month <= 2)        { optLo=-12; optHi=-2; tooWarm=15; }
+      else if (month === 3 && day <= 20)    { optLo=-6;  optHi= 2; tooWarm=18; }
+      else                                  { optLo=-2;  optHi= 8; tooWarm=22; }
 
       let fTemp = 0.5;
       if (tMax !== null) {
-        if      (tMax <= -20) fTemp = 0.3;
-        else if (tMax <= -12) fTemp = 0.7 + 0.3 * (tMax - (-20)) / 8;
-        else if (tMax <=  -2) fTemp = 1.0;
-        else if (tMax <=   5) fTemp = 1.0 - 0.5 * (tMax - (-2)) / 7;
-        else if (tMax <=  15) fTemp = 0.5 - 0.4 * (tMax - 5)    / 10;
-        else                  fTemp = 0.05;
+        if      (tMax <= -20)      fTemp = 0.3;
+        else if (tMax <= optLo)    fTemp = 0.7 + 0.3 * (tMax - (-20)) / (optLo - (-20));
+        else if (tMax <= optHi)    fTemp = 1.0;
+        else if (tMax <= tooWarm)  fTemp = 1.0 - 0.6 * (tMax - optHi) / (tooWarm - optHi);
+        else                       fTemp = 0.05;
         fTemp = Math.max(0, Math.min(1, fTemp));
       }
 
@@ -1560,19 +1605,27 @@
         else                 windMult = 0.3;
       }
 
-      // Powder bonus: fresh summit snow > 10cm + gusts < 50 km/h → up to +0.15
       let powderBonus = 0;
       if (fresh !== null && fresh > 10) {
         const snowFactor = Math.min(1, (fresh - 10) / 20);
         const windFactor = (gust === null || gust <= 30) ? 1.0
-                         : gust <= 50 ? 1.0 - (gust - 30) / 20
-                         : 0;
+                         : gust <= 50 ? 1.0 - (gust - 30) / 20 : 0;
         powderBonus = Math.round(0.15 * snowFactor * windFactor * 10000) / 10000;
       }
 
-      const raw   = 0.45*fSun + 0.30*fDepth + 0.25*fTemp;
-      const score = Math.max(0, Math.min(1, (raw + powderBonus) * windMult));
+      // Powder override: fresh >= 15cm AND gust < 60 → sunshine irrelevant
+      const freshCm = fresh ?? 0;
+      const gustKmh = gust  ?? 0;
+      let raw;
+      if (freshCm >= 15 && gustKmh < 60) {
+        const powderIntensity = Math.min(1.0, freshCm / 40);
+        raw = 0.0 * fSun + 0.60 * fDepth + 0.25 * fTemp + 0.15 * powderIntensity;
+        powderBonus = 0;
+      } else {
+        raw = 0.45 * fSun + 0.30 * fDepth + 0.25 * fTemp;
+      }
 
+      const score = Math.max(0, Math.min(1, (raw + powderBonus) * windMult));
       return { score, metrics: { fSun, fDepth, fTemp, windMult, powderBonus } };
     };
 
@@ -1601,7 +1654,7 @@
           ${powderRow}
           <span style="color:var(--text-muted); font-weight:800;">⭐ Score</span> <span class="tt-val" style="color:var(--brand);">${(finalSc*100).toFixed(0)}%</span>
         </div>
-        <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.5rem; border-top:1px solid var(--border-color); padding-top:0.35rem;">Score = (sun·45 + depth·30 + temp·25) × wind${(m.powderBonus||0)>0?' + powder bonus':''} · 100% = perfect day</div>
+        <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.5rem; border-top:1px solid var(--border-color); padding-top:0.35rem;">Score = (sun·45 + depth·30 + temp·25) × wind${(m.powderBonus||0)>0?' + powder bonus':''}${m.powderOverride?' — ☁ powder override active':''} · 100% = perfect day</div>
       </div>`;
     };
 
@@ -1802,7 +1855,9 @@
               };
             }
             
-            blocks.push({ d: `${startStr} to ${endStr}`, sObj: avgScoreObj, s: scoreAvg, f: snowTot, pH: precipHoursTot, pS: precipTot, isFuture });
+            const dayNum = parseInt(startStr.slice(8,10));
+            const isShoulder = mo.m === 11 || (mo.m === 4 && dayNum >= 15);
+            blocks.push({ d: `${startStr} to ${endStr}`, sObj: avgScoreObj, s: scoreAvg, f: snowTot, pH: precipHoursTot, pS: precipTot, isFuture, isShoulder });
           }
           
           html += `<div class="hm-month-block"><div class="hm-month-label">${mo.name}</div><div class="hm-grid">
@@ -1825,7 +1880,7 @@
               
               const tHtml = generateRichTooltipHTML(w.d, w.sObj, w.s, ex);
               
-              return `<div class="hm-cell has-tooltip" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};">
+              return `<div class="hm-cell has-tooltip${w.isShoulder ? ' hm-cell-shoulder' : ''}" style="background:${getColor(w.s)}; border: 1px solid ${w.s===null?'var(--border-color)':'transparent'};">
                  ${emojiHtml}
                  ${tHtml}
               </div>`;
