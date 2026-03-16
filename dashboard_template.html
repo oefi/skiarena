@@ -411,7 +411,37 @@
 
 </main>
 
-<footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 2rem;">
+<section style="max-width:1440px; margin: 0 auto 0; padding: 0 1rem 2rem;">
+  <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <h2 style="margin-top:0; color:var(--brand); border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; letter-spacing:-0.02em; font-size:1rem;">📋 What this dashboard actually is</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.75rem; margin-top:1rem;">
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🛰 Historical data</div>
+        ERA5-Seamless is a climate reanalysis — physics model output constrained by real observations, not station measurements. Grid resolution: ~9 km. Base and summit elevations within the same resort typically fall in the same grid cell; temperature differences are lapse-rate corrections, not independent readings. Accuracy: roughly ±1–2°C for temperature, ±20% for sunshine duration.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">☀ Clear sky hours</div>
+        Estimated from daily aggregates using <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">sun × temp_factor × wind_factor × √(srad/Ra)</code>. Parameters chosen by feel. The √ exponent exists because linear felt too harsh. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🔵 Bluebird Score</div>
+        Weights (sun 45%, depth 30%, temp 25%) are not derived from empirical data. The powder bonus threshold, wind multiplier breakpoints, and per-resort depth caps were estimated from general knowledge of ski terrain. The formula is fully documented and reproducible, which puts it ahead of most commercial ski condition ratings. That is a low bar.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">📡 Forecast</div>
+        Days 1–3: useful. Days 4–7: synoptic signal present, details uncertain. Days 8–16: the ECMWF ensemble spread for Alpine precipitation at this range covers most outcomes. Projected scores beyond day 5 indicate a plausible weather pattern, not a confirmed one. The confidence multiplier narrows the displayed scores; it does not narrow the atmosphere.
+      </div>
+
+    </div>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin:1rem 0 0; font-style:italic; line-height:1.6;">ERA5 is the dataset used to study 100-year climate trends. It is also what drives the bar chart above. This is fine.</p>
+  </div>
+</section>
+
+<footer style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 0;">
   Zwei Länder Skiarena · Open-Meteo ERA5-Seamless + ECMWF/ICON/GFS · Refreshed every 6 hours
 </footer>
 
