@@ -125,14 +125,6 @@
   @media (max-width: 900px) { #forecast-wrapper { grid-template-columns: 1fr; } }
 
   /* ── BEST-DAYS STRIP ── */
-  #best-days-strip { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: hidden; padding: 0; }
-  #best-days-strip .fc-day-chip { flex: 1 1 0; min-width: 0; border-radius: 0; border-right-width: 0; }
-  #best-days-strip .fc-day-chip:first-child { border-radius: 6px 0 0 6px; }
-  #best-days-strip .fc-day-chip:last-child  { border-radius: 0 6px 6px 0; border-right-width: 1px; }
-  .fc-day-chip { flex: 0 0 auto; min-width: 72px; padding: 0.5rem 0.4rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; display: flex; flex-direction: column; gap: 0.15rem; cursor: default; transition: transform 0.1s; }
-  .fc-day-chip:hover { transform: translateY(-2px); }
-  .fc-day-chip--top { border: 2px solid #16a34a; box-shadow: 0 0 0 1px rgba(22,163,74,0.25); }
-  .fc-day-chip--top3-1 { border: 2px solid #d97706; box-shadow: 0 0 0 1px rgba(217,119,6,0.25); }
 
   /* ── AVALANCHE WARNING ── */
   .avl-warning { font-size: 0.75rem; font-weight: 700; color: #b45309; background: rgba(180,83,9,0.08); border: 1px solid rgba(180,83,9,0.25); border-radius: 3px; padding: 0.2rem 0.4rem; margin-top: 0.3rem; display: inline-block; }
@@ -291,16 +283,10 @@
         </div>
 
         <div style="position: relative; flex-grow: 1; min-height: 300px;">
-          <canvas id="forecast-canvas" width="2000" height="760"></canvas>
+          <canvas id="forecast-canvas" width="2000" height="920"></canvas>
         </div>
 
-        <!-- Best ski days — aligned to canvas left/right padding (pX=72px desktop, 48px mobile) -->
-        <div style="padding: 0.5rem 72px 0; box-sizing: border-box;">
-          <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
-            Best Ski Days — Next 16 Days <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;color:var(--text-muted);" title="Projected ski quality score based on forecast snow, sunshine, temperature and wind. Scores are weighted by precipitation probability.">⭐ best day &nbsp;·&nbsp; ✓ top 3 picks</span>
-          </div>
-          <div id="best-days-strip"><div style="color:var(--text-muted); font-style:italic; font-size:0.85rem;">Awaiting forecast…</div></div>
-        </div>
+
 
       </div>
     </div>
@@ -716,7 +702,6 @@
         window.GLOBAL_RESORT = r;
         
         if(typeof renderTacticalSummary === 'function') renderTacticalSummary(window.GLOBAL_RESORT);
-        if(typeof window.renderBestDaysStrip === 'function') window.renderBestDaysStrip();
         if(typeof window.repaintForecastCanvas === 'function') window.repaintForecastCanvas();
         if(typeof window.renderHeatmaps === 'function') window.renderHeatmaps();
         if(typeof window.repaintCanvas === 'function') window.repaintCanvas();
@@ -931,7 +916,7 @@
           </div>
         </div>`;
 
-      fcBoard.innerHTML = snowWeekCard + liveCard;
+      fcBoard.innerHTML = liveCard + snowWeekCard;
     };
 
     if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
@@ -1199,7 +1184,7 @@
       const pX = isMobile ? 48 : 72;
       const pY = 24;
       const pRight = isMobile ? 48 : 72;
-      const pBot = isNarrow ? 92 : 58;  // extra room for date labels + axis titles
+      const pBot = 165;  // includes chip row (115px) + axis title pad (50px)
 
       const w = cvsFc.width - pX - pRight;
       const h = cvsFc.height - pY - pBot; 
@@ -1332,23 +1317,129 @@
 
         ctxFc.fillStyle = getStyleVar('--text-muted'); 
         const cx = pX + i*colW + colW/2;
-        
-        if (isNarrow) {
-            ctxFc.save();
-            ctxFc.translate(cx, yP2 + hP2 + 10);
-            ctxFc.rotate(Math.PI / 6); 
-            ctxFc.textAlign = 'left';
-            ctxFc.textBaseline = 'middle';
-            ctxFc.fillText(d.label.replace(',', ''), 0, 0); 
-            ctxFc.restore();
-        } else {
-            ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
-            const parts = d.label.split(', ');
-            if(parts.length === 2) {
-              ctxFc.fillText(parts[0], cx, yP2 + hP2 + 10); ctxFc.fillText(parts[1], cx, yP2 + hP2 + 24);
-            } else {
-              ctxFc.fillText(d.label, cx, yP2 + hP2 + 10);
-            }
+        // Date labels now drawn inside chips below — skip standalone labels
+      });
+
+      // ── In-canvas chip row ─────────────────────────────────────────────
+      // Drawn at the bottom of pBot space, perfectly column-aligned.
+      // Each chip = one forecast day, same width as chart column.
+      const chipTop  = yP2 + hP2 + 6;   // 6px gap below chart
+      const chipH    = cvsFc.height - chipTop - 4;
+      const chipPad  = 4;
+      const sc2 = cvsFc.width / (cvsFc.clientWidth || 800); // buffer scale
+
+      // Pre-compute scores for all days
+      const maxSunForScore = Math.max(8, ...daily.map(d => d.sun));
+      const chipScores = daily.map((d, i) => {
+        const s  = i * 24, e = s + 24;
+        const depthArr = hourly.snow_depth ? hourly.snow_depth.slice(s,e).filter(v=>v!==null) : [];
+        const depthM   = depthArr.length ? depthArr.reduce((a,b)=>a+b,0)/depthArr.length : 0;
+        const probArr  = hourly.precipitation_probability ? hourly.precipitation_probability.slice(s,e).filter(v=>v!==null) : [];
+        const probMax  = probArr.length ? Math.max(...probArr) : null;
+        let exactDate;
+        if (hourly.time && hourly.time[s]) exactDate = new Date(hourly.time[s]);
+        else exactDate = new Date(localNow.getTime() + i*86400000);
+        const ds = exactDate.toISOString().slice(0,10);
+        const wmo = hourly.weather_code ? (hourly.weather_code.slice(s,e).filter(v=>v!==null)[12]||null) : null;
+        const emoji = wmo===null?'🌤':wmo===0?'☀️':wmo<=2?'🌤':wmo===3?'☁️':wmo<=48?'🌫️':wmo<=57?'🌧️':wmo<=67?'🌨️':wmo<=77?'❄️':wmo<=82?'🌦️':wmo<=86?'🌨️':'⛈️';
+        const scored = computeForecastDayScore(d.tMax, d.tMin, d.sun, depthM, d.gust, d.snow, probMax, maxSunForScore, ds);
+        const isPowder = d.snow >= 15 && d.gust < 60;
+        return { score: scored.score, emoji: isPowder ? '🌨️' : emoji, probMax, dateObj: exactDate, ds };
+      });
+
+      // Find top 3 by score
+      const ranked = chipScores.map((c,i)=>({i,s:c.score})).sort((a,b)=>b.s-a.s);
+      const topSet  = new Set(ranked.slice(0,3).map(r=>r.i));
+      const bestIdx = ranked[0]?.i;
+
+      daily.forEach((d, i) => {
+        const chipLeft = pX + i * colW;
+        const chipW    = colW;
+        const isTop    = topSet.has(i);
+        const isBest   = i === bestIdx;
+        const sc_val   = chipScores[i].score;
+        const scoreColor = sc_val >= 0.75 ? '#16a34a' : sc_val >= 0.5 ? '#d97706' : sc_val >= 0.3 ? '#f97316' : '#ef4444';
+
+        // Chip background
+        ctxFc.fillStyle = getStyleVar('--bg-card');
+        ctxFc.beginPath();
+        ctxFc.roundRect
+          ? ctxFc.roundRect(chipLeft+1, chipTop, chipW-2, chipH, 4)
+          : ctxFc.rect(chipLeft+1, chipTop, chipW-2, chipH);
+        ctxFc.fill();
+
+        // Border: bold for top picks
+        ctxFc.strokeStyle = isBest ? '#16a34a' : isTop ? '#d97706' : getStyleVar('--border-color');
+        ctxFc.lineWidth   = isBest || isTop ? 2 : 0.5;
+        ctxFc.beginPath();
+        ctxFc.roundRect
+          ? ctxFc.roundRect(chipLeft+1, chipTop, chipW-2, chipH, 4)
+          : ctxFc.rect(chipLeft+1, chipTop, chipW-2, chipH);
+        ctxFc.stroke();
+
+        // Hover highlight
+        if (i === fcHoverIdx) {
+          ctxFc.fillStyle = 'rgba(30,64,175,0.07)';
+          ctxFc.beginPath();
+          ctxFc.roundRect
+            ? ctxFc.roundRect(chipLeft+1, chipTop, chipW-2, chipH, 4)
+            : ctxFc.rect(chipLeft+1, chipTop, chipW-2, chipH);
+          ctxFc.fill();
+        }
+
+        const cx2 = chipLeft + chipW / 2;
+        const fScale = Math.min(1, chipW / (72 * sc2)); // scale font if chips narrow
+        const fBase  = Math.max(8, Math.floor(10 * sc2 * fScale));
+        const fSm    = Math.max(7, Math.floor(9  * sc2 * fScale));
+
+        ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'top';
+
+        // Row 1: weekday bold
+        const dateObj = chipScores[i].dateObj;
+        const wkday = dateObj.toLocaleDateString('en-US', {weekday:'short'}).toUpperCase();
+        ctxFc.font = `700 ${fBase}px system-ui`;
+        ctxFc.fillStyle = isBest ? '#16a34a' : isTop ? '#d97706' : getStyleVar('--text-muted');
+        ctxFc.fillText(wkday, cx2, chipTop + chipPad);
+
+        // Row 2: date (Mon D)
+        const dateLabel = dateObj.toLocaleDateString('en-GB',{month:'short',day:'numeric'});
+        ctxFc.font = `${fSm}px system-ui`;
+        ctxFc.fillStyle = getStyleVar('--text-muted');
+        ctxFc.fillText(dateLabel, cx2, chipTop + chipPad + fBase + 2);
+
+        // Row 3: emoji
+        const emojiY = chipTop + chipPad + fBase*2 + 6;
+        ctxFc.font = `${Math.max(12, Math.floor(14 * sc2 * fScale))}px system-ui`;
+        ctxFc.fillText(chipScores[i].emoji, cx2, emojiY);
+
+        // Row 4: score %  bold coloured
+        const scoreY = emojiY + Math.floor(16 * sc2 * fScale) + 2;
+        ctxFc.font = `800 ${Math.max(9, Math.floor(11 * sc2 * fScale))}px system-ui`;
+        ctxFc.fillStyle = scoreColor;
+        ctxFc.fillText(`${Math.round(sc_val*100)}%`, cx2, scoreY);
+
+        // Row 5: T max
+        const tempY = scoreY + Math.floor(13 * sc2 * fScale) + 1;
+        ctxFc.font = `${fSm}px system-ui`;
+        ctxFc.fillStyle = d.tMax > 2 ? '#ef4444' : d.tMax > -5 ? '#f97316' : getStyleVar('--text-main');
+        ctxFc.fillText(`${d.tMax > 0 ? '+' : ''}${d.tMax.toFixed(0)}°C`, cx2, tempY);
+
+        // Row 6: precip prob if notable
+        const prob = chipScores[i].probMax;
+        if (prob !== null && prob > 20) {
+          const probY = tempY + Math.floor(12 * sc2 * fScale) + 1;
+          ctxFc.font = `${fSm}px system-ui`;
+          ctxFc.fillStyle = d.snow > 0 ? '#2563eb' : '#94a3b8';
+          ctxFc.fillText(`${d.snow > 0 ? '❄' : '☔'} ${Math.round(prob)}%`, cx2, probY);
+        }
+
+        // Star badge for best day
+        if (isBest) {
+          ctxFc.font = `${Math.max(8, Math.floor(9 * sc2))}px system-ui`;
+          ctxFc.fillStyle = '#16a34a';
+          ctxFc.textAlign = 'right';
+          ctxFc.fillText('★', chipLeft + chipW - 3, chipTop + chipPad);
+          ctxFc.textAlign = 'center';
         }
       });
 
@@ -1520,7 +1611,7 @@
         }
       }, {passive: false});
       
-      window.addEventListener('resize', () => { if (cvsFc) setupHiDPI(cvsFc, 2000, 760); window.repaintForecastCanvas(); });
+      window.addEventListener('resize', () => { if (cvsFc) setupHiDPI(cvsFc, 2000, 920); window.repaintForecastCanvas(); });
       setTimeout(window.repaintForecastCanvas, 100);
     }
 
