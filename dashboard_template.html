@@ -378,13 +378,13 @@
   <!-- ── ATMOSPHERIC CONDITIONS CANVAS ── -->
   <section id="atmosphere">
     <h2>Season Overview 🌡️</h2>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;"><strong>Top panel:</strong> Mountain temperature (solid) · Apparent/feels-like (dashed). &nbsp;<strong>Bottom panel:</strong> ☀ Bluebird hrs · ❄ New snow · 💨 Wind gusts.</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem;"><strong>Top panel:</strong> Mountain temperature (solid) · Apparent/feels-like (dashed). &nbsp;<strong>Bottom panel:</strong> ☀ Clear sky hrs · ❄ New snow · 💨 Wind gusts.</p>
 
     <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 1.2rem; padding: 0.5rem 0.75rem; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); align-items: center;">
         <div class="legend-item"><span style="display:inline-block;width:20px;height:3px;background:linear-gradient(to right,#ef4444,#3b82f6);border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Mountain temp</div>
         <div class="legend-item"><span style="display:inline-block;width:20px;height:0;border-bottom:2px dashed rgba(239,68,68,0.55);vertical-align:middle;margin-right:4px;"></span>Feels-like (apparent) †</div>
-        <div class="legend-item"><div class="legend-color" style="background:var(--sun-yield);height:12px;"></div>Bluebird hrs †</div>
+        <div class="legend-item"><div class="legend-color" style="background:var(--sun-yield);height:12px;"></div>Clear sky hrs †</div>
         <div class="legend-item"><div class="legend-color" style="background:var(--snow-yield);height:12px;"></div>New snow</div>
         <div class="legend-item"><span style="display:inline-block;width:20px;height:0;border-bottom:2px dashed rgba(239,68,68,0.7);vertical-align:middle;margin-right:4px;"></span>Peak gust</div>
         <span style="font-size:0.65rem;color:var(--text-muted);opacity:0.8;">† estimated from daily aggregates</span>
@@ -392,8 +392,8 @@
       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
         <div style="display: flex; gap: 0; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
           <span style="font-size:0.7rem;color:var(--text-muted);padding:0 0.5rem;font-weight:bold;text-transform:uppercase;white-space:nowrap;">Temp smooth:</span>
-          <button class="control-btn atmos-ma-btn active" data-ma="7" style="border:none;border-left:1px solid var(--border-color);border-radius:0;font-size:0.8rem;">7d</button>
-          <button class="control-btn atmos-ma-btn" data-ma="3" style="border:none;border-left:1px solid var(--border-color);border-radius:0;font-size:0.8rem;">3d</button>
+          <button class="control-btn atmos-ma-btn" data-ma="7" style="border:none;border-left:1px solid var(--border-color);border-radius:0;font-size:0.8rem;">7d</button>
+          <button class="control-btn atmos-ma-btn active" data-ma="3" style="border:none;border-left:1px solid var(--border-color);border-radius:0;font-size:0.8rem;">3d</button>
           <button class="control-btn atmos-ma-btn" data-ma="1" style="border:none;border-left:1px solid var(--border-color);border-radius:0;font-size:0.8rem;">Raw</button>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1932,7 +1932,7 @@
     let atmosHoverDay = null;
     let isAtmosTouch = false;
     let atmosSeasonIdx = 0;
-    let atmosMAWindow = 7;
+    let atmosMAWindow = 3;
     const ATMOS_PAD_X = 120, ATMOS_DAYS = 182;
 
     document.querySelectorAll('.atmos-ma-btn').forEach(btn => {
@@ -1986,30 +1986,51 @@
 
         atmosData[off] = {
           date:  r.date,
-          sTMax: r.summit?.temperature_2m_max      ?? null,
-          sTMin: r.summit?.temperature_2m_min      ?? null,
+          sTMax: r.summit?.temperature_2m_max       ?? null,
+          sTMin: r.summit?.temperature_2m_min       ?? null,
           apMax: r.summit?.apparent_temperature_max ?? null,
           apMin: r.summit?.apparent_temperature_min ?? null,
           sunH:  ((r.summit?.sunshine_duration ?? r.base?.sunshine_duration ?? r.sunshine_duration) ?? 0) / 3600,
-          snow:  r.summit?.snowfall_sum            ?? r.snowfall_sum         ?? 0,
-          gust:  r.summit?.wind_gusts_10m_max      ?? r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0,
+          srad:  r.base?.shortwave_radiation_sum     ?? r.shortwave_radiation_sum ?? null,
+          snow:  r.summit?.snowfall_sum             ?? r.snowfall_sum         ?? 0,
+          gust:  r.summit?.wind_gusts_10m_max       ?? r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? 0,
           // Village temp kept for tooltip only
-          vMax:  r.base?.temperature_2m_max        ?? null,
-          vMin:  r.base?.temperature_2m_min        ?? null,
+          vMax:  r.base?.temperature_2m_max         ?? null,
+          vMin:  r.base?.temperature_2m_min         ?? null,
         };
       });
 
-      // ── Bluebird hours approximation ───────────────────────────────────────
-      // Counts estimated hours the mountain was genuinely pleasant:
-      //   sun_hours × temp_factor × wind_factor
-      // temp_factor: 1.0 at tMax ≥ −15°C, linear to 0 at −30°C
-      // wind_factor: 1.0 at gust ≤ 30, linear to 0.1 at 65, flat 0.1 above
+      // ── Clear sky hours approximation ──────────────────────────────────────
+      // Three-factor estimate of genuinely pleasant mountain hours per day:
+      //   sunH × tF × wF × sqrt(ccF)
+      //
+      // tF  — temperature comfort: 1.0 at tMax ≥ −15°C → 0 at −30°C
+      // wF  — wind comfort:        1.0 at gust ≤ 30 km/h → 0.1 above 65 km/h
+      // ccF — cloud cover check from shortwave radiation vs theoretical clear-sky.
+      //       ERA5 overestimates sunshine by +10–30% in Alpine terrain; shortwave
+      //       provides an independent physical cross-check. sqrt() to avoid
+      //       over-penalising patchy cloud days.
+      //       If srad unavailable: ccF = 1.0 (no correction applied).
       for (let i = 0; i <= ATMOS_DAYS; i++) {
         const d = atmosData[i];
         if (!d) continue;
+        const doy = Math.floor((new Date(d.date) - new Date(new Date(d.date).getFullYear(), 0, 0)) / 86400000);
+        // Theoretical top-of-atmosphere radiation (MJ/m²/day) — Hargreaves-Samani
+        const dr   = 1 + 0.033 * Math.cos(2 * Math.PI * doy / 365);
+        const decl = 0.409 * Math.sin(2 * Math.PI * doy / 365 - 1.39);
+        const lat  = 47 * Math.PI / 180;
+        const cosWs = Math.max(-1, Math.min(1, -Math.tan(lat) * Math.tan(decl)));
+        const ws   = Math.acos(cosWs);
+        const Ra   = 37.6 * dr * (ws * Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.sin(ws));
+        // Clear-sky surface estimate: Ra × 0.75 (typical clear-sky transmissivity)
+        const radClear = Ra * 0.75;
+        // Cloud cover fraction from shortwave; sqrt softens the penalty
+        const ccF = (d.srad !== null && radClear > 0)
+          ? Math.sqrt(Math.min(1, d.srad / radClear))
+          : 1.0;
         const tF = d.sTMax === null ? 0.7 : d.sTMax >= -15 ? 1.0 : d.sTMax >= -30 ? (d.sTMax + 30) / 15 : 0;
         const wF = d.gust <= 30 ? 1.0 : d.gust <= 65 ? 1 - 0.9*(d.gust-30)/35 : 0.1;
-        d.bbH = +(d.sunH * tF * wF).toFixed(2);
+        d.bbH = +(d.sunH * tF * wF * ccF).toFixed(2);
       }
 
       // ── Moving average (applies ONLY to temperature series) ────────────────
@@ -2050,10 +2071,10 @@
       const mapTempY  = t => (pY + topH) - ((t - tMinLimit) / tRange) * topH;
 
       // Condition zone axes
-      const rawMaxBB   = validTemps.length ? Math.max(...validTemps.map(d => d.bbH))  : 12;
+      const rawMaxBB   = validTemps.length ? Math.max(...validTemps.map(d => d.bbH))  : 8;
       const rawMaxSnow = validTemps.length ? Math.max(...validTemps.map(d => d.snow)) : 30;
       const rawMaxGust = validTemps.length ? Math.max(...validTemps.map(d => d.gust)) : 120;
-      const atmBBMax   = Math.ceil((rawMaxBB   + 1) / 2) * 2;
+      const atmBBMax   = 8;  // capped — 8h is an excellent alpine day; shows realistic scale
       const atmSnowMax = Math.ceil(Math.max(30, rawMaxSnow + 5) / 10) * 10;
       const atmGustMax = Math.ceil(Math.max(120, rawMaxGust + 10) / 20) * 20;
       const mapBBY   = s => botY0 + botH - (Math.min(s, atmBBMax)   / atmBBMax)   * botH;
@@ -2165,12 +2186,12 @@
       ctxA.textAlign = 'right'; ctxA.textBaseline = 'bottom';
       ctxA.fillText('Mountain °C', pX - 4, divY - 4);
       ctxA.textBaseline = 'top';
-      ctxA.fillText('Bluebird hrs · Snow · Gust', pX - 4, divY + 4);
+      ctxA.fillText('Clear sky hrs · Snow · Gust', pX - 4, divY + 4);
 
       // ── Bar zone axes (right side) ──────────────────────────────────────────
       ctxA.textAlign = 'left'; ctxA.textBaseline = 'top';
       ctxA.fillStyle = 'rgba(180,120,0,0.85)';
-      ctxA.fillText(`${atmBBMax}h ☀`, pX+w+8, botY0);
+      ctxA.fillText(`8h ☀ max`, pX+w+8, botY0);
       ctxA.fillStyle = 'rgba(59,130,246,0.8)';
       ctxA.fillText(`${atmSnowMax}cm`, pX+w+8, botY0 + botH*0.32);
       ctxA.fillStyle = 'rgba(200,50,50,0.8)';
@@ -2212,7 +2233,7 @@
         ctxA.beginPath(); ctxA.moveTo(pX, ry); ctxA.lineTo(pX + w * 0.4, ry);
         ctxA.strokeStyle = 'rgba(180,120,0,0.3)'; ctxA.setLineDash([3,3]); ctxA.stroke(); ctxA.setLineDash([]);
         ctxA.fillStyle = 'rgba(150,100,0,0.6)'; ctxA.textAlign = 'left'; ctxA.textBaseline = 'bottom';
-        ctxA.fillText('6h', pX + 3, ry - 2);
+        ctxA.fillText('6h good', pX + 3, ry - 2);
       }
       if (atmGustMax > 65) {
         const gy = mapGustY(65);
@@ -2253,7 +2274,7 @@
         ln(`⛰ ${elev.summit}m  ${d.sTMax !== null ? d.sTMax.toFixed(1) : '—'} / ${d.sTMin !== null ? d.sTMin.toFixed(1) : '—'}°C`);
         if (hasAp) ln(`🧤 Feels-like  ${d.apMax !== null ? d.apMax.toFixed(1) : '—'} / ${d.apMin !== null ? d.apMin.toFixed(1) : '—'}°C`, 'rgba(100,116,139,0.9)');
         if (hasVill) ln(`🏘 ${elev.base}m  ${d.vMax !== null ? d.vMax.toFixed(1) : '—'} / ${d.vMin !== null ? d.vMin.toFixed(1) : '—'}°C`, getStyleVar('--text-muted'));
-        ln(`☀ Bluebird  ${d.bbH.toFixed(1)} h  (${d.sunH.toFixed(1)}h sun)`, 'rgba(180,120,0,0.9)');
+        ln(`☀ Clear sky  ${d.bbH.toFixed(1)} h  (${d.sunH.toFixed(1)}h sun × cloud/temp/wind)`, 'rgba(180,120,0,0.9)');
         ln(`❄ New snow  ${d.snow.toFixed(1)} cm`, '#2563eb');
         ln(`💨 Peak gust  ${d.gust.toFixed(0)} km/h${d.gust > 65 ? '  ⚠ lifts' : ''}`, '#ef4444');
 
