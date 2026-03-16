@@ -423,7 +423,7 @@
 
       <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
         <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">☀ Clear sky hours</div>
-        Estimated from daily aggregates using <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">sun × temp_factor × wind_factor × √(srad/Ra)</code>. Parameters chosen by feel. The √ exponent exists because linear felt too harsh. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5.
+        Sunshine duration (ERA5) corrected by actual surface shortwave radiation vs theoretical clear-sky: <code style="font-size:0.72rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">sun × √(srad / Ra)</code>. ERA5 overestimates Alpine sunshine by 10–30%; the shortwave term partially corrects this using a second ERA5 variable. It is ERA5 correcting ERA5. Temperature and wind are shown separately on the same chart.
       </div>
 
       <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
@@ -434,6 +434,39 @@
       <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
         <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">📡 Forecast</div>
         Days 1–3: useful. Days 4–7: synoptic signal present, details uncertain. Days 8–16: the ECMWF ensemble spread for Alpine precipitation at this range covers most outcomes. Projected scores beyond day 5 indicate a plausible weather pattern, not a confirmed one. The confidence multiplier narrows the displayed scores; it does not narrow the atmosphere.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">🗂 Which model, where</div>
+        <table style="width:100%; border-collapse:collapse; font-size:0.74rem;">
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Heatmap · Daily table · Snowpack · Season Overview</td>
+            <td style="padding:0.25rem 0;">ERA5-Seamless (Call A) + ERA5-Land (Call B for snow depth). Reanalysis, ~9 km, ~6-day lag.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Forecast canvas · Tactical cards · Best-days strip</td>
+            <td style="padding:0.25rem 0;"><code style="font-size:0.7rem; background:rgba(0,0,0,0.06); padding:0 3px; border-radius:2px;">best_match</code> — Open-Meteo's auto-blend: ICON-D2/AROME for days 1–5 (~2 km), ECMWF IFS + GFS beyond. 16 days, summit elevation only.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.25rem 0.4rem 0.25rem 0; color:var(--text-main); font-weight:600; white-space:nowrap;">Village temps in forecast</td>
+            <td style="padding:0.25rem 0;">Not fetched. Derived from summit data using a standard environmental lapse rate of 6.5°C per 1000 m. Labelled "(est.)" accordingly.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">❄ Snow depth — a special case</div>
+        Snow depth exists only in ERA5-Land (Call B). It is fetched hourly and the daily maximum is taken — a conservative choice for ski purposes. ERA5-Land snow depth is notoriously imprecise in steep Alpine terrain; the model's snowpack depends heavily on wind redistribution and aspect, neither of which the ~9 km grid resolves. The values are directionally correct. Treat centimetre-level precision as decorative.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">⏱ Data freshness</div>
+        Historical pipeline runs every 6 hours via GitHub Actions. ERA5-Seamless has an ~6-day publishing lag; the most recent days in the Heatmap and Daily table are therefore always 6 days behind today. The forecast payload is fetched at the same interval and is current to the last pipeline run. The countdown in the header shows time to the next scheduled refresh, not time since last data update.
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.65; padding:0.75rem; background:var(--bg-main); border-radius:6px; border:1px solid var(--border-color);">
+        <div style="font-weight:700; color:var(--text-main); margin-bottom:0.3rem;">📐 Presentational choices</div>
+        The clear-sky-hours axis is capped at 8 h — a good alpine day, not the theoretical maximum. The Bluebird Score heatmap is normalised per resort against that resort's own historical peak, so a 70% score means the same thing in Nauders and Sulden even though Sulden is 500 m higher. The 7-day temperature smoothing default reduces noise; switching to Raw shows the underlying daily variance ERA5 actually produces.
       </div>
 
     </div>
@@ -2030,37 +2063,25 @@
         };
       });
 
-      // ── Clear sky hours approximation ──────────────────────────────────────
-      // Three-factor estimate of genuinely pleasant mountain hours per day:
-      //   sunH × tF × wF × sqrt(ccF)
-      //
-      // tF  — temperature comfort: 1.0 at tMax ≥ −15°C → 0 at −30°C
-      // wF  — wind comfort:        1.0 at gust ≤ 30 km/h → 0.1 above 65 km/h
-      // ccF — cloud cover check from shortwave radiation vs theoretical clear-sky.
-      //       ERA5 overestimates sunshine by +10–30% in Alpine terrain; shortwave
-      //       provides an independent physical cross-check. sqrt() to avoid
-      //       over-penalising patchy cloud days.
-      //       If srad unavailable: ccF = 1.0 (no correction applied).
+      // ── Clear sky hours ────────────────────────────────────────────────────
+      // Sunshine duration (ERA5) corrected by actual surface radiation vs
+      // theoretical clear-sky. √ softens the penalty for patchy cloud.
+      // Temperature and wind are shown separately — not factored in here.
       for (let i = 0; i <= ATMOS_DAYS; i++) {
         const d = atmosData[i];
         if (!d) continue;
         const doy = Math.floor((new Date(d.date) - new Date(new Date(d.date).getFullYear(), 0, 0)) / 86400000);
-        // Theoretical top-of-atmosphere radiation (MJ/m²/day) — Hargreaves-Samani
         const dr   = 1 + 0.033 * Math.cos(2 * Math.PI * doy / 365);
         const decl = 0.409 * Math.sin(2 * Math.PI * doy / 365 - 1.39);
         const lat  = 47 * Math.PI / 180;
         const cosWs = Math.max(-1, Math.min(1, -Math.tan(lat) * Math.tan(decl)));
         const ws   = Math.acos(cosWs);
         const Ra   = 37.6 * dr * (ws * Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.sin(ws));
-        // Clear-sky surface estimate: Ra × 0.75 (typical clear-sky transmissivity)
         const radClear = Ra * 0.75;
-        // Cloud cover fraction from shortwave; sqrt softens the penalty
         const ccF = (d.srad !== null && radClear > 0)
           ? Math.sqrt(Math.min(1, d.srad / radClear))
           : 1.0;
-        const tF = d.sTMax === null ? 0.7 : d.sTMax >= -15 ? 1.0 : d.sTMax >= -30 ? (d.sTMax + 30) / 15 : 0;
-        const wF = d.gust <= 30 ? 1.0 : d.gust <= 65 ? 1 - 0.9*(d.gust-30)/35 : 0.1;
-        d.bbH = +(d.sunH * tF * wF * ccF).toFixed(2);
+        d.bbH = +(d.sunH * ccF).toFixed(2);
       }
 
       // ── Moving average (applies ONLY to temperature series) ────────────────
@@ -2304,7 +2325,7 @@
         ln(`⛰ ${elev.summit}m  ${d.sTMax !== null ? d.sTMax.toFixed(1) : '—'} / ${d.sTMin !== null ? d.sTMin.toFixed(1) : '—'}°C`);
         if (hasAp) ln(`🧤 Feels-like  ${d.apMax !== null ? d.apMax.toFixed(1) : '—'} / ${d.apMin !== null ? d.apMin.toFixed(1) : '—'}°C`, 'rgba(100,116,139,0.9)');
         if (hasVill) ln(`🏘 ${elev.base}m  ${d.vMax !== null ? d.vMax.toFixed(1) : '—'} / ${d.vMin !== null ? d.vMin.toFixed(1) : '—'}°C`, getStyleVar('--text-muted'));
-        ln(`☀ Clear sky  ${d.bbH.toFixed(1)} h  (${d.sunH.toFixed(1)}h sun × cloud/temp/wind)`, 'rgba(180,120,0,0.9)');
+        ln(`☀ Clear sky  ${d.bbH.toFixed(1)} h  (${d.sunH.toFixed(1)}h sun × cloud correction)`, 'rgba(180,120,0,0.9)');
         ln(`❄ New snow  ${d.snow.toFixed(1)} cm`, '#2563eb');
         ln(`💨 Peak gust  ${d.gust.toFixed(0)} km/h${d.gust > 65 ? '  ⚠ lifts' : ''}`, '#ef4444');
 
