@@ -218,7 +218,17 @@ def compute_score(record, bounds):
         }}
 
     sun_range = rb.get("sun", (0, 1))
-    f_sun     = max(0.0, min(1.0, norm(sun if sun is not None else 0, *sun_range)))
+    # Redistribute weights when sunshine_duration is null (rare API anomaly at
+    # sequence boundaries). Using 0 would silently crush 45% of the score on
+    # days that may be perfectly skiable. Instead, spread its weight to the
+    # remaining factors that do have data.
+    if sun is not None:
+        f_sun = max(0.0, min(1.0, norm(sun, *sun_range)))
+        w_sun, w_depth, w_temp = 0.45, 0.30, 0.25
+    else:
+        f_sun  = 0.0
+        w_sun, w_depth, w_temp = 0.00, 0.55, 0.45  # 45% redistributed to depth+temp
+
     f_depth   = depth_score_piste(depth, resort)
     f_temp    = temperature_score_seasonal(t_max, date_str)
     w_mult    = wind_penalty(gust)
@@ -233,7 +243,7 @@ def compute_score(record, bounds):
         raw = 0.0 * f_sun + 0.60 * f_depth + 0.25 * f_temp + 0.15 * powder_intensity
         p_bonus = 0.0  # override already captures it
     else:
-        raw = 0.45 * f_sun + 0.30 * f_depth + 0.25 * f_temp
+        raw = w_sun * f_sun + w_depth * f_depth + w_temp * f_temp
 
     score = round(max(0.0, min(1.0, (raw + p_bonus) * w_mult)), 4)
 

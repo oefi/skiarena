@@ -5,7 +5,7 @@ Fetches both hourly (for canvas charts) and daily (for tactical board cards).
 best_match blends ICON-D2/AROME/HARMONIE for days 1-5, then ECMWF IFS/GFS.
 """
 
-import requests, json, sys, time
+import requests, json, sys, time, os
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
@@ -101,13 +101,21 @@ def main():
             }
             time.sleep(0.5)
 
-        with open(OUT_FILE, "w") as f:
+        # Validate before committing — don't write if all resorts failed
+        if not any(forecast_payload["resorts"].values()):
+            raise ValueError("All resort fetches returned empty data")
+        tmp = OUT_FILE.with_suffix(".tmp")
+        with open(tmp, "w") as f:
             json.dump(forecast_payload, f, separators=(",", ":"))
+        tmp.replace(OUT_FILE)
 
     except Exception as e:
         print(f"\n[!] WARNING: High-res forecast fetch failed: {e}")
-        with open(OUT_FILE, "w") as f:
-            json.dump({"error": str(e), "resorts": {}}, f)
+        if OUT_FILE.exists():
+            print(f"    Retaining cached {OUT_FILE.name} for dashboard build.")
+        else:
+            print(f"    No cached forecast exists — dashboard will show no forecast data.")
+        sys.exit(1)  # signal failure to action_refresh.py (allow_fail=True handles it)
 
 if __name__ == "__main__":
     main()
