@@ -2795,8 +2795,8 @@
       const rect = cvsA.getBoundingClientRect();
       const pX   = ATMOS_PAD_X;
       const cvsW = cvsA.width;
-      const cssW = rect.width;
-      const bufX = (clientX - rect.left) * (cvsW / cssW);
+      const cssW = rect.right - rect.left;  // avoid sub-pixel float drift
+      const bufX = Math.max(0, Math.min(cvsW, (clientX - rect.left) * (cvsW / cssW)));
       return Math.round((bufX - pX) / (cvsW - pX*2) * ATMOS_DAYS);
     };
 

@@ -21,7 +21,8 @@ def main():
 
     # Round-trip through json to guarantee valid, properly escaped JSON —
     # guards against any corrupt byte or accidental </script> in string fields.
-    data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8")))
+    data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8"))).replace("</", "<\\/")
+    # data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8")))
     html = template.replace("__SKI_DATA_PLACEHOLDER__", data_str)
 
     # Inject Forecast
