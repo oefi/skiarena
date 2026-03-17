@@ -277,7 +277,7 @@
           <span title="Soil surface temperature (0 cm depth). Stays negative = snowpack stable. Above 0°C = melt from below." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #a16207;"></span>Soil temp (ground freeze indicator)</span>
           <span title="24h snowfall accumulation (cm). Plotted as water-equivalent mm on precip axis." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--snow-yield);border-radius:2px;"></span>Snowfall</span>
           <span title="24h liquid rainfall (mm)." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--rain-yield);border-radius:2px;"></span>Rainfall</span>
-          <span title="Cloud cover by altitude layer, shown at bottom of temp chart. High (Ci): pale blue — no impact. Mid (As): grey — flat light. Low (St/Fog): dark — whiteout, lift closure risk." style="display:flex;align-items:center;gap:0.2rem;cursor:help;"><span style="display:inline-block;width:8px;height:5px;background:rgba(185,210,240,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(105,130,160,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(50,70,95,0.9);border-radius:1px;"></span> Cloud Hi/Mid/Low</span>
+          <span title="Cloud cover by altitude. High (cirrus): harmless. Mid (altostratus): flat grey light, poor visibility. Low (stratus/fog): whiteout risk, lifts may close. Darker = more cloud." style="display:flex;align-items:center;gap:0.2rem;cursor:help;"><span style="display:inline-block;width:8px;height:5px;background:rgba(185,210,240,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(105,130,160,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(50,70,95,0.9);border-radius:1px;"></span> Cloud: High · Mid · Low (darker = more)</span>
           <span title="Mean direct solar beam (W/m²) over daylight hours. Intensity = amber depth. Zero under full cloud. High = bluebird, UV exposure, snow softening." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:rgba(255,145,10,0.85);border-radius:2px;"></span>Solar radiation</span>
           <span title="Peak wind gust speed (km/h) at 10 m. Dashed red line. Above ~65 km/h = lift holds likely." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #ef4444;"></span>Peak wind gust</span>
         </div>
@@ -873,7 +873,7 @@
         
         // Pluck the raw precip mm and soil temp (if the backend was updated to fetch them)
         const precipArr = hourly.precipitation ? hourly.precipitation.slice(start, end).filter(v => v !== null) : [];
-        const totalPrecip = precipArr.length ? precipArr.reduce((a,b)=>a+b, 0) : rn + (sn * 10 / 7); // sn cm snow-height → mm SWE: ÷7 (density) ×10 (cm→mm)
+        const totalPrecip = precipArr.length ? precipArr.reduce((a,b)=>a+b, 0) : rn + (sn / 10); // sn cm snow-height → mm SWE using standard 10:1 ratio
         
         const soilArr = hourly.soil_temperature_0cm ? hourly.soil_temperature_0cm.slice(start, end).filter(v => v !== null) : [];
         const soilTemp = soilArr.length ? soilArr.reduce((a,b)=>a+b, 0)/soilArr.length : null;
@@ -916,7 +916,7 @@
         }
         
         const gustArr = hourly.wind_gusts_10m ? hourly.wind_gusts_10m.slice(start, end).filter(v => v !== null) : [];
-        const gust = gustArr.length ? Math.max(...gustArr) : 0;
+        const gust = gustArr.length ? Math.max(...gustArr) : null; // null = no data, not 0 km/h
 
         const dateStr = exactDate.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
         
@@ -936,8 +936,8 @@
         const directMean = drArr.length ? drArr.reduce((a,b)=>a+b,0) / drLitCount : 0; // mean W/m² over lit hours
 
         daily.push({ 
-            tMax: t.length ? Math.max(...t) : 0, 
-            tMin: t.length ? Math.min(...t) : 0, 
+            tMax: t.length ? Math.max(...t) : null,
+            tMin: t.length ? Math.min(...t) : null,
             snow: sn, 
             rain: rn, 
             precip: totalPrecip,
@@ -953,7 +953,6 @@
       }
 
       const actualWidth = cvsFc.clientWidth || cvsFc.width;
-      const isNarrow = actualWidth < 700;
       const isMobile = actualWidth < 500;
 
       const pX = isMobile ? 48 : 72;
@@ -969,10 +968,20 @@
       
       const colW = w / numDays;
       const fonts = getResponsiveCanvasFonts(cvsFc, 12, 14);
+      const sc2 = cvsFc.width / (cvsFc.clientWidth || 800); // buffer scale — used throughout render
 
       // Dynamically stretch thermal Y-axis bounds to prevent soil temp clipping
-      const dataMaxT = Math.max(...daily.map(d => Math.max(d.tMax, d.soil !== null ? d.soil : -999)));
-      const dataMinT = Math.min(...daily.map(d => Math.min(d.tMin, d.soil !== null ? d.soil : 999)));
+      // Null-safe: skip days with no temperature data (null coerces to 0 in Math.max, corrupting axis)
+      const dataMaxT = Math.max(...daily.map(d => {
+        const v = [d.soil !== null ? d.soil : -999];
+        if (d.tMax !== null) v.push(d.tMax);
+        return Math.max(...v);
+      }));
+      const dataMinT = Math.min(...daily.map(d => {
+        const v = [d.soil !== null ? d.soil : 999];
+        if (d.tMin !== null) v.push(d.tMin);
+        return Math.min(...v);
+      }));
 
       const maxT = Math.max(10, dataMaxT + 6);
       const minT = Math.min(-5, dataMinT) - 2;
@@ -981,8 +990,11 @@
       
       const zeroY = mapYTemp(0);
 
+      // Precip axis: unified mm SWE. Use API's totalPrecip (already mm SWE) as the reference.
+      // Snow bars also plot as mm SWE (snow_cm ÷ 10 = standard 10:1 density ratio).
+      // No 0.85 shrink — axis ticks must align with bar tops.
       const maxPrecip = Math.max(5, ...daily.map(d => d.precip));
-      const mapYPrecip = val => zeroY - (val / maxPrecip) * (zeroY - yP1) * 0.85;
+      const mapYPrecip = val => Math.max(yP1, zeroY - (val / maxPrecip) * (zeroY - yP1));
 
       // Direct radiation axis — mean W/m² over lit hours.
       // Fallback to sun-hours axis if direct_radiation not in payload.
@@ -993,109 +1005,143 @@
       const mapYDirect = val => yP2 + hP2 - (Math.min(val, maxDirect) / maxDirect) * hP2;
 
 
-      const maxGust = Math.max(60, ...daily.map(d=>d.gust));
+      const maxGust = Math.max(60, ...daily.filter(d=>d.gust!==null).map(d=>d.gust));
       const mapYGust = g => yP2 + hP2 - (Math.min(g, maxGust) / maxGust) * hP2;
 
       ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.font = fonts.axis;
 
-      // Axis unit labels — small, non-rotated, at panel corners. No clipping risk.
-      const smallFont = `bold ${Math.max(10, Math.floor(11 * (cvsFc.width / (cvsFc.clientWidth || 1000))))}px system-ui`;
-      ctxFc.font = smallFont; ctxFc.textBaseline = 'top';
-      // Left panel corners
-      // Unit labels outside the axis — right-aligned flush to the left margin
-      ctxFc.textBaseline = 'middle'; ctxFc.textAlign = 'right';
-      ctxFc.fillStyle = getStyleVar('--text-muted');
-      ctxFc.fillText('°C', pX - (isMobile?6:14), yP1 + 10);
-      ctxFc.fillStyle = '#3b82f6';
-      ctxFc.fillText('mm', pX - (isMobile?6:14), zeroY - 14);
-      ctxFc.fillStyle = getStyleVar('--text-muted');
-      ctxFc.fillText(hasDirectRad ? 'W/m²' : 'h', pX - (isMobile?6:14), yP2 + 10);
-      // km/h: right margin, top of gust panel, left-aligned
-      ctxFc.fillStyle = '#ef4444'; ctxFc.textAlign = 'left';
-      ctxFc.fillText('km/h', pX + w + (isMobile?3:7), yP2 + 10);
+      const labelOffset = isMobile ? 5 : 12;
+      const rOff = isMobile ? 3 : 6;   // right-side label x offset from pX+w
+      const minTickGap = 14 * sc2;      // 14 CSS px regardless of DPR — buffer-pixel space
+
+      // ── Unit headers — outside axis, never overlapping tick labels ─────
+      const unitFont = `bold ${Math.max(9, Math.floor(10 * (cvsFc.width / (cvsFc.clientWidth||1000))))}px system-ui`;
+      ctxFc.font = unitFont; ctxFc.textBaseline = 'bottom';
+      // °C — above the top of the temp panel (never touches ticks)
+      ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'right';
+      ctxFc.fillText('°C', pX - 4, yP1 - 2);
+      // W/m² — above top of lower panel
+      ctxFc.fillText(hasDirectRad ? 'W/m²' : 'Sun h', pX - 4, yP2 - 2);
+      // mm — right side, above precip zone (above zeroY, below yP1)
+      ctxFc.fillStyle = '#3b82f6'; ctxFc.textAlign = 'left';
+      ctxFc.fillText('mm SWE', pX + w + rOff, zeroY - 16);
+      // km/h — right side, above lower panel
+      ctxFc.fillStyle = '#ef4444';
+      ctxFc.fillText('km/h', pX + w + rOff + 38, yP2 - 2);
       ctxFc.font = fonts.axis;
 
+      // ── Temperature ticks (left axis) ─────────────────────────────────
       ctxFc.textAlign = 'right'; ctxFc.textBaseline = 'middle';
-      const labelOffset = isMobile ? 5 : 12;
-      for(let t=Math.ceil(minT/5)*5; t<=maxT; t+=5) {
+      let lastTLabelY = -999;
+      for (let t = Math.ceil(minT/5)*5; t <= maxT; t += 5) {
         const y = mapYTemp(t);
-        ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y);
+        if (y < yP1 || y > yP1 + hP1) continue;
+        ctxFc.beginPath(); ctxFc.moveTo(pX, y); ctxFc.lineTo(pX+w, y);
         ctxFc.lineWidth = (t === 0) ? 2 : 1;
-        ctxFc.strokeStyle = (t === 0) ? getStyleVar('--text-muted') : getStyleVar('--grid-line');
+        ctxFc.strokeStyle = (t === 0) ? 'rgba(30,64,175,0.35)' : getStyleVar('--grid-line');
         ctxFc.stroke();
-        ctxFc.fillStyle = getStyleVar('--text-muted');
-        ctxFc.fillText(`${t}°`, pX - labelOffset, y);
+        // Skip label if too close to previous (collision guard)
+        if (Math.abs(y - lastTLabelY) >= minTickGap) {
+          ctxFc.fillStyle = t === 0 ? 'rgba(30,64,175,0.85)' : getStyleVar('--text-muted');
+          ctxFc.fillText(`${t}°`, pX - labelOffset, y);
+          lastTLabelY = y;
+        }
       }
       ctxFc.strokeStyle = getStyleVar('--grid-line');
-      
-      ctxFc.textAlign = 'left';
-      ctxFc.fillStyle = '#3b82f6';
-      // Skip 0 tick — coincides with 0°C temperature label at zeroY
-      [maxPrecip/2, maxPrecip].forEach(pt => {
+
+      // ── Precip ticks (right axis, blue) ───────────────────────────────
+      // Two clean ticks: half-max and max. Right-aligned in a dedicated column.
+      ctxFc.textAlign = 'right'; ctxFc.fillStyle = '#3b82f6';
+      const precipTicks = [Math.round(maxPrecip/2 * 10)/10, Math.round(maxPrecip * 10)/10];
+      let lastPLabelY = 999;
+      precipTicks.forEach(pt => {
         const y = mapYPrecip(pt);
-        ctxFc.beginPath(); ctxFc.moveTo(pX+w-5, y); ctxFc.lineTo(pX+w, y);
+        if (y < yP1 || y >= zeroY) return;
+        ctxFc.beginPath(); ctxFc.moveTo(pX+w, y); ctxFc.lineTo(pX+w+4, y);
         ctxFc.strokeStyle = '#3b82f6'; ctxFc.lineWidth = 1; ctxFc.stroke();
-        ctxFc.fillText(`${pt.toFixed(0)}`, pX+w + (isMobile ? 3 : 7), y);
+        if (Math.abs(y - lastPLabelY) >= minTickGap) {
+          ctxFc.fillText(`${pt % 1 === 0 ? pt.toFixed(0) : pt.toFixed(1)}`, pX+w+rOff+32, y);
+          lastPLabelY = y;
+        }
       });
 
-      ctxFc.textAlign = 'right';
-      ctxFc.fillStyle = getStyleVar('--text-muted');
+      // ── Radiation/sun ticks (left axis, lower panel) ──────────────────
+      ctxFc.textAlign = 'right'; ctxFc.fillStyle = getStyleVar('--text-muted');
+      let lastRLabelY = -999;
       if (hasDirectRad) {
-        // W/m² ticks at clean round intervals
         const drStep = maxDirect <= 400 ? 100 : maxDirect <= 800 ? 200 : 250;
         for (let v = drStep; v <= maxDirect; v += drStep) {
           const y = mapYDirect(v);
-          ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke();
-          ctxFc.fillText(`${v}`, pX - labelOffset, y);
+          if (y < yP2 || y > yP2+hP2) continue;
+          ctxFc.beginPath(); ctxFc.moveTo(pX, y); ctxFc.lineTo(pX+w, y); ctxFc.lineWidth = 1; ctxFc.stroke();
+          if (Math.abs(y - lastRLabelY) >= minTickGap) {
+            ctxFc.fillText(`${v}`, pX - labelOffset, y);
+            lastRLabelY = y;
+          }
         }
       } else {
-        const sunStep = maxDirect <= 12 ? 6 : maxDirect <= 16 ? 4 : 6;
-        for(let s=sunStep; s<=maxDirect; s+=sunStep) {
+        const sunStep = maxDirect <= 12 ? 6 : 4;
+        for (let s = sunStep; s <= maxDirect; s += sunStep) {
           const y = mapYDirect(s);
-          ctxFc.beginPath(); ctxFc.moveTo(pX,y); ctxFc.lineTo(pX+w,y); ctxFc.lineWidth = 1; ctxFc.stroke(); ctxFc.fillText(`${s}h`, pX - labelOffset, y);
+          if (y < yP2 || y > yP2+hP2) continue;
+          ctxFc.beginPath(); ctxFc.moveTo(pX, y); ctxFc.lineTo(pX+w, y); ctxFc.lineWidth = 1; ctxFc.stroke();
+          if (Math.abs(y - lastRLabelY) >= minTickGap) {
+            ctxFc.fillText(`${s}h`, pX - labelOffset, y);
+            lastRLabelY = y;
+          }
         }
       }
+
+      // ── Gust ticks (right axis, red) — offset right of precip labels ──
       ctxFc.textAlign = 'left'; ctxFc.fillStyle = '#ef4444';
       const gustStep = Math.ceil(maxGust / 3 / 10) * 10;
-      for(let g=gustStep; g<=maxGust; g+=gustStep) {
+      let lastGLabelY = 999;
+      for (let g = gustStep; g <= maxGust; g += gustStep) {
         const y = mapYGust(g);
-        ctxFc.fillText(`${g}`, pX+w + (isMobile ? 3 : 7), y);
+        if (y < yP2 || y > yP2+hP2) continue;
+        if (Math.abs(y - lastGLabelY) >= minTickGap) {
+          ctxFc.fillText(`${g}`, pX+w+rOff+38, y);
+          lastGLabelY = y;
+        }
       }
       ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
 
-      // Cloud layer bands — at BOTTOM of temp panel, stacked upward: low (bottom) → high (top).
-      // Low cloud = stratus/fog at base altitude; shown lowest. High cloud = cirrus; shown highest.
-      // Opacity = cloud cover %. Colour saturation encodes impact severity.
-      const cloudBandH = 8; // canvas units per layer
-      const cloudBase = yP1 + hP1 - cloudBandH * 3; // start 3 bands above bottom of temp panel
+      // Cloud bands — 3 rows, each 18 canvas-px tall (9 CSS px at 2×DPR).
+      // Order top→bottom in the chart: High (cirrus, harmless) → Mid (flat light) → Low (fog/whiteout risk).
+      // Opacity encodes coverage %. A fully opaque Low band = whiteout risk.
+      const cloudBandH = 18;
+      const cloudBase = yP1 + hP1 - cloudBandH * 3;
       daily.forEach((d, i) => {
         const colX = pX + i*colW + 1;
         const colBW = colW - 2;
-        // High cloud (cirrus/Ci) — pale steel blue — minimal impact, lifts open
-        if (d.ccHigh > 0) {
-          ctxFc.fillStyle = 'rgba(185,210,240,1)'; ctxFc.globalAlpha = Math.min(0.9, d.ccHigh / 100 * 1.1);
+        // High cloud: cirrus — pale blue, minimal ski impact
+        if (d.ccHigh > 5) {
+          ctxFc.fillStyle = 'rgba(185,210,240,1)';
+          ctxFc.globalAlpha = Math.min(0.85, d.ccHigh / 100 * 1.1);
           ctxFc.fillRect(colX, cloudBase, colBW, cloudBandH);
+          ctxFc.globalAlpha = 1.0;
         }
-        // Mid cloud (As/Ac) — grey-blue — reduced contrast, flat light
-        if (d.ccMid > 0) {
-          ctxFc.fillStyle = 'rgba(105,130,160,1)'; ctxFc.globalAlpha = Math.min(0.9, d.ccMid / 100 * 1.1);
+        // Mid cloud: altostratus — grey, flat light, reduces visibility
+        if (d.ccMid > 5) {
+          ctxFc.fillStyle = 'rgba(105,130,160,1)';
+          ctxFc.globalAlpha = Math.min(0.85, d.ccMid / 100 * 1.1);
           ctxFc.fillRect(colX, cloudBase + cloudBandH, colBW, cloudBandH);
+          ctxFc.globalAlpha = 1.0;
         }
-        // Low cloud (St/Fog) — dark slate — whiteout & lift closure risk
-        if (d.ccLow > 0) {
-          ctxFc.fillStyle = 'rgba(50,70,95,1)'; ctxFc.globalAlpha = Math.min(0.95, d.ccLow / 100 * 1.2);
+        // Low cloud: stratus/fog — dark slate, whiteout, possible lift closure
+        if (d.ccLow > 5) {
+          ctxFc.fillStyle = 'rgba(50,70,95,1)';
+          ctxFc.globalAlpha = Math.min(0.92, d.ccLow / 100 * 1.2);
           ctxFc.fillRect(colX, cloudBase + cloudBandH*2, colBW, cloudBandH);
+          ctxFc.globalAlpha = 1.0;
         }
-        // Fallback: no layer data → single tint across full panel
-        if (d.ccHigh === 0 && d.ccMid === 0 && d.ccLow === 0 && d.cloud > 0) {
+        // Fallback: only when layer arrays not fetched (all zero AND no layer vars in payload)
+        if (d.ccHigh === 0 && d.ccMid === 0 && d.ccLow === 0 && d.cloud > 0 && !hourly.cloud_cover_low) {
           ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
           ctxFc.fillRect(colX, yP1, colBW, hP1);
         }
         ctxFc.globalAlpha = 1.0;
 
-        ctxFc.fillStyle = getStyleVar('--text-muted'); 
-        const cx = pX + i*colW + colW/2;
-        // Date labels now drawn inside chips below — skip standalone labels
       });
 
       // ── In-canvas chip row ─────────────────────────────────────────────
@@ -1104,7 +1150,6 @@
       const chipTop  = yP2 + hP2 + 6;   // 6px gap below chart
       const chipH    = cvsFc.height - chipTop - 4;
       const chipPad  = 4;
-      const sc2 = cvsFc.width / (cvsFc.clientWidth || 800); // buffer scale
 
       // Pre-compute scores for all days
       // Normalise against historical peak sunshine, not the window's own maximum.
@@ -1121,7 +1166,9 @@
         if (hourly.time && hourly.time[s]) exactDate = new Date(hourly.time[s]);
         else exactDate = new Date(localNow.getTime() + i*86400000);
         const ds = exactDate.toISOString().slice(0,10);
-        const wmo = hourly.weather_code ? (hourly.weather_code.slice(s,e).filter(v=>v!==null)[12]||null) : null;
+        // WMO: use raw hour 12 (midday) directly — filter()[12] would shift index if early hours are null
+        const wmoRaw = hourly.weather_code ? hourly.weather_code[s + 12] : null;
+        const wmo = (wmoRaw !== null && wmoRaw !== undefined) ? wmoRaw : null;
         // WMO weather interpretation codes — full mapping
         // 0=clear, 1=mainly clear, 2=partly cloudy, 3=overcast
         // 45/48=fog, 51/53/55=drizzle, 56/57=freezing drizzle
@@ -1146,16 +1193,9 @@
         return { score: scored.score, emoji: isPowder ? '🌨️' : emoji, probMax, dateObj: exactDate, ds };
       });
 
-      // Find top 3 by score
-      const ranked = chipScores.map((c,i)=>({i,s:c.score})).sort((a,b)=>b.s-a.s);
-      const topSet  = new Set(ranked.slice(0,3).map(r=>r.i));
-      const bestIdx = ranked[0]?.i;
-
       daily.forEach((d, i) => {
         const chipLeft = pX + i * colW;
         const chipW    = colW;
-        const isTop    = topSet.has(i);
-        const isBest   = i === bestIdx;
         const sc_val   = chipScores[i].score;
         const scoreColor = sc_val >= 0.75 ? '#16a34a' : sc_val >= 0.5 ? '#d97706' : sc_val >= 0.3 ? '#f97316' : '#ef4444';
 
@@ -1167,9 +1207,9 @@
           : ctxFc.rect(chipLeft+1, chipTop, chipW-2, chipH);
         ctxFc.fill();
 
-        // Border: bold for top picks
-        ctxFc.strokeStyle = isBest ? '#16a34a' : isTop ? '#d97706' : getStyleVar('--border-color');
-        ctxFc.lineWidth   = isBest || isTop ? 2 : 0.5;
+        // Border: uniform, thin — score color already conveys quality
+        ctxFc.strokeStyle = getStyleVar('--border-color');
+        ctxFc.lineWidth   = 0.5;
         ctxFc.beginPath();
         ctxFc.roundRect
           ? ctxFc.roundRect(chipLeft+1, chipTop, chipW-2, chipH, 4)
@@ -1197,7 +1237,7 @@
         const dateObj = chipScores[i].dateObj;
         const wkday = dateObj.toLocaleDateString('en-US', {weekday:'short'}).toUpperCase();
         ctxFc.font = `700 ${fBase}px system-ui`;
-        ctxFc.fillStyle = isBest ? '#16a34a' : isTop ? '#d97706' : getStyleVar('--text-muted');
+        ctxFc.fillStyle = getStyleVar('--text-muted');
         ctxFc.fillText(wkday, cx2, chipTop + chipPad);
 
         // Row 2: date (Mon D)
@@ -1220,39 +1260,34 @@
         // Row 5: T range — min at ski-start / max at warmest (more useful than max alone)
         const tempY = scoreY + Math.floor(13 * sc2 * fScale) + 1;
         ctxFc.font = `${fSm}px system-ui`;
-        const tMinColor = d.tMin < -15 ? '#3b82f6' : d.tMin < -5 ? getStyleVar('--text-main') : '#f97316';
-        ctxFc.fillStyle = tMinColor;
-        ctxFc.fillText(`${d.tMin > 0?'+':''}${d.tMin.toFixed(0)} / ${d.tMax > 0?'+':''}${d.tMax.toFixed(0)}°`, cx2, tempY);
+        if (d.tMin !== null && d.tMax !== null) {
+          const tMinColor = d.tMin < -15 ? '#3b82f6' : d.tMin < -5 ? getStyleVar('--text-main') : '#f97316';
+          ctxFc.fillStyle = tMinColor;
+          ctxFc.fillText(`${d.tMin > 0?'+':''}${d.tMin.toFixed(0)} / ${d.tMax > 0?'+':''}${d.tMax.toFixed(0)}°`, cx2, tempY);
+        }
 
         // Row 6: precip prob if notable
         const prob = chipScores[i].probMax;
-        if (prob !== null && prob > 20) {
+        if (prob !== null && prob > 30) {
           const probY = tempY + Math.floor(12 * sc2 * fScale) + 1;
           ctxFc.font = `${fSm}px system-ui`;
-          ctxFc.fillStyle = d.snow > 0 ? '#2563eb' : '#94a3b8';
-          ctxFc.fillText(`${d.snow > 0 ? '❄' : '☔'} ${Math.round(prob)}%`, cx2, probY);
+          ctxFc.fillStyle = d.snow >= 1 ? '#2563eb' : '#94a3b8';
+          ctxFc.fillText(`${d.snow >= 1 ? '❄' : '☔'} ${Math.round(prob)}%`, cx2, probY);
         }
 
-        // Star badge for best day
-        if (isBest) {
-          ctxFc.font = `${Math.max(8, Math.floor(9 * sc2))}px system-ui`;
-          ctxFc.fillStyle = '#16a34a';
-          ctxFc.textAlign = 'right';
-          ctxFc.fillText('★', chipLeft + chipW - 3, chipTop + chipPad);
-          ctxFc.textAlign = 'center';
-        }
+        // Top-3 borders removed — score color (green/amber/red) conveys quality without relative ranking noise
       });
 
       // Air Temp Thermal Band
       ctxFc.beginPath();
-      daily.forEach((d, i) => { const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
-      for(let i=numDays-1; i>=0; i--) { const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
+      daily.forEach((d, i) => { if (d.tMax === null) return; const cx = pX + i*colW + colW/2; if(i===0) ctxFc.moveTo(cx, mapYTemp(d.tMax)); else ctxFc.lineTo(cx, mapYTemp(d.tMax)); });
+      for(let i=numDays-1; i>=0; i--) { if (daily[i].tMin === null) continue; const cx = pX + i*colW + colW/2; ctxFc.lineTo(cx, mapYTemp(daily[i].tMin)); }
       ctxFc.closePath();
       const grad = ctxFc.createLinearGradient(0, yP1, 0, yP1+hP1);
       grad.addColorStop(0, 'rgba(239, 68, 68, 0.3)'); grad.addColorStop(1, 'rgba(59, 130, 246, 0.3)');
       ctxFc.fillStyle = grad; ctxFc.fill();
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMax)); else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
-      ctxFc.beginPath(); daily.forEach((d,i) => { const cx=pX+i*colW+colW/2; if(i===0) ctxFc.moveTo(cx,mapYTemp(d.tMin)); else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
+      ctxFc.beginPath(); { let s=false; daily.forEach((d,i) => { if(d.tMax===null) return; const cx=pX+i*colW+colW/2; if(!s){ctxFc.moveTo(cx,mapYTemp(d.tMax));s=true;} else ctxFc.lineTo(cx,mapYTemp(d.tMax)); }); } ctxFc.strokeStyle='#ef4444'; ctxFc.lineWidth=3; ctxFc.stroke();
+      ctxFc.beginPath(); { let s=false; daily.forEach((d,i) => { if(d.tMin===null) return; const cx=pX+i*colW+colW/2; if(!s){ctxFc.moveTo(cx,mapYTemp(d.tMin));s=true;} else ctxFc.lineTo(cx,mapYTemp(d.tMin)); }); } ctxFc.strokeStyle='#3b82f6'; ctxFc.lineWidth=3; ctxFc.stroke();
 
       // Soil Temp Baseline
       let hasSoil = false;
@@ -1277,18 +1312,19 @@
         const cx = pX + i*colW + colW/2;
         const bW = Math.max(4, Math.min(colW * 0.5, 30));
         
-        if (d.rain > 0) { 
-            const rY = mapYPrecip(d.rain);
-            ctxFc.fillStyle = getStyleVar('--rain-yield'); 
-            ctxFc.fillRect(cx - bW/2, rY, bW, zeroY - rY); 
+        const bX = Math.round(cx - bW/2), bWr = Math.round(bW); // integer coords = crisp bars
+        if (d.rain > 0) {
+            const rY = Math.round(mapYPrecip(d.rain));
+            ctxFc.fillStyle = getStyleVar('--rain-yield');
+            ctxFc.fillRect(bX, rY, bWr, Math.round(zeroY) - rY);
         }
-        if (d.snow > 0) { 
-            // snowfall is in cm (snow height); convert to SWE mm (÷7) to plot on the mm precip axis
-            const snowSWE = d.snow * 10 / 7; // cm snow-height → mm SWE (÷7 density, ×10 cm→mm)
-            const sY = mapYPrecip(d.rain + snowSWE);
-            const rY = mapYPrecip(d.rain);
-            ctxFc.fillStyle = getStyleVar('--snow-yield'); 
-            ctxFc.fillRect(cx - bW/2, sY, bW, rY - sY); 
+        if (d.snow > 0) {
+            // Snow: cm → mm SWE using standard 10:1 ratio (100 kg/m³ fresh snow density)
+            const snowSWE = d.snow / 10;
+            const sY = Math.round(mapYPrecip(d.rain + snowSWE));
+            const rY = Math.round(mapYPrecip(d.rain));
+            ctxFc.fillStyle = getStyleVar('--snow-yield');
+            ctxFc.fillRect(bX, sY, bWr, rY - sY);
         }
         
         if (hasDirectRad) {
@@ -1302,17 +1338,18 @@
             const bC = Math.round(120 - 120 * dFrac);     // 120→0
             const aC = (0.20 + 0.75 * dFrac).toFixed(2);
             ctxFc.fillStyle = `rgba(${rC},${gC},${bC},${aC})`;
-            ctxFc.fillRect(cx - bW/2, yP2+hP2 - barH, bW, barH);
+            ctxFc.fillRect(Math.round(cx - bW/2), Math.round(yP2+hP2 - barH), Math.round(bW), Math.round(barH));
           }
         } else {
           // Fallback: sunshine-hours bars (old behaviour, old payload)
           const sunH = hP2 - (mapYDirect(d.sun) - yP2);
-          if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(cx - bW/2, yP2+hP2 - sunH, bW, sunH); }
+          if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(Math.round(cx - bW/2), Math.round(yP2+hP2 - sunH), Math.round(bW), Math.round(sunH)); }
         }
       });
 
       ctxFc.beginPath(); let drawingG = false;
       daily.forEach((d, i) => {
+        if (d.gust === null) { drawingG = false; return; } // gap in data — lift pen
         const cx = pX + i*colW + colW/2; const y = mapYGust(d.gust);
         if(!drawingG) { ctxFc.moveTo(cx, y); drawingG = true; } else { ctxFc.lineTo(cx, y); }
       });
@@ -1327,15 +1364,15 @@
         const scale = cvsFc.width / (cvsFc.clientWidth || 800);
         
         // Expand the glass tooltip bounding box if we have extra density or soil data
-        let rows = 6;
+        let rows = 5;
         if (d.soil !== null) rows++;
-        if (hasDirectRad) rows++;          // direct solar row
         if (d.ccLow > 5 || d.ccMid > 5 || d.ccHigh > 5) rows++; // cloud layers row
-        const boxW = 190 * scale, boxH = (30 + (rows * 20)) * scale, padding = 15 * scale;
+        const boxW = 230 * scale, boxH = (35 + (rows * 20)) * scale, padding = 14 * scale; // 35=10top+5date-extra+20last-row
         
         let boxX = hx + padding, boxY = pY;
         if (fcTouch) { boxY = pY - (50*scale); if (boxY < 0) boxY = 0; }
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
+        if (boxX < pX) boxX = pX; // left edge clamp
         
         ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = getStyleVar('--border-color'); ctxFc.strokeRect(boxX, boxY, boxW, boxH);
         ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
@@ -1345,9 +1382,13 @@
 
         ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, currentY); currentY += yStep + (5*scale);
         
-        ctxFc.fillStyle = getStyleVar('--text-main'); 
-        ctxFc.fillText(`T max: ${d.tMax.toFixed(1)} °C`, boxX + padding, currentY); currentY += yStep;
-        ctxFc.fillText(`T min: ${d.tMin.toFixed(1)} °C`, boxX + padding, currentY); currentY += yStep;
+        ctxFc.fillStyle = getStyleVar('--text-main');
+        if (d.tMin !== null && d.tMax !== null) {
+          ctxFc.fillText(`🌡 ${d.tMin.toFixed(1)} / ${d.tMax.toFixed(1)} °C  (min / max)`, boxX + padding, currentY);
+        } else {
+          ctxFc.fillText('🌡 Temperature data unavailable', boxX + padding, currentY);
+        }
+        currentY += yStep;
         
         if (d.soil !== null) {
             ctxFc.fillStyle = '#a16207'; 
@@ -1355,7 +1396,7 @@
         }
         
         ctxFc.fillStyle = getStyleVar('--text-main');
-        if (hasDirectRad && d.directMean > 0) {
+        if (hasDirectRad) {
           const dFrac = maxDirect > 0 ? Math.min(1, d.directMean / maxDirect) : 0;
           const quality = dFrac >= 0.8 ? '☀ Bluebird' : dFrac >= 0.5 ? '🌤 Bright' : dFrac >= 0.25 ? '⛅ Diffuse' : '☁ Overcast';
           ctxFc.fillText(`Direct beam: ${Math.round(d.directMean)} W/m²  ${quality}`, boxX + padding, currentY); currentY += yStep;
@@ -1364,7 +1405,12 @@
         }
         if (d.ccLow > 5 || d.ccMid > 5 || d.ccHigh > 5) {
           ctxFc.fillStyle = getStyleVar('--text-muted');
-          ctxFc.fillText(`Cloud  Hi: ${Math.round(d.ccHigh)}%  Mid: ${Math.round(d.ccMid)}%  Low: ${Math.round(d.ccLow)}%`, boxX + padding, currentY); currentY += yStep;
+          // Translate cloud layers to skier language
+          const cloudMsg = d.ccLow > 50 ? '⚠ Low cloud/fog — whiteout risk' :
+                           d.ccLow > 20 ? '⛅ Valley fog possible' :
+                           d.ccMid > 60 ? '☁ Flat grey light' :
+                           d.ccHigh > 60 ? '🌤 High cloud, good vis' : '☀ Clear visibility';
+          ctxFc.fillText(`${cloudMsg}  (Lo:${Math.round(d.ccLow)}% Mi:${Math.round(d.ccMid)}% Hi:${Math.round(d.ccHigh)}%)`, boxX + padding, currentY); currentY += yStep;
         }
         ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)}mm`, boxX + padding, currentY); currentY += yStep;
         ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)}cm`, boxX + padding, currentY); currentY += yStep;
