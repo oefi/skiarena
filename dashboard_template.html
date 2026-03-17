@@ -63,12 +63,6 @@
   .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
   /* ── ANIMATIONS & FLASHING ── */
-  @keyframes updatePulse {
-    0% { background-color: rgba(30, 64, 175, 0.12); color: var(--brand); transform: scale(1.04); }
-    100% { background-color: transparent; transform: scale(1); }
-  }
-  .flash-update { animation: updatePulse 0.6s ease-out forwards; border-radius: 4px; }
-
   /* ── CONTROLS & HEADER ── */
   #toc a { padding: 0.2rem 0.5rem; border-radius: 4px; transition: background 0.2s, color 0.2s; text-decoration: none; color: inherit; opacity: 0.7; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 0.2rem; }
   #toc a:hover { background: var(--brand-light); color: var(--brand); opacity: 1; }
@@ -159,7 +153,7 @@
   th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
   .diff-badge { font-size: 0.75rem; padding: 0.1rem 0.3rem; border-radius: 3px; margin-left: 0.4rem; font-weight: bold; }
   .diff-pos { background: var(--brand-light); color: var(--brand); }
-  .diff-neg { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  .diff-neg { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
   .diff-neu { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
   
   .quality-badge { cursor: help; display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0.5rem; border-radius: 4px; transition: background 0.2s; width: max-content; background: #f1f5f9; }
@@ -168,7 +162,7 @@
   /* ── GLOBAL ADVANCED TOOLTIP ── */
   #global-tooltip {
     display: none; position: fixed; pointer-events: none; z-index: 9999;
-    background: var(--bg-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    background: rgba(255,255,255,0.97);
     color: var(--text-main); padding: 1rem; border-radius: 10px; font-size: 0.8rem;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px var(--border-color);
     min-width: 220px; transition: opacity 0.1s;
@@ -232,7 +226,7 @@
 </header>
 
 <!-- ── GLOBAL RESORT SELECTOR (PINNED) ── -->
-<div id="global-resort-header" style="position: sticky; top: 0; z-index: 998; background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
+<div id="global-resort-header" role="tablist" aria-label="Select resort" style="position: sticky; top: 0; z-index: 998; background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.5rem 1rem; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
   <!-- Buttons injected via JS -->
 </div>
 
@@ -303,14 +297,14 @@
       <table id="daily-table">
         <thead>
           <tr>
-            <th>Resort <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Base · Summit)</span></th>
-            <th>🏘 Village</th>
-            <th>⛰ Mountain</th>
-            <th>Snow Depth <span style="text-transform:none; font-weight:normal; opacity:0.7;">(vs Hist. Avg)</span></th>
-            <th>New Snow (24h)</th>
-            <th>Gusts</th>
-            <th>Sun</th>
-            <th style="text-align: right;">Bluebird Score
+            <th scope="col">Resort <span style="opacity:0.6; font-size:0.65rem; font-weight:normal;">(Base · Summit)</span></th>
+            <th scope="col">🏘 Village</th>
+            <th scope="col">⛰ Mountain</th>
+            <th scope="col">Snow Depth <span style="text-transform:none; font-weight:normal; opacity:0.7;">(vs Hist. Avg)</span></th>
+            <th scope="col">New Snow (24h)</th>
+            <th scope="col">Gusts</th>
+            <th scope="col">Sun</th>
+            <th scope="col" style="text-align: right;">Bluebird Score
               <div style="font-weight:400; font-size:0.65rem; opacity:0.65; text-transform:none; letter-spacing:0; margin-top:0.15rem;">0–100% · hover for breakdown</div>
             </th>
           </tr>
@@ -397,7 +391,7 @@
       </div>
     </div>
     <div id="info-scroll" style="overflow:hidden; position:relative;">
-      <div id="info-track" style="display:flex; gap:0.75rem; transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); will-change:transform;"></div>
+      <div id="info-track" style="display:flex; gap:0.75rem; transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);"></div>
     </div>
     <p style="font-size:0.72rem; color:var(--text-muted); margin:1rem 0 0; font-style:italic; line-height:1.6;">ERA5 is the dataset used to study 100-year climate trends. It is also what drives the bar chart above. This is fine.</p>
   </div>
@@ -603,7 +597,7 @@
 
     // Fire reload when we cross into a new sync period
     if (_lastSyncPeriod !== null && _lastSyncPeriod !== currentPeriod) {
-      cdTimer.innerHTML = `<span style="color:var(--brand); animation: updatePulse 1s infinite alternate;">SYNCING...</span>`;
+      cdTimer.innerHTML = `<span style="color:var(--brand); font-weight:700;">SYNCING…</span>`;
       setTimeout(() => window.location.reload(true), 2000);
     } else {
       cdTimer.innerText = `${String(dispH).padStart(2,'0')}:${String(dispMin).padStart(2,'0')}:${String(dispSec).padStart(2,'0')}`;
@@ -613,29 +607,6 @@
 
   // Tooltip engine — shows .tt-data-node contents in #global-tooltip on .has-tooltip hover.
   const gTooltip = document.getElementById('global-tooltip');
-  // Show tooltip on tap for mobile (toggle on click)
-  document.addEventListener('click', (e) => {
-    const node = e.target.closest('.has-tooltip');
-    if (node) {
-      const dataNode = node.querySelector('.tt-data-node');
-      if (dataNode) {
-        if (gTooltip.style.display === 'block') { gTooltip.style.display = 'none'; return; }
-        gTooltip.innerHTML = dataNode.innerHTML;
-        gTooltip.style.opacity = '1';
-        gTooltip.style.display = 'block';
-        const rect = node.getBoundingClientRect();
-        let x = rect.left, y = rect.bottom + 8;
-        if (x + 240 > window.innerWidth - 8) x = window.innerWidth - 248;
-        if (y + 120 > window.innerHeight - 8) y = rect.top - 130;
-        x = Math.max(8, x);
-        gTooltip.style.left = `${x}px`; gTooltip.style.top = `${y}px`;
-        setTimeout(() => gTooltip.style.display = 'none', 4000);
-      }
-    } else {
-      gTooltip.style.display = 'none';
-    }
-  });
-
   document.addEventListener('mouseenter', (e) => {
     const node = e.target.closest('.has-tooltip');
     if (node) {
@@ -701,20 +672,23 @@
     globalResorts.forEach(r => {
       const b = document.createElement('button');
       b.className = 'resort-tab-btn' + (r === window.GLOBAL_RESORT ? ' active' : '');
-      const shortName = RESORT_ABBREVIATIONS[r] ? RESORT_ABBREVIATIONS[r].toUpperCase() : r.toUpperCase();
-      b.innerHTML = `${r.toUpperCase()}</span>`;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('role', 'tab');
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', r === window.GLOBAL_RESORT ? 'true' : 'false');
+      b.innerHTML = `${r.toUpperCase()}`;
       
       b.onclick = () => { 
-        document.querySelectorAll('.resort-tab-btn').forEach(btn => btn.classList.remove('active'));
-        b.classList.add('active');
+        document.querySelectorAll('.resort-tab-btn').forEach(btn => { btn.classList.remove('active'); btn.setAttribute('aria-selected','false'); });
+        b.classList.add('active'); b.setAttribute('aria-selected','true');
         window.GLOBAL_RESORT = r;
         
         if(typeof renderTacticalSummary === 'function') renderTacticalSummary(window.GLOBAL_RESORT);
         if(typeof window.repaintForecastCanvas === 'function') window.repaintForecastCanvas();
         if(typeof window.renderHeatmaps === 'function') window.renderHeatmaps();
         if(typeof window.repaintCanvas === 'function') window.repaintCanvas();
-        if (typeof atmosSeasonIdx !== 'undefined') atmosSeasonIdx = 0;
-        if(typeof window.repaintAtmosCanvas === 'function') window.repaintAtmosCanvas();
+        atmosSeasonIdx = 0;
+        _invalidateAtmos(); if(typeof window.repaintAtmosCanvas === 'function') window.repaintAtmosCanvas();
       };
       glbHeader.appendChild(b);
     });
@@ -1025,7 +999,22 @@
       const maxGust = Math.max(60, ...daily.filter(d=>d.gust!==null).map(d=>d.gust));
       const mapYGust = g => yP2 + hP2 - (Math.min(g, maxGust) / maxGust) * hP2;
 
-      ctxFc.strokeStyle = getStyleVar('--grid-line'); ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.font = fonts.axis;
+      // Cache all CSS vars once — getComputedStyle is expensive in tight loops
+      // CSS vars cached once per repaint — avoids getComputedStyle in hot loops
+      const cv = {
+        gridLine: 'rgba(0, 0, 0, 0.055)',
+        textMuted: '#64748b',
+        textMain: '#0f172a',
+        bgCard: '#ffffff',
+        bgMain: '#f8fafd',
+        bgHeader: '#ffffff',
+        borderColor: '#e2e8f0',
+        cloudBase: 'rgba(100, 116, 139, 0.20)',
+        snowYield: 'rgba(59, 130, 246, 0.42)',
+        rainYield: 'rgba(37, 99, 235, 0.72)',
+        sunYield: 'rgba(217, 163, 0, 0.45)',
+      };
+      ctxFc.strokeStyle = cv.gridLine; ctxFc.fillStyle = cv.textMuted; ctxFc.font = fonts.axis;
 
       const labelOffset = 12;
       const rOff = 6;   // right-side label x offset from pX+w
@@ -1035,7 +1024,7 @@
       const unitFont = `bold ${Math.max(9, Math.floor(10 * (cvsFc.width / (cvsFc.clientWidth||1000))))}px system-ui`;
       ctxFc.font = unitFont; ctxFc.textBaseline = 'bottom';
       // °C — above the top of the temp panel (never touches ticks)
-      ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.textAlign = 'right';
+      ctxFc.fillStyle = cv.textMuted; ctxFc.textAlign = 'right';
       ctxFc.fillText('°C', pX - 4, yP1 - 2);
       // W/m² — above top of lower panel
       ctxFc.fillText(hasDirectRad ? 'W/m²' : 'Sun h', pX - 4, yP2 - 2);
@@ -1055,16 +1044,16 @@
         if (y < yP1 || y > yP1 + hP1) continue;
         ctxFc.beginPath(); ctxFc.moveTo(pX, y); ctxFc.lineTo(pX+w, y);
         ctxFc.lineWidth = (t === 0) ? 2 : 1;
-        ctxFc.strokeStyle = (t === 0) ? 'rgba(30,64,175,0.35)' : getStyleVar('--grid-line');
+        ctxFc.strokeStyle = (t === 0) ? 'rgba(30,64,175,0.35)' : cv.gridLine;
         ctxFc.stroke();
         // Skip label if too close to previous (collision guard)
         if (Math.abs(y - lastTLabelY) >= minTickGap) {
-          ctxFc.fillStyle = t === 0 ? 'rgba(30,64,175,0.85)' : getStyleVar('--text-muted');
+          ctxFc.fillStyle = t === 0 ? 'rgba(30,64,175,0.85)' : cv.textMuted;
           ctxFc.fillText(`${t}°`, pX - labelOffset, y);
           lastTLabelY = y;
         }
       }
-      ctxFc.strokeStyle = getStyleVar('--grid-line');
+      ctxFc.strokeStyle = cv.gridLine;
 
       // ── Precip ticks (right axis, blue) ───────────────────────────────
       // Two clean ticks: half-max and max. Right-aligned in a dedicated column.
@@ -1083,7 +1072,7 @@
       });
 
       // ── Radiation/sun ticks (left axis, lower panel) ──────────────────
-      ctxFc.textAlign = 'right'; ctxFc.fillStyle = getStyleVar('--text-muted');
+      ctxFc.textAlign = 'right'; ctxFc.fillStyle = cv.textMuted;
       let lastRLabelY = -999;
       if (hasDirectRad) {
         const drStep = maxDirect <= 400 ? 100 : maxDirect <= 800 ? 200 : 250;
@@ -1121,7 +1110,7 @@
           lastGLabelY = y;
         }
       }
-      ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=getStyleVar('--text-muted'); ctxFc.stroke();
+      ctxFc.beginPath(); ctxFc.moveTo(pX,yP2+hP2); ctxFc.lineTo(pX+w,yP2+hP2); ctxFc.lineWidth=2; ctxFc.strokeStyle=cv.textMuted; ctxFc.stroke();
 
       // Cloud bands — 3 rows, each 18 canvas-px tall (9 CSS px at 2×DPR).
       // Order top→bottom in the chart: High (cirrus, harmless) → Mid (flat light) → Low (fog/whiteout risk).
@@ -1154,7 +1143,7 @@
         }
         // Fallback: only when layer arrays not fetched (all zero AND no layer vars in payload)
         if (d.ccHigh === 0 && d.ccMid === 0 && d.ccLow === 0 && d.cloud > 0 && !hourly.cloud_cover_low) {
-          ctxFc.fillStyle = getStyleVar('--cloud-base'); ctxFc.globalAlpha = d.cloud / 100;
+          ctxFc.fillStyle = cv.cloudBase; ctxFc.globalAlpha = d.cloud / 100;
           ctxFc.fillRect(colX, yP1, colBW, hP1);
         }
         ctxFc.globalAlpha = 1.0;
@@ -1224,7 +1213,7 @@
         // isDimmed uses _cetHour hoisted before loop (avoids 16× Intl calls per repaint)
         const isToday  = i === 0;
         const isDimmed = isToday && _cetHour >= 14;
-        ctxFc.fillStyle = isDimmed ? getStyleVar('--bg-main') : getStyleVar('--bg-card');
+        ctxFc.fillStyle = isDimmed ? cv.bgMain : cv.bgCard;
         ctxFc.beginPath();
         ctxFc.roundRect
           ? ctxFc.roundRect(chipLeft+1, chipTop, chipW-2, chipH, 4)
@@ -1232,7 +1221,7 @@
         ctxFc.fill();
 
         // Border: uniform, thin — score color already conveys quality
-        ctxFc.strokeStyle = getStyleVar('--border-color');
+        ctxFc.strokeStyle = cv.borderColor;
         ctxFc.lineWidth   = 0.5;
         ctxFc.beginPath();
         ctxFc.roundRect
@@ -1273,13 +1262,13 @@
         const dateObj = chipScores[i].dateObj;
         const wkday = dateObj.toLocaleDateString('en-US', {weekday:'short'}).toUpperCase();
         ctxFc.font = `700 ${fBase}px system-ui`;
-        ctxFc.fillStyle = getStyleVar('--text-muted');
+        ctxFc.fillStyle = cv.textMuted;
         ctxFc.fillText(wkday, cx2, chipTop + chipPad);
 
         // Row 2: date (Mon D)
         const dateLabel = dateObj.toLocaleDateString('en-GB',{month:'short',day:'numeric'});
         ctxFc.font = `${fSm}px system-ui`;
-        ctxFc.fillStyle = getStyleVar('--text-muted');
+        ctxFc.fillStyle = cv.textMuted;
         ctxFc.fillText(dateLabel, cx2, chipTop + chipPad + fBase + 2);
 
         // Row 3: emoji
@@ -1297,7 +1286,7 @@
         const tempY = scoreY + Math.floor(13 * sc2 * fScale) + 1;
         ctxFc.font = `${fSm}px system-ui`;
         if (d.tMin !== null && d.tMax !== null) {
-          const tMinColor = d.tMin < -15 ? '#3b82f6' : d.tMin < -5 ? getStyleVar('--text-main') : '#f97316';
+          const tMinColor = d.tMin < -15 ? '#3b82f6' : d.tMin < -5 ? cv.textMain : '#f97316';
           ctxFc.fillStyle = tMinColor;
           ctxFc.fillText(`${d.tMin > 0?'+':''}${d.tMin.toFixed(0)} / ${d.tMax > 0?'+':''}${d.tMax.toFixed(0)}°`, cx2, tempY);
         }
@@ -1309,6 +1298,28 @@
           ctxFc.font = `${fSm}px system-ui`;
           ctxFc.fillStyle = d.snow >= 1 ? '#2563eb' : '#94a3b8';
           ctxFc.fillText(`${d.snow >= 1 ? '❄' : '☔'} ${Math.round(prob)}%`, cx2, probY);
+        }
+
+        // Row 7: gust warning when lift hold risk
+        if (d.gust !== null && d.gust > 65) {
+          const gustWarnY = (prob !== null && prob > 30)
+            ? tempY + Math.floor(24 * sc2 * fScale) + 1
+            : tempY + Math.floor(12 * sc2 * fScale) + 1;
+          const gwFont = Math.max(8, Math.floor(9 * sc2 * fScale));
+          ctxFc.font = `700 ${gwFont}px system-ui`;
+          // Pill background
+          const pillW = Math.floor(colW * 0.82), pillH = Math.floor(gwFont * 1.6);
+          const pillX = Math.round(cx2 - pillW/2);
+          ctxFc.fillStyle = '#ef4444';
+          if (ctxFc.roundRect) {
+            ctxFc.beginPath(); ctxFc.roundRect(pillX, gustWarnY, pillW, pillH, 2); ctxFc.fill();
+          } else {
+            ctxFc.fillRect(pillX, gustWarnY, pillW, pillH);
+          }
+          ctxFc.fillStyle = '#ffffff';
+          ctxFc.textAlign = 'center'; ctxFc.textBaseline = 'middle';
+          ctxFc.fillText('LIFT HOLD RISK', cx2, gustWarnY + pillH / 2);
+          ctxFc.textBaseline = 'top';
         }
 
         // Top-3 borders removed — score color (green/amber/red) conveys quality without relative ranking noise
@@ -1351,7 +1362,7 @@
         const bX = Math.round(cx - bW/2), bWr = Math.round(bW); // integer coords = crisp bars
         if (d.rain > 0) {
             const rY = Math.round(mapYPrecip(d.rain));
-            ctxFc.fillStyle = getStyleVar('--rain-yield');
+            ctxFc.fillStyle = cv.rainYield;
             ctxFc.fillRect(bX, rY, bWr, Math.round(zeroY) - rY);
         }
         if (d.snow > 0) {
@@ -1359,7 +1370,7 @@
             const snowSWE = d.snow / 10;
             const sY = Math.round(mapYPrecip(d.rain + snowSWE));
             const rY = Math.round(mapYPrecip(d.rain));
-            ctxFc.fillStyle = getStyleVar('--snow-yield');
+            ctxFc.fillStyle = cv.snowYield;
             ctxFc.fillRect(bX, sY, bWr, rY - sY);
         }
         
@@ -1379,7 +1390,7 @@
         } else {
           // Fallback: sunshine-hours bars (old behaviour, old payload)
           const sunH = hP2 - (mapYDirect(d.sun) - yP2);
-          if (sunH > 0) { ctxFc.fillStyle = getStyleVar('--sun-yield'); ctxFc.fillRect(Math.round(cx - bW/2), Math.round(yP2+hP2 - sunH), Math.round(bW), Math.round(sunH)); }
+          if (sunH > 0) { ctxFc.fillStyle = cv.sunYield; ctxFc.fillRect(Math.round(cx - bW/2), Math.round(yP2+hP2 - sunH), Math.round(bW), Math.round(sunH)); }
         }
       });
 
@@ -1394,8 +1405,8 @@
       if (fcHoverIdx !== null && fcHoverIdx >= 0 && fcHoverIdx < numDays) {
         const d = daily[fcHoverIdx];
         const hx = pX + fcHoverIdx*colW + colW/2;
-        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, yP2+hP2); ctxFc.strokeStyle=getStyleVar('--text-main'); ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
-        ctxFc.fillStyle = getStyleVar('--bg-header');
+        ctxFc.beginPath(); ctxFc.moveTo(hx, pY); ctxFc.lineTo(hx, yP2+hP2); ctxFc.strokeStyle=cv.textMain; ctxFc.lineWidth=2; ctxFc.setLineDash([5,5]); ctxFc.stroke(); ctxFc.setLineDash([]);
+        ctxFc.fillStyle = cv.bgHeader;
         
         const scale = cvsFc.width / (cvsFc.clientWidth || 800);
         
@@ -1409,15 +1420,15 @@
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
         if (boxX < pX) boxX = pX; // left edge clamp
         
-        ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = getStyleVar('--border-color'); ctxFc.strokeRect(boxX, boxY, boxW, boxH);
+        ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = cv.borderColor; ctxFc.strokeRect(boxX, boxY, boxW, boxH);
         ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
         
         let currentY = boxY + (10*scale);
         const yStep = 20 * scale;
 
-        ctxFc.fillStyle = getStyleVar('--text-muted'); ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, currentY); currentY += yStep + (5*scale);
+        ctxFc.fillStyle = cv.textMuted; ctxFc.fillText(d.label.replace(', ', ' · '), boxX + padding, currentY); currentY += yStep + (5*scale);
         
-        ctxFc.fillStyle = getStyleVar('--text-main');
+        ctxFc.fillStyle = cv.textMain;
         if (d.tMin !== null && d.tMax !== null) {
           ctxFc.fillText(`🌡 ${d.tMin.toFixed(1)} / ${d.tMax.toFixed(1)} °C  (min / max)`, boxX + padding, currentY);
         } else {
@@ -1430,7 +1441,7 @@
             ctxFc.fillText(`Soil 0 cm: ${d.soil.toFixed(1)} °C  (freeze risk to roots/pipes)`, boxX + padding, currentY); currentY += yStep;
         }
         
-        ctxFc.fillStyle = getStyleVar('--text-main');
+        ctxFc.fillStyle = cv.textMain;
         if (hasDirectRad) {
           const dFrac = maxDirect > 0 ? Math.min(1, d.directMean / maxDirect) : 0;
           const quality = dFrac >= 0.8 ? '☀ Bluebird' : dFrac >= 0.5 ? '🌤 Bright' : dFrac >= 0.25 ? '⛅ Diffuse' : '☁ Overcast';
@@ -1439,7 +1450,7 @@
           ctxFc.fillText(`Sun: ${d.sun.toFixed(1)}h`, boxX + padding, currentY); currentY += yStep;
         }
         if (d.ccLow > 5 || d.ccMid > 5 || d.ccHigh > 5) {
-          ctxFc.fillStyle = getStyleVar('--text-muted');
+          ctxFc.fillStyle = cv.textMuted;
           // Translate cloud layers to skier language
           const cloudMsg = d.ccLow > 50 ? '⚠ Low cloud/fog — whiteout risk' :
                            d.ccLow > 20 ? '⛅ Valley fog possible' :
@@ -1456,24 +1467,23 @@
 
 
     if (cvsFc) {
+      let _fcHoverTid;
       cvsFc.addEventListener('mousemove', (e) => {
         if (!FORECAST_DATA || !FORECAST_DATA.resorts || !window.GLOBAL_RESORT || !FORECAST_DATA.resorts[window.GLOBAL_RESORT]) return;
         const rect = cvsFc.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (cvsFc.width / rect.width);
-        
-        const actualWidth = cvsFc.clientWidth || cvsFc.width;
         const pX = 72, pRight = 72;
         const w = cvsFc.width - pX - pRight;
-        
         const numDays = Math.floor((FORECAST_DATA.resorts[window.GLOBAL_RESORT].hourly || FORECAST_DATA.resorts[window.GLOBAL_RESORT]).temperature_2m.length / 24);
         if (numDays === 0) return;
-        fcHoverIdx = Math.floor((mouseX - pX) / (w / numDays));
-        if (fcHoverIdx < 0 || fcHoverIdx >= numDays) fcHoverIdx = null;
-        window.repaintForecastCanvas();
+        const newIdx = Math.floor((mouseX - pX) / (w / numDays));
+        fcHoverIdx = (newIdx < 0 || newIdx >= numDays) ? null : newIdx;
+        cancelAnimationFrame(_fcHoverTid);
+        _fcHoverTid = requestAnimationFrame(window.repaintForecastCanvas);
       });
       cvsFc.addEventListener('mouseleave', () => { fcHoverIdx = null; window.repaintForecastCanvas(); });
 
-      window.addEventListener('resize', () => { if (cvsFc) setupHiDPI(cvsFc, 2000, 960); window.repaintForecastCanvas(); });
+      let _fcResizeTid; window.addEventListener('resize', () => { cancelAnimationFrame(_fcResizeTid); _fcResizeTid = requestAnimationFrame(() => { if (cvsFc) setupHiDPI(cvsFc, 2000, 960); window.repaintForecastCanvas(); }); });
       setTimeout(window.repaintForecastCanvas, 100);
     }
 
@@ -1486,7 +1496,10 @@
     sb.innerHTML = `✓ Live Data`;
     const d = new Date(latestDataDate + 'T12:00:00');
     const fmt = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    ts.innerHTML = `Data through <b style="color:var(--text-main);">${fmt}</b> · <span style="opacity:0.7;">Open-Meteo ERA5</span>`;
+    const msAgo  = Date.now() - new Date(latestDataDate + 'T12:00:00').getTime();
+    const hrsAgo  = Math.floor(msAgo / 3600000);
+    const agoStr  = hrsAgo < 1 ? 'just now' : hrsAgo < 24 ? `${hrsAgo}h ago` : `${Math.floor(hrsAgo/24)}d ago`;
+    ts.innerHTML = `Data through <b style="color:var(--text-main);">${fmt}</b> <span style="opacity:0.55;">(${agoStr})</span> · <span style="opacity:0.7;">Open-Meteo ERA5</span>`;
 
     const byDate = {}, byResort = {}, dates = [];
     SKI_DATA.records.forEach(r => {
@@ -1538,11 +1551,14 @@
 
     const triggerVisualFlash = () => {
       document.querySelectorAll('.hm-cell, .quality-badge').forEach(el => {
-        el.classList.remove('flash-update'); void el.offsetWidth; el.classList.add('flash-update');
       });
     };
 
+    // Memoize computeDynamicScore — inputs never change for historical records
+    const _scoreCache = new Map();
     const computeDynamicScore = (r, bounds) => {
+      const key = `${r.resort}|${r.date}`;
+      if (_scoreCache.has(key)) return _scoreCache.get(key);
       const tMax   = r.base?.temperature_2m_max ?? r.temperature_2m_max ?? null;
       const depth  = r.summit?.snow_depth       ?? r.snow_depth         ?? null;
       const gust   = r.base?.wind_gusts_10m_max ?? r.wind_gusts_10m_max ?? null;
@@ -1683,7 +1699,7 @@
       btnLatest.disabled = (dStr === dates[dates.length - 1]);
 
       if(!byDate[dStr]) { 
-        dtb.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No matrix data available for ${dStr}</td></tr>`; 
+        dtb.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 2rem;">No matrix data available for ${dStr}</td></tr>`; 
         return; 
       }
       
@@ -1737,7 +1753,10 @@
           }
         }
         const gustColor = rawGust === null ? 'var(--text-muted)' : rawGust > 65 ? '#ef4444' : rawGust > 40 ? '#f59e0b' : 'var(--text-main)';
-        const gustHtml = rawGust !== null ? `<span style="font-weight:700;color:${gustColor};">${rawGust.toFixed(0)}</span><span style="font-size:0.7rem;color:var(--text-muted);"> km/h</span>` : '—';
+        const gustBadge = rawGust !== null && rawGust > 65
+          ? `<span style="display:inline-block;background:#ef4444;color:#fff;font-size:0.6rem;font-weight:700;padding:1px 4px;border-radius:3px;margin-left:3px;letter-spacing:0.02em;vertical-align:middle;">LIFT HOLD RISK</span>`
+          : '';
+        const gustHtml = rawGust !== null ? `<span style="font-weight:700;color:${gustColor};">${rawGust.toFixed(0)}</span><span style="font-size:0.7rem;color:var(--text-muted);"> km/h</span>${gustBadge}` : '—';
         const sunHtml  = rawSunH  !== null ? `<span style="font-weight:700;">${rawSunH.toFixed(1)}</span><span style="font-size:0.7rem;color:var(--text-muted);"> h</span>` : '—';
 
         return `<tr>
@@ -1804,13 +1823,48 @@
     const isShoulder = off => off < 30 || off >= 166; // Nov = 0–29; Apr 15+ = 166–182
 
     // Is date a peak holiday?
-    const isPeakOff = off => {
-      // Christmas (Dec 23 – Jan 6) = approx off 52–66
+    // Compute Easter Sunday for a given year using the Anonymous Gregorian algorithm
+    const easterSunday = (y) => {
+      const a = y % 19, b = Math.floor(y/100), c = y % 100;
+      const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
+      const g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15) % 30;
+      const i = Math.floor(c/4), k = c % 4;
+      const l = (32+2*e+2*i-h-k) % 7;
+      const m = Math.floor((a+11*h+22*l)/451);
+      const month = Math.floor((h+l-7*m+114)/31); // 3=Mar, 4=Apr
+      const day   = ((h+l-7*m+114) % 31) + 1;
+      return new Date(Date.UTC(y, month-1, day));
+    };
+
+    // Convert a season's start year + day-offset to a real date for holiday checking
+    const isPeakOff = (off, seasonYear) => {
+      // off = days since Nov 1 of seasonYear; Jan 1 = off 61, Apr 30 = off 181
+      const nov1 = Date.UTC(seasonYear, 10, 1);
+      const date = new Date(nov1 + off * 86400000);
+      const y    = date.getUTCFullYear();
+      const mmdd = date.getUTCMonth() * 100 + date.getUTCDate(); // ints for fast compare
+
+      // Christmas/New Year (Dec 23 – Jan 6, always fixed)
       if (off >= 52 && off <= 66) return true;
-      // Carnival (Feb 1–18) = approx off 92–109
-      if (off >= 92 && off <= 109) return true;
-      // Easter (Mar 28 – Apr 14) = approx off 147–165
-      if (off >= 147 && off <= 165) return true;
+
+      // Carnival: Sat before Ash Wednesday to the following Sunday
+      // = 7 weeks + 1 day before Easter (Ash Wed = 46 days before Easter)
+      const easter = easterSunday(y);
+      const ashWed = new Date(easter.getTime() - 46 * 86400000);
+      const carnStart = new Date(ashWed.getTime() - 4 * 86400000); // Thu before (Weiberfastnacht)
+      const carnEnd   = new Date(ashWed.getTime() - 1 * 86400000); // Tue (Fastnacht Tuesday)
+      if (date >= carnStart && date <= carnEnd) return true;
+
+      // Austrian school carnival break (typically 1 week around Fasching Tue, varies by state)
+      // Use a ±4 day window around Fasching Tuesday
+      const carnWin = 4 * 86400000;
+      if (Math.abs(date.getTime() - carnEnd.getTime()) <= carnWin) return true;
+
+      // Easter school holidays (Palm Sunday – Easter Monday = ~10 days)
+      const palmSun = new Date(easter.getTime() - 7 * 86400000);
+      const easterMon = new Date(easter.getTime() + 1 * 86400000);
+      if (date >= palmSun && date <= easterMon) return true;
+
       return false;
     };
 
@@ -1956,7 +2010,7 @@
 
           // Holiday striping overlay
           for (let d = 0; d <= SEASON_DAYS; d++) {
-            if (!isPeakOff(d)) continue;
+            if (!isPeakOff(d, isAvg ? latestSeasonYear : sd.year)) continue;
             const x1 = Math.floor(d / SEASON_DAYS * W) * 2;
             const x2 = Math.floor((d+1) / SEASON_DAYS * W) * 2;
             ctx.fillStyle = 'rgba(0,0,0,0.10)';
@@ -1996,7 +2050,7 @@
           const entry = scores ? scores[dayOff] : null;
           const sc = entry ? entry.score : null;
           const shoulder = isShoulder(dayOff);
-          const peak = isPeakOff(dayOff);
+          const peak = isPeakOff(dayOff, isAvg ? latestSeasonYear : sd.year);
           const seasonStartMs = Date.UTC(isAvg ? latestSeasonYear : sd.year, 10, 1);
           const dateStr = new Date(seasonStartMs + dayOff * 86400000).toISOString().slice(0,10);
 
@@ -2073,11 +2127,12 @@
         drawMonthHeader();
         canvases.forEach(({ cvs }) => cvs._draw && cvs._draw());
       };
-      requestAnimationFrame(() => requestAnimationFrame(drawAll));
+      requestAnimationFrame(drawAll);
 
-      // Redraw on resize
-      const ro = new ResizeObserver(() => { drawAll(); });
-      ro.observe(hc);
+      // Redraw on resize — disconnect previous observer to prevent leak on resort switch
+      if (window._hmResizeObserver) window._hmResizeObserver.disconnect();
+      window._hmResizeObserver = new ResizeObserver(() => { drawAll(); });
+      window._hmResizeObserver.observe(hc);
     };
     renderHeatmaps();
 
@@ -2108,7 +2163,16 @@
 
     window.repaintCanvas = () => {
       if(!cvs) return;
-      ctx.clearRect(0,0,cvs.width,cvs.height); 
+      ctx.clearRect(0,0,cvs.width,cvs.height);
+      const cv2 = {
+        gridLine: 'rgba(0, 0, 0, 0.055)',
+        textMuted: '#64748b',
+        textMain: '#0f172a',
+        bgMain: '#f8fafd',
+        bgHeader: '#ffffff',
+        borderColor: '#e2e8f0',
+        snowStroke: '#2563eb',
+      }; 
       const rd = byResort[window.GLOBAL_RESORT]; if(!rd) return;
       
       const linesRaw = {}; let maxD = 100;
@@ -2151,7 +2215,7 @@
       const elev = STATIC_METADATA[window.GLOBAL_RESORT] || { base: '—', summit: '—' };
       let legendHtml = `<div class="legend-item"><span style="display:inline-block;width:20px;height:3px;background:var(--snow-stroke);vertical-align:middle;margin-right:4px;border-radius:2px;"></span>⛰ Summit (${elev.summit}m)</div>`;
       legendHtml += seasonKeys.map((s, idx) => {
-        const c = s === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
+        const c = s === currentSeason ? cv2.snowStroke : seasonColors[idx % seasonColors.length];
         return `<div class="legend-item"><div class="legend-color" style="background:${c}"></div>${s}</div>`;
       }).join('');
       if (showHistoricalAvg) legendHtml += `<div class="legend-item"><div class="legend-color legend-dotted"></div>Hist. Mean</div>`;
@@ -2198,7 +2262,7 @@
       });
       ctx.restore();
       
-      ctx.strokeStyle = getStyleVar('--grid-line'); ctx.fillStyle = getStyleVar('--text-muted'); ctx.font = fonts.axis; ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; 
+      ctx.strokeStyle = cv2.gridLine; ctx.fillStyle = cv2.textMuted; ctx.font = fonts.axis; ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; 
       for(let i=0; i<=maxD; i+=50) { const y = pY+h-(i/maxD)*h; ctx.beginPath(); ctx.moveTo(pX,y); ctx.lineTo(pX+w,y); ctx.lineWidth = 2; ctx.stroke(); ctx.fillText(`${i} cm`, pX-20, y); }
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       monthMarkers.forEach(m => { const x = mapX(m.off); if (x <= pX+w) { ctx.beginPath(); ctx.moveTo(x, pY); ctx.lineTo(x, pY+h); ctx.lineWidth = 2; ctx.stroke(); ctx.fillText(m.label, x, pY+h + 15); }});
@@ -2215,25 +2279,25 @@
       };
 
       // Mountain (summit) snow — solid, full opacity
-      seasonKeys.forEach((ss, idx) => { const c = ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length]; drawPath(lines[ss], c, ss === currentSeason ? 6 : 3); });
-      if (showHistoricalAvg && avgData.length > 1) drawPath(avgData, getStyleVar('--text-main'), 5, true);
+      seasonKeys.forEach((ss, idx) => { const c = ss === currentSeason ? cv2.snowStroke : seasonColors[idx % seasonColors.length]; drawPath(lines[ss], c, ss === currentSeason ? 6 : 3); });
+      if (showHistoricalAvg && avgData.length > 1) drawPath(avgData, cv2.textMain, 5, true);
 
       if (hoverDayOffset !== null && hoverDayOffset >= 0 && hoverDayOffset <= SNOW_DAYS) {
         const hx = mapX(hoverDayOffset);
-        ctx.beginPath(); ctx.moveTo(hx, pY); ctx.lineTo(hx, pY+h); ctx.strokeStyle = getStyleVar('--text-main'); ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(hx, pY); ctx.lineTo(hx, pY+h); ctx.strokeStyle = cv2.textMain; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
         
         const readouts = [];
         seasonKeys.forEach((ss, idx) => {
           const pt = lines[ss][hoverDayOffset];
           if (pt && pt.y !== null) {
-            const c = ss === currentSeason ? getStyleVar('--snow-stroke') : seasonColors[idx % seasonColors.length];
+            const c = ss === currentSeason ? cv2.snowStroke : seasonColors[idx % seasonColors.length];
             readouts.push({ s: ss, yMtn: pt.y, c });
-            ctx.beginPath(); ctx.arc(hx, mapY(pt.y), 6, 0, 2*Math.PI); ctx.fillStyle = getStyleVar('--bg-main'); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = c; ctx.stroke();
+            ctx.beginPath(); ctx.arc(hx, mapY(pt.y), 6, 0, 2*Math.PI); ctx.fillStyle = cv2.bgMain; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = c; ctx.stroke();
           }
         });
         if (showHistoricalAvg) {
           const aPt = avgData[hoverDayOffset];
-          if (aPt && aPt.y !== null) { ctx.beginPath(); ctx.arc(hx, mapY(aPt.y), 6, 0, 2*Math.PI); ctx.fillStyle = getStyleVar('--text-main'); ctx.fill(); }
+          if (aPt && aPt.y !== null) { ctx.beginPath(); ctx.arc(hx, mapY(aPt.y), 6, 0, 2*Math.PI); ctx.fillStyle = cv2.textMain; ctx.fill(); }
         }
 
         if (readouts.length > 0) {
@@ -2243,15 +2307,15 @@
             if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
           if (boxX < pX) boxX = pX; 
           
-          ctx.fillStyle = getStyleVar('--bg-header');
-          ctx.fillRect(boxX, boxY, boxW, boxH); ctx.strokeStyle = getStyleVar('--border-color'); ctx.strokeRect(boxX, boxY, boxW, boxH);
+          ctx.fillStyle = cv2.bgHeader;
+          ctx.fillRect(boxX, boxY, boxW, boxH); ctx.strokeStyle = cv2.borderColor; ctx.strokeRect(boxX, boxY, boxW, boxH);
           ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = fonts.tooltip;
           readouts.sort((a,b) => b.yMtn - a.yMtn).forEach((r, i) => {
             const dep = r.yMtn;
             const cond = dep >= 150 ? '❄ Excellent' : dep >= 80 ? '✓ Good' : dep >= 30 ? '~ OK' : '✗ Low';
             const condColor = dep >= 150 ? '#15803d' : dep >= 80 ? '#d97706' : dep >= 30 ? '#b45309' : '#ef4444';
             ctx.fillStyle = r.c; ctx.fillText(`■`, boxX + padding, boxY + padding + (i*36*scale));
-            ctx.fillStyle = getStyleVar('--text-main');
+            ctx.fillStyle = cv2.textMain;
             ctx.fillText(`${r.s}:  ${dep.toFixed(0)} cm`, boxX + padding*3, boxY + padding + (i*36*scale));
             ctx.fillStyle = condColor;
             ctx.fillText(cond, boxX + padding*3 + 120*scale, boxY + padding + (i*36*scale));
@@ -2260,14 +2324,19 @@
       }
     };
     
-    cvs.addEventListener('mousemove', (e) => { const rect = cvs.getBoundingClientRect(); hoverDayOffset = Math.round((((e.clientX - rect.left) * (cvs.width / rect.width)) - SNOW_PAD_X) / (cvs.width - SNOW_PAD_X*2) * SNOW_DAYS); window.repaintCanvas(); });
+    let _snHoverTid; cvs.addEventListener('mousemove', (e) => { const rect = cvs.getBoundingClientRect(); hoverDayOffset = Math.max(0, Math.min(SNOW_DAYS - 1, Math.floor((((e.clientX - rect.left) * (cvs.width / rect.width)) - SNOW_PAD_X) / (cvs.width - SNOW_PAD_X*2) * SNOW_DAYS))); cancelAnimationFrame(_snHoverTid); _snHoverTid = requestAnimationFrame(window.repaintCanvas); });
     cvs.addEventListener('mouseleave', () => { hoverDayOffset = null; window.repaintCanvas(); });
 
-    window.addEventListener('resize', () => { setupHiDPI(cvs, 2000, 800); window.repaintCanvas(); });
+    let _snResizeTid; window.addEventListener('resize', () => { cancelAnimationFrame(_snResizeTid); _snResizeTid = requestAnimationFrame(() => { setupHiDPI(cvs, 2000, 800); window.repaintCanvas(); }); });
     setTimeout(window.repaintCanvas, 50);
 
     const cvsA = document.getElementById('atmos-canvas'), ctxA = cvsA.getContext('2d'), lblSeason = document.getElementById('atmos-season-label');
     setupHiDPI(cvsA, 2000, 600);
+    // Offscreen canvas for the static layer (everything except hover tooltip)
+    let _atmosOffscreen = null;   // OffscreenCanvas or null
+    let _atmosStaticDirty = true; // set true whenever data/season/size changes
+
+    const _invalidateAtmos = () => { _atmosStaticDirty = true; };
     let atmosHoverDay = null;
     let atmosSeasonIdx = 0;
     let atmosMAWindow = 3;
@@ -2277,7 +2346,7 @@
       btn.onclick = (e) => {
         document.querySelectorAll('.atmos-ma-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-        atmosMAWindow = parseInt(e.target.dataset.ma);
+        atmosMAWindow = parseInt(e.target.dataset.ma); _invalidateAtmos();
         window.repaintAtmosCanvas();
       };
     });
@@ -2292,18 +2361,34 @@
     document.getElementById('atmos-prev-season')?.addEventListener('click', () => {
       const rd = byResort[window.GLOBAL_RESORT]; if (!rd) return;
       const seasons = getSeasonYears(rd);
-      if (atmosSeasonIdx < seasons.length - 1) { atmosSeasonIdx++; window.repaintAtmosCanvas(); }
+      if (atmosSeasonIdx < seasons.length - 1) { atmosSeasonIdx++; _invalidateAtmos(); window.repaintAtmosCanvas(); }
     });
     document.getElementById('atmos-next-season')?.addEventListener('click', () => {
-      if (atmosSeasonIdx > 0) { atmosSeasonIdx--; window.repaintAtmosCanvas(); }
+      if (atmosSeasonIdx > 0) { atmosSeasonIdx--; _invalidateAtmos(); window.repaintAtmosCanvas(); }
     });
-
-    // ── helper: compute dynamic left pad (mirrors draw function) ──────────────
-    const _atmosPX = () => ATMOS_PAD_X;
 
     window.repaintAtmosCanvas = () => {
       if(!cvsA) return;
+
+      // Fast path: if data unchanged and no hover active, blit static layer and return.
+      // When hovering, fall through to full repaint (hover code is inline below).
+      if (!_atmosStaticDirty && _atmosOffscreen && atmosHoverDay === null) {
+        ctxA.clearRect(0,0,cvsA.width,cvsA.height);
+        ctxA.drawImage(_atmosOffscreen, 0, 0);
+        return;
+      }
+
+      // Full static repaint
       ctxA.clearRect(0,0,cvsA.width,cvsA.height);
+      const cv3 = {
+        gridLine: 'rgba(0, 0, 0, 0.055)',
+        textMuted: '#64748b',
+        textMain: '#0f172a',
+        bgMain: '#f8fafd',
+        bgHeader: '#ffffff',
+        borderColor: '#e2e8f0',
+        snowYield: 'rgba(59, 130, 246, 0.42)',
+      };
       const rd = byResort[window.GLOBAL_RESORT]; if(!rd) return;
 
       const seasons = getSeasonYears(rd);
@@ -2368,7 +2453,7 @@
       const smApMin = maSmooth('apMin', atmosMAWindow);
 
       // ── Geometry ───────────────────────────────────────────────────────────
-      const pX    = _atmosPX();
+      const pX    = ATMOS_PAD_X;
       const pY    = 20;                     // top pad — zone header lives here
       const pRight = pX;
       const pBot  = 28;                     // bottom pad — month labels
@@ -2422,7 +2507,7 @@
       monthMarkers.forEach(m => {
         const x = mapX(m.off); if (x > pX+w) return;
         ctxA.beginPath(); ctxA.moveTo(x, pY); ctxA.lineTo(x, botY0+botH); ctxA.stroke();
-        ctxA.font = boldFont; ctxA.fillStyle = getStyleVar('--text-main');
+        ctxA.font = boldFont; ctxA.fillStyle = cv3.textMain;
         ctxA.textAlign = 'center'; ctxA.textBaseline = 'top';
         ctxA.fillText(m.label, x, botY0+botH+6);
       });
@@ -2442,10 +2527,10 @@
       ctxA.font = fonts.axis; ctxA.textBaseline = 'middle'; ctxA.textAlign = 'right';
       for (let t = Math.ceil(tMinLimit/10)*10; t <= tMaxLimit; t += 10) {
         const y = mapTempY(t); if (y < pY || y > pY+topH) continue;
-        ctxA.strokeStyle = t === 0 ? 'rgba(30,64,175,0.3)' : getStyleVar('--grid-line');
+        ctxA.strokeStyle = t === 0 ? 'rgba(30,64,175,0.3)' : cv3.gridLine;
         ctxA.lineWidth   = t === 0 ? 2 : 1;
         ctxA.beginPath(); ctxA.moveTo(pX, y); ctxA.lineTo(pX+w, y); ctxA.stroke();
-        ctxA.fillStyle = t === 0 ? 'rgba(30,64,175,0.8)' : getStyleVar('--text-muted');
+        ctxA.fillStyle = t === 0 ? 'rgba(30,64,175,0.8)' : cv3.textMuted;
         ctxA.fillText(`${t}°C`, pX-6, y);
       }
       // 0°C label inside chart — explicit callout
@@ -2497,13 +2582,17 @@
         const annYMax = mapTempY(smSTMax(annIdx));
         const annYMin = mapTempY(smSTMin(annIdx));
         ctxA.font = `bold ${Math.max(10, Math.floor(11*sc))}px system-ui`;
-        ctxA.textBaseline = 'middle'; ctxA.textAlign = 'left';
-        ctxA.fillStyle = '#ef4444'; ctxA.fillText('T max', annX+4, annYMax);
-        ctxA.fillStyle = '#3b82f6'; ctxA.fillText('T min', annX+4, annYMin);
+        ctxA.textBaseline = 'middle';
+        // Draw labels to LEFT of the line when near right edge (avoids clipping)
+        const annRight = annX > pX + w * 0.85;
+        ctxA.textAlign = annRight ? 'right' : 'left';
+        const annOff = annRight ? -4 : 4;
+        ctxA.fillStyle = '#ef4444'; ctxA.fillText('T max', annX + annOff, annYMax);
+        ctxA.fillStyle = '#3b82f6'; ctxA.fillText('T min', annX + annOff, annYMin);
         if (hasApparent) {
           const aMax = smApMax(annIdx), aMin = smApMin(annIdx);
-          if (aMax !== null) { ctxA.fillStyle='rgba(239,68,68,0.55)'; ctxA.fillText('Feels max', annX+4, mapTempY(aMax)); }
-          if (aMin !== null) { ctxA.fillStyle='rgba(59,130,246,0.55)'; ctxA.fillText('Feels min', annX+4, mapTempY(aMin)); }
+          if (aMax !== null) { ctxA.fillStyle='rgba(239,68,68,0.55)'; ctxA.fillText('Feels max', annX + annOff, mapTempY(aMax)); }
+          if (aMin !== null) { ctxA.fillStyle='rgba(59,130,246,0.55)'; ctxA.fillText('Feels min', annX + annOff, mapTempY(aMin)); }
         }
         ctxA.font = fonts.axis;
       }
@@ -2513,14 +2602,14 @@
       // ── 4. Zone header labels (drawn over clip, inside each zone) ──────────
       const hdrFont = `bold ${Math.max(11, Math.floor(12*sc))}px system-ui`;
       ctxA.font = hdrFont; ctxA.textBaseline = 'top'; ctxA.textAlign = 'left';
-      ctxA.fillStyle = getStyleVar('--text-muted');
+      ctxA.fillStyle = cv3.textMuted;
       ctxA.fillText(`⛰ Mountain temperature  ·  ${curYear}/${String(curYear+1).slice(2)}`, pX+6, pY+4);
       ctxA.fillText('☀ Clear sky hours (left axis, h)   ❄ New snowfall (cm)   💨 Peak gust (right axis, km/h)', pX+6, botY0+5);
       ctxA.font = fonts.axis;
 
       // ── 5. Divider ─────────────────────────────────────────────────────────
       ctxA.beginPath(); ctxA.moveTo(pX, divY); ctxA.lineTo(pX+w, divY);
-      ctxA.lineWidth = 1.5; ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.stroke();
+      ctxA.lineWidth = 1.5; ctxA.strokeStyle = cv3.borderColor; ctxA.stroke();
 
       // ── 6. Bar zone grid lines + left axis (sun hours) ─────────────────────
       // Left axis: sun hours only — primary series, amber, evenly spaced at 3h intervals
@@ -2589,7 +2678,7 @@
           ctxA.fillRect(mapX(i)-barW, sy, barW, botY0+botH-sy);
         }
         if (d.snow > 0) {
-          ctxA.fillStyle = getStyleVar('--snow-yield');
+          ctxA.fillStyle = cv3.snowYield;
           const sny = mapSnY(d.snow);
           ctxA.fillRect(mapX(i), sny, barW*0.7, botY0+botH-sny);
         }
@@ -2612,13 +2701,20 @@
         ctxA.font = fonts.axis;
       }
 
+      // ── Snapshot static layer for fast-path repaints ─────────────────────
+      if (typeof OffscreenCanvas !== 'undefined') {
+        _atmosOffscreen = new OffscreenCanvas(cvsA.width, cvsA.height);
+        _atmosOffscreen.getContext('2d').drawImage(cvsA, 0, 0);
+      }
+      _atmosStaticDirty = false;
+
       // ── 11. Hover tooltip ───────────────────────────────────────────────────
       if (atmosHoverDay !== null && atmosHoverDay >= 0 && atmosHoverDay <= ATMOS_DAYS && atmosData[atmosHoverDay]) {
         const d = atmosData[atmosHoverDay]; const hx = mapX(atmosHoverDay);
 
         // crosshair
         ctxA.beginPath(); ctxA.moveTo(hx, pY); ctxA.lineTo(hx, botY0+botH);
-        ctxA.strokeStyle=getStyleVar('--text-main'); ctxA.lineWidth=2; ctxA.setLineDash([5,5]); ctxA.stroke(); ctxA.setLineDash([]);
+        ctxA.strokeStyle=cv3.textMain; ctxA.lineWidth=2; ctxA.setLineDash([5,5]); ctxA.stroke(); ctxA.setLineDash([]);
 
         const hasAp   = d.apMax !== null || d.apMin !== null;
         const hasVill = d.vMax !== null;
@@ -2647,10 +2743,8 @@
         // Y: top half → anchor to top of temp zone; bottom half → anchor above bottom
         const hoverInTop = hx > pX && (d.sTMax === null || mapTempY(d.sTMax) > pY);
         let boxY;
-        if (false) {
-          boxY = pY + 2*sc; // always top on touch
-        } else {
-          boxY = pY + 4*sc; // default: top of chart
+        {
+          boxY = pY + 4*sc; // top of chart
           // if cursor is in bar zone and box would overlap data there, push down
           if (atmosHoverDay !== null) {
             const cursorCanvasX = hx;
@@ -2665,9 +2759,9 @@
         if (boxY < pY) boxY = pY;
 
         // Draw box
-        ctxA.fillStyle = getStyleVar('--bg-header');
+        ctxA.fillStyle = cv3.bgHeader;
         ctxA.fillRect(boxX, boxY, boxW, boxH);
-        ctxA.strokeStyle = getStyleVar('--border-color'); ctxA.strokeRect(boxX, boxY, boxW, boxH);
+        ctxA.strokeStyle = cv3.borderColor; ctxA.strokeRect(boxX, boxY, boxW, boxH);
 
         ctxA.textAlign = 'left'; ctxA.textBaseline = 'top';
         ctxA.font = fonts.tooltip;
@@ -2675,14 +2769,14 @@
         const elev = STATIC_METADATA[window.GLOBAL_RESORT] || {base:'?', summit:'?'};
         let row = 0;
         const ln = (txt, col) => {
-          ctxA.fillStyle = col || getStyleVar('--text-main');
+          ctxA.fillStyle = col || cv3.textMain;
           ctxA.fillText(txt, boxX+pad, boxY+pad + row++*rowH);
         };
 
-        ln(d.date, getStyleVar('--text-muted'));
+        ln(d.date, cv3.textMuted);
         ln(`⛰ ${elev.summit}m   ${d.sTMax!==null?d.sTMax.toFixed(1):'—'} / ${d.sTMin!==null?d.sTMin.toFixed(1):'—'}°C   (max/min)`);
         if (hasAp) ln(`🧤 Feels-like   ${d.apMax!==null?d.apMax.toFixed(1):'—'} / ${d.apMin!==null?d.apMin.toFixed(1):'—'}°C`, 'rgba(100,116,139,0.9)');
-        if (hasVill) ln(`🏘 ${elev.base}m   ${d.vMax!==null?d.vMax.toFixed(1):'—'} / ${d.vMin!==null?d.vMin.toFixed(1):'—'}°C`, getStyleVar('--text-muted'));
+        if (hasVill) ln(`🏘 ${elev.base}m   ${d.vMax!==null?d.vMax.toFixed(1):'—'} / ${d.vMin!==null?d.vMin.toFixed(1):'—'}°C`, cv3.textMuted);
         ln(`☀ Clear sky   ${d.bbH.toFixed(1)} h   (${d.sunH.toFixed(1)}h sun × cloud correction)`, 'rgba(160,100,0,0.9)');
         ln(`❄ New snow   ${d.snow.toFixed(1)} cm`, '#2563eb');
         ln(`💨 Peak gust   ${d.gust.toFixed(0)} km/h${d.gust>65?' — ⚠ lift holds likely':''}`, d.gust>65?'#ef4444':'var(--text-main)');
@@ -2695,25 +2789,25 @@
       }
     };
 
-    // ── Event listeners — use _atmosPX() for consistent hit-testing ──────────
+
+    // ── Event listeners — use ATMOS_PAD_X for consistent hit-testing ──────────
     const _atmosHitX = (clientX) => {
       const rect = cvsA.getBoundingClientRect();
-      const pX   = _atmosPX();
+      const pX   = ATMOS_PAD_X;
       const cvsW = cvsA.width;
       const cssW = rect.width;
       const bufX = (clientX - rect.left) * (cvsW / cssW);
       return Math.round((bufX - pX) / (cvsW - pX*2) * ATMOS_DAYS);
     };
 
-    cvsA.addEventListener('mousemove', (e) => {
-     
+    let _atHoverTid; cvsA.addEventListener('mousemove', (e) => {
       atmosHoverDay = _atmosHitX(e.clientX);
       if (atmosHoverDay < 0 || atmosHoverDay > ATMOS_DAYS) atmosHoverDay = null;
-      window.repaintAtmosCanvas();
+      cancelAnimationFrame(_atHoverTid); _atHoverTid = requestAnimationFrame(window.repaintAtmosCanvas);
     });
     cvsA.addEventListener('mouseleave', () => { atmosHoverDay = null; window.repaintAtmosCanvas(); });
 
-    window.addEventListener('resize', () => { setupHiDPI(cvsA, 2000, 600); window.repaintAtmosCanvas(); });
+    let _atResizeTid; window.addEventListener('resize', () => { cancelAnimationFrame(_atResizeTid); _atResizeTid = requestAnimationFrame(() => { setupHiDPI(cvsA, 2000, 600); _invalidateAtmos(); window.repaintAtmosCanvas(); }); });
     setTimeout(window.repaintAtmosCanvas, 100);
   });
 </script>
