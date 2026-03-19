@@ -767,8 +767,9 @@
       // tMax: base daily max temp (°C). Mirrors compute_metrics.py which uses
       //       b.get("temperature_2m_max") so forecast and historical scores are comparable.
       const sunPeak = (maxSun && maxSun > 0) ? maxSun : 10;
-      const sunMin  = (bounds && bounds.minSun > 0) ? bounds.minSun : 0;
       // Mirrors computeDynamicScore: (sun - minSun) / (maxSun - minSun)
+      // minSun passed from call site (minSunForScore) so no hidden closure dependency.
+      const sunMin = (minSun > 0) ? minSun : 0;
       const fSun = sunPeak > sunMin
         ? Math.max(0, Math.min(1, (sunH - sunMin) / (sunPeak - sunMin)))
         : Math.min(1, sunH / sunPeak);
@@ -1372,16 +1373,22 @@
       });
 
       // Air Temp Thermal Band — single closed polygon: forward on tMax, backward on tMin.
-      // Null days are skipped; the polygon may be open if there are gaps in the window.
+      // lastPaired: rightmost index where both tMax and tMin are non-null — prevents a
+      // spike at the trailing edge when the final day has tMax but null tMin.
+      let lastPaired = -1;
+      for (let i = numDays-1; i >= 0; i--) {
+        if (daily[i].tMax !== null && daily[i].tMin !== null) { lastPaired = i; break; }
+      }
       ctxFc.beginPath();
       let bandStarted = false;
-      daily.forEach((d, i) => {
-        if (d.tMax === null) return;
+      for (let i = 0; i <= lastPaired; i++) {
+        const d = daily[i];
+        if (d.tMax === null) continue;
         const cx = pX + i*colW + colW/2;
         if (!bandStarted) { ctxFc.moveTo(cx, mapYTemp(d.tMax)); bandStarted = true; }
         else ctxFc.lineTo(cx, mapYTemp(d.tMax));
-      });
-      for (let i = numDays-1; i >= 0; i--) {
+      }
+      for (let i = lastPaired; i >= 0; i--) {
         if (daily[i].tMin === null) continue;
         ctxFc.lineTo(pX + i*colW + colW/2, mapYTemp(daily[i].tMin));
       }
@@ -1470,12 +1477,12 @@
         let rows = 6;  // date · base-temp · radiation · cloud(conditional) · rain · snow · gust
         if (d.sTMax !== null) rows++;           // summit temp row
         if (d.soil !== null) rows++;
-        if (d.ccLow > 5 || d.ccMid > 5 || d.ccHigh > 5) rows++; // cloud layers row
-        const boxW = 240 * scale, boxH = (35 + (rows * 20)) * scale, padding = 14 * scale;
+        if (d.ccLow > 5 || d.ccMid > 5 || d.ccHigh > 5) rows += 2; // cloud: label + % breakdown
+        const boxW = 280 * scale, boxH = (35 + (rows * 20)) * scale, padding = 14 * scale;
         
         let boxX = hx + padding, boxY = pY;
         if (boxX + boxW > pX + w) boxX = hx - boxW - padding;
-        if (boxX < pX) boxX = pX; // left edge clamp
+        boxX = Math.max(pX, Math.min(pX + w - boxW, boxX)); // hard clamp both edges
         
         ctxFc.fillRect(boxX, boxY, boxW, boxH); ctxFc.strokeStyle = cv.borderColor; ctxFc.strokeRect(boxX, boxY, boxW, boxH);
         ctxFc.textAlign = 'left'; ctxFc.textBaseline = 'top'; ctxFc.font = fonts.tooltip;
@@ -1499,7 +1506,7 @@
         
         if (d.soil !== null) {
             ctxFc.fillStyle = '#a16207'; 
-            ctxFc.fillText(`Soil 0 cm: ${d.soil.toFixed(1)} °C  (snowpack stability indicator)`, boxX + padding, currentY); currentY += yStep;
+            ctxFc.fillText(`Soil: ${d.soil.toFixed(1)} °C at summit  (snowpack stability)`, boxX + padding, currentY); currentY += yStep;
         }
         
         ctxFc.fillStyle = cv.textMain;
@@ -1517,7 +1524,8 @@
                            d.ccLow > 20 ? '⛅ Valley fog possible' :
                            d.ccMid > 60 ? '☁ Flat grey light' :
                            d.ccHigh > 60 ? '🌤 High cloud, good vis' : '☀ Clear visibility';
-          ctxFc.fillText(`${cloudMsg}  (Lo:${Math.round(d.ccLow)}% Mi:${Math.round(d.ccMid)}% Hi:${Math.round(d.ccHigh)}%)`, boxX + padding, currentY); currentY += yStep;
+          ctxFc.fillText(`${cloudMsg}`, boxX + padding, currentY); currentY += yStep;
+          ctxFc.fillText(`  Lo:${Math.round(d.ccLow)}%  Mid:${Math.round(d.ccMid)}%  Hi:${Math.round(d.ccHigh)}%`, boxX + padding, currentY); currentY += yStep;
         }
         ctxFc.fillStyle = '#3b82f6'; ctxFc.fillText(`Rain: ${d.rain.toFixed(1)} mm  (base)`, boxX + padding, currentY); currentY += yStep;
         ctxFc.fillStyle = '#60a5fa'; ctxFc.fillText(`Snow: ${d.snow.toFixed(1)} cm summit  (${(d.snow/10).toFixed(1)} mm SWE)`, boxX + padding, currentY); currentY += yStep;
