@@ -28,7 +28,7 @@ def main():
     # Inject Forecast
     if "__FORECAST_DATA_PLACEHOLDER__" in html:
         if FORECAST.exists():
-            fc_str = json.dumps(json.loads(FORECAST.read_text(encoding="utf-8")))
+            fc_str = json.dumps(json.loads(FORECAST.read_text(encoding="utf-8"))).replace("</", "<\\/")
             html = html.replace("__FORECAST_DATA_PLACEHOLDER__", fc_str)
             print("  ✓ Injected high-res forecast data")
         else:
