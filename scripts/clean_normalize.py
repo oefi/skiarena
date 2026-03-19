@@ -78,7 +78,6 @@ def extract_daily(raw_json):
             "temperature_2m_min": t_min,
             "apparent_temperature_min": safe_val("apparent_temperature_min"),
             "apparent_temperature_max": safe_val("apparent_temperature_max"),
-            "apparent_temperature_max": safe_val("apparent_temperature_max"),
             "snowfall_sum": snow,
             "snow_depth": safe_val("snow_depth"),
             "precipitation_sum": precip,
