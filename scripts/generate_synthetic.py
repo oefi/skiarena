@@ -157,6 +157,7 @@ def generate_resort_elevation(resort_name, elevation_label):
         "temperature_2m_max": [],
         "temperature_2m_min": [],
         "apparent_temperature_min": [],  # was missing
+        "apparent_temperature_max": [],  # was missing
         "snowfall_sum": [],
         "snow_depth": [],                # stored in metres (API convention)
         "precipitation_sum": [],
@@ -278,6 +279,7 @@ def generate_resort_elevation(resort_name, elevation_label):
         daily["temperature_2m_max"].append(round(t_max, 1))
         daily["temperature_2m_min"].append(round(t_min, 1))
         daily["apparent_temperature_min"].append(apparent_t_min)
+        daily["apparent_temperature_max"].append(round(t_max - wind_kmh * 0.02, 1))  # approx feels-like max
         daily["snowfall_sum"].append(round(snow_today_cm, 1))
         daily["snow_depth"].append(round(max(0, cur_depth_cm) / 100, 3))  # metres
         daily["precipitation_sum"].append(round(precip_mm, 1))
@@ -299,6 +301,7 @@ def generate_resort_elevation(resort_name, elevation_label):
             "temperature_2m_max": "°C",
             "temperature_2m_min": "°C",
             "apparent_temperature_min": "°C",
+            "apparent_temperature_max": "°C",
             "snowfall_sum": "cm",
             "snow_depth": "m",
             "precipitation_sum": "mm",

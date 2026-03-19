@@ -15,11 +15,9 @@ OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
 HOURLY_VARS = [
-    "temperature_2m", "apparent_temperature", "precipitation", "rain",
+    "temperature_2m", "precipitation", "rain",
     "snowfall", "weather_code",
-    "wind_speed_10m",
     "wind_gusts_10m",
-    "visibility", "freezing_level_height",
     "cloud_cover",
     "cloud_cover_low",          # stratus/fog layer — lift closures, whiteout risk
     "cloud_cover_mid",          # altostratus — diffuse flat light
@@ -46,16 +44,19 @@ DAILY_VARS = [
     "weather_code",
     "precipitation_hours",
     "uv_index_max",             # altitude UV exposure — critical at 2750-3250m summit
+    "precipitation_probability_max",  # peak daily precip prob — eliminates JS hourly re-derivation
 ]
 
 FORECAST_DAYS = 16
 
+# (name, lat, lon, summit_elev, base_elev)
+# base uses same lat/lon — Open-Meteo lapse-adjusts via the elevation param.
 RESORTS = [
-    ("nauders",    46.88, 10.50, 2750),
-    ("schoeneben", 46.80, 10.48, 2390),
-    ("watles",     46.70, 10.50, 2550),
-    ("sulden",     46.52, 10.58, 3250),
-    ("trafoi",     46.55, 10.50, 2800)
+    ("nauders",    46.88, 10.50, 2750, 1400),
+    ("schoeneben", 46.80, 10.48, 2390, 1460),
+    ("watles",     46.70, 10.50, 2550, 1500),
+    ("sulden",     46.52, 10.58, 3250, 1900),
+    ("trafoi",     46.55, 10.50, 2800, 1540),
 ]
 
 def get_session():
@@ -74,32 +75,36 @@ def main():
             "forecast_days": FORECAST_DAYS,
             "hourly_vars": HOURLY_VARS,
             "daily_vars": DAILY_VARS,
+            "elevations": "summit + base per resort",
         },
         "resorts": {}
     }
 
     try:
-        for name, lat, lon, elev in RESORTS:
-            params = {
-                "latitude": lat,
-                "longitude": lon,
-                "elevation": elev,
-                "hourly": ",".join(HOURLY_VARS),
-                "daily": ",".join(DAILY_VARS),
-                "models": "best_match",
-                "forecast_days": FORECAST_DAYS,
-                "timezone": "Europe/Berlin"
-            }
-            resp = session.get(BASE_URL, params=params, timeout=10)
-            resp.raise_for_status()
-            data = resp.json()
-            forecast_payload["resorts"][name] = {
-                "hourly": data.get("hourly", {}),
-                "daily":  data.get("daily",  {}),
-                "hourly_units": data.get("hourly_units", {}),
-                "daily_units":  data.get("daily_units",  {}),
-            }
-            time.sleep(0.5)
+        for name, lat, lon, summit_elev, base_elev in RESORTS:
+            resort_payload = {}
+            for label, elev in (("summit", summit_elev), ("base", base_elev)):
+                params = {
+                    "latitude": lat,
+                    "longitude": lon,
+                    "elevation": elev,
+                    "hourly": ",".join(HOURLY_VARS),
+                    "daily": ",".join(DAILY_VARS),
+                    "models": "best_match",
+                    "forecast_days": FORECAST_DAYS,
+                    "timezone": "Europe/Berlin"
+                }
+                resp = session.get(BASE_URL, params=params, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+                resort_payload[label] = {
+                    "hourly": data.get("hourly", {}),
+                    "daily":  data.get("daily",  {}),
+                    "hourly_units": data.get("hourly_units", {}),
+                    "daily_units":  data.get("daily_units",  {}),
+                }
+                time.sleep(0.5)
+            forecast_payload["resorts"][name] = resort_payload
 
         # Validate before committing — don't write if all resorts failed
         if not any(forecast_payload["resorts"].values()):
