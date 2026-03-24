@@ -243,19 +243,24 @@
     <div id="forecast-wrapper">
 
       <div id="tactical-summary-board">
-        <div style="color: var(--text-muted); font-style: italic;">Awaiting payload...</div>
+        <div style="color: var(--text-muted); font-style: italic; font-size: 0.85rem;">Loading forecast…</div>
       </div>
 
       <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; min-height: 0;">
         
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">
+          <span style="font-size:0.85rem;font-weight:700;color:var(--text-main);">16-day outlook <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem;">· hover any day for details</span></span>
+          <span style="font-size:0.7rem;color:var(--text-muted);opacity:0.75;">Days 1–5: ICON-D2/AROME &nbsp;·&nbsp; Days 6+: ECMWF</span>
+        </div>
+
         <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); flex-wrap: wrap; align-items: center; padding-bottom: 0.25rem;">
-          <span title="Daily air temperature range at base elevation (valley station). Red line = daily max, blue line = daily min. Snow/wind data comes from the summit." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:12px;height:10px;background:linear-gradient(to bottom,rgba(239,68,68,0.5),rgba(59,130,246,0.5));border-radius:2px;"></span>Temperature — base (max/min)</span>
-          <span title="Summit soil surface temperature (0 cm depth). Stays negative = snowpack frozen and stable. Above 0°C = basal melt — wet slide risk, icy refreeze overnight." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #a16207;"></span>Soil temp — summit (snowpack indicator)</span>
-          <span title="24h snowfall accumulation (cm). Plotted as water-equivalent mm on precip axis." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--snow-yield);border-radius:2px;"></span>Snowfall</span>
-          <span title="24h liquid rainfall (mm)." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--rain-yield);border-radius:2px;"></span>Rainfall</span>
-          <span title="Cloud cover by altitude. High (cirrus): harmless. Mid (altostratus): flat grey light, poor visibility. Low (stratus/fog): whiteout risk, lifts may close. Darker = more cloud." style="display:flex;align-items:center;gap:0.2rem;cursor:help;"><span style="display:inline-block;width:8px;height:5px;background:rgba(185,210,240,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(105,130,160,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(50,70,95,0.9);border-radius:1px;"></span> Cloud: High · Mid · Low (darker = more)</span>
-          <span title="Mean direct solar beam (W/m²) over daylight hours. Intensity = amber depth. Zero under full cloud. High = bluebird, UV exposure, snow softening." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:rgba(255,145,10,0.85);border-radius:2px;"></span>Direct solar beam</span>
-          <span title="Peak wind gust speed (km/h) at 10 m. Dashed red line. Above ~65 km/h = lift holds likely." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #ef4444;"></span>Peak wind gust</span>
+          <span title="Daily air temperature range at base elevation (valley station). Red line = daily max, blue line = daily min. Snow/wind data comes from the summit." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:12px;height:10px;background:linear-gradient(to bottom,rgba(239,68,68,0.5),rgba(59,130,246,0.5));border-radius:2px;"></span>Temp — valley (max/min)</span>
+          <span title="Summit soil surface temperature (0 cm depth). Stays negative = snowpack frozen and stable. Above 0°C = basal melt — wet slide risk, icy refreeze overnight." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #a16207;"></span>Snowpack stability · <span style="color:#a16207;">0°C = wet-slide risk</span></span>
+          <span title="24h snowfall accumulation (cm). Plotted as water-equivalent mm on precip axis." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--snow-yield);border-radius:2px;"></span>New snow</span>
+          <span title="24h liquid rainfall (mm). Rain at altitude = slush, piste damage, higher avalanche risk." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:var(--rain-yield);border-radius:2px;"></span>Rain (slush risk)</span>
+          <span title="Cloud cover by altitude. High (cirrus): harmless. Mid (altostratus): flat grey light, poor visibility. Low (stratus/fog): whiteout risk, lifts may close. Darker = more cloud." style="display:flex;align-items:center;gap:0.2rem;cursor:help;"><span style="display:inline-block;width:8px;height:5px;background:rgba(185,210,240,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(105,130,160,0.9);border-radius:1px;"></span><span style="display:inline-block;width:8px;height:5px;background:rgba(50,70,95,0.9);border-radius:1px;"></span> Cloud: high harmless · mid flat-light · <span style="color:#475569;">low = whiteout</span></span>
+          <span title="Mean direct solar beam (W/m²) over daylight hours. Intensity = amber depth. Zero under full cloud. High = bluebird, UV exposure, snow softening." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:10px;height:10px;background:rgba(255,145,10,0.85);border-radius:2px;"></span>Direct sun intensity</span>
+          <span title="Peak wind gust speed (km/h) at 10 m. Dashed red line. Above ~65 km/h = lift holds likely." style="display:flex;align-items:center;gap:0.3rem;cursor:help;"><span style="display:inline-block;width:16px;height:0;border-bottom:2px dashed #ef4444;"></span>Peak gust · <span style="color:#ef4444;">&gt;65 = lift hold risk</span></span>
         </div>
         <div style="position: relative;">
           <canvas id="forecast-canvas" width="2000" height="960" role="img" aria-label="Ski conditions forecast: base temperature, summit snowfall, direct solar beam, cloud layers, soil temperature and wind gusts for the selected resort"></canvas>
@@ -688,7 +693,16 @@
     const renderTacticalSummary = (resort) => {
       if (fcSubtitle) {
         const meta = STATIC_METADATA[resort.toLowerCase()] || {};
-        fcSubtitle.innerHTML = `<strong style="color:var(--text-main);">📍 ${meta.label ?? resort} &nbsp;<span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">${meta.region ?? ''}</span></strong>&ensp;·&ensp;${(meta.base ?? '?')}m base (temps · rain · precip %) &nbsp;/&nbsp; ${(meta.summit ?? '?')}m summit (snow · wind · cloud · radiation)&ensp;·&ensp;ICON-D2/AROME days 1–5 · ECMWF/GFS days 6–16`;
+        const fetchedAt = FORECAST_DATA?._meta?.fetched_at ?? null;
+        let freshness = '';
+        if (fetchedAt) {
+          const msAgo = Date.now() - new Date(fetchedAt).getTime();
+          const hAgo  = Math.floor(msAgo / 3600000);
+          const mAgo  = Math.floor((msAgo % 3600000) / 60000);
+          const agoStr = hAgo > 0 ? `${hAgo}h ${mAgo}m ago` : `${mAgo}m ago`;
+          freshness = `&ensp;·&ensp;<span style="opacity:0.6;" title="Forecast fetched at ${fetchedAt}">📡 fetched ${agoStr}</span>`;
+        }
+        fcSubtitle.innerHTML = `<strong style="color:var(--text-main);">📍 ${meta.label ?? resort} &nbsp;<span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">${meta.region ?? ''}</span></strong>&ensp;·&ensp;${(meta.base ?? '?')}m base (temps · rain · precip %) &nbsp;/&nbsp; ${(meta.summit ?? '?')}m summit (snow · wind · cloud · radiation)&ensp;·&ensp;ICON-D2/AROME days 1–5 · ECMWF/GFS days 6–16${freshness}`;
       }
       if (!FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[resort]) {
         fcBoard.innerHTML = `<div style="color:#ef4444;padding:1rem;border:1px dashed #ef4444;border-radius:6px;width:100%;">No forecast payload for ${resort}</div>`;
@@ -759,7 +773,79 @@
           <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">at ${elev.summit ?? '?'}m — today midday</div>
         </div>` : '';
 
-      fcBoard.innerHTML = snowWeekCard + snowDepthCard + liveCard;
+      // ── TOMORROW HERO CARD ───────────────────────────────────
+      // Always shows day index 1 (tomorrow) from the daily arrays.
+      // Index 0 = today (may be partial) — we always want the next full day here
+      // regardless of snowStart, which is only used for the 7-day accumulation.
+      const baseDaily   = resortData.base?.daily   || null;
+      const summitDaily = resortData.summit?.daily || daily || null;
+      const tIdx = 1; // tomorrow
+
+      const tmrSnow    = summitDaily?.snowfall_sum?.[tIdx] ?? null;
+      const tmrDepthM  = summitDaily?.snow_depth?.[tIdx]   ?? null;
+      const tmrDepthCm = tmrDepthM !== null ? Math.round(tmrDepthM * 100) : null;
+      const tmrTMax    = baseDaily?.temperature_2m_max?.[tIdx] ?? null;
+      const tmrTMin    = baseDaily?.temperature_2m_min?.[tIdx] ?? null;
+      const tmrGust    = summitDaily?.wind_gusts_10m_max?.[tIdx] ?? daily?.wind_gusts_10m_max?.[tIdx] ?? null;
+      const tmrWC      = summitDaily?.weather_code?.[tIdx] ?? baseDaily?.weather_code?.[tIdx] ?? null;
+      const tmrDateStr = summitDaily?.time?.[tIdx] ?? baseDaily?.time?.[tIdx] ?? null;
+
+      const tmrDayLabel = tmrDateStr
+        ? new Date(tmrDateStr + 'T12:00:00+01:00').toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'short'})
+        : 'Tomorrow';
+
+      const isWindy  = tmrGust !== null && tmrGust > 65;
+      const isPowder = (tmrSnow ?? 0) >= 15 && !isWindy;
+      const hasFresh = (tmrSnow ?? 0) >= 3 && !isPowder;
+      const isTooWarm = tmrTMax !== null && tmrTMax > 6;
+      const goodBase  = (tmrDepthCm ?? 0) >= 80;
+
+      let verdict, vColor, vBg, stars;
+      if      (isPowder)           { verdict='Powder day';         vColor='#1d4ed8'; vBg='rgba(29,78,216,0.07)';   stars=5; }
+      else if (isWindy)            { verdict='Wind hold risk ⚠️';  vColor='#b91c1c'; vBg='rgba(185,28,28,0.07)';   stars=2; }
+      else if (isTooWarm && hasFresh){ verdict='Spring powder';    vColor='#b45309'; vBg='rgba(180,83,9,0.07)';    stars=4; }
+      else if (isTooWarm)          { verdict='Spring skiing';      vColor='#b45309'; vBg='rgba(180,83,9,0.07)';    stars=3; }
+      else if (hasFresh && goodBase){ verdict='Fresh snow + good base'; vColor='#15803d'; vBg='rgba(21,128,61,0.07)'; stars=5; }
+      else if (hasFresh)           { verdict='Fresh snow';         vColor='#0369a1'; vBg='rgba(3,105,161,0.07)';   stars=4; }
+      else if (goodBase)           { verdict='Good piste';         vColor='#15803d'; vBg='rgba(21,128,61,0.07)';   stars=3; }
+      else                         { verdict='Check conditions';   vColor='#64748b'; vBg='rgba(100,116,139,0.07)'; stars=2; }
+
+      const starStr = `<span style="color:#f59e0b;">${'★'.repeat(stars)}</span><span style="color:#d1d5db;">${'☆'.repeat(5-stars)}</span>`;
+
+      const tmrWmoEmoji = tmrWC === null ? '🌤️'
+        : tmrWC === 0 ? '☀️' : tmrWC === 1 ? '🌤️' : tmrWC === 2 ? '⛅'
+        : tmrWC === 3 ? '☁️' : tmrWC <= 48 ? '🌫️' : tmrWC <= 55 ? '🌦️'
+        : tmrWC <= 67 ? '🌧️' : tmrWC <= 77 ? '❄️' : tmrWC <= 86 ? '🌨️' : '⛈️';
+
+      const tmrPills = [
+        tmrSnow !== null
+          ? `<span title="New snow overnight and tomorrow · summit"><b style="color:#2563eb;">❄ ${tmrSnow.toFixed(0)} cm</b> new snow</span>`
+          : null,
+        (tmrTMax !== null && tmrTMin !== null)
+          ? `<span title="Valley air temperature tomorrow (max / min). Slopes will be colder.">🌡 <b>${tmrTMax>0?'+':''}${tmrTMax.toFixed(0)} / ${tmrTMin>0?'+':''}${tmrTMin.toFixed(0)} °C</b> valley</span>`
+          : null,
+        tmrGust !== null
+          ? `<span title="Peak wind gust at summit" style="color:${tmrGust>65?'#b91c1c':'inherit'};">💨 <b>${tmrGust.toFixed(0)} km/h</b>${tmrGust>65?' — lift hold risk':''}` + `</span>`
+          : null,
+        tmrDepthCm !== null
+          ? `<span title="Current snow base depth at summit">🏔 <b style="color:var(--text-main);">${tmrDepthCm} cm</b> base</span>`
+          : null,
+      ].filter(Boolean).join('');
+
+      const tomorrowHeroCard = `
+        <div class="fc-card" style="border-left:4px solid ${vColor};background:${vBg};">
+          ${cardLabel(tmrDayLabel)}
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.8rem;line-height:1;">${tmrWmoEmoji}</span>
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:${vColor};line-height:1.2;">${verdict}</div>
+              <div style="font-size:0.9rem;letter-spacing:0.02em;line-height:1.4;">${starStr}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.3rem 0.7rem;font-size:0.78rem;color:var(--text-muted);">${tmrPills}</div>
+        </div>`;
+
+      fcBoard.innerHTML = tomorrowHeroCard + snowWeekCard + snowDepthCard + liveCard;
     };
 
     if (FORECAST_DATA && FORECAST_DATA.resorts && Object.keys(FORECAST_DATA.resorts).length > 0) {
@@ -1206,10 +1292,15 @@
       const rawDailyBase = resortData.base?.daily || null;
       const chipScores = daily.map((d, i) => {
         const s  = i * 24, e = s + 24;
-        // Midday (hour 12) gives representative skiing-time depth; fall back to mean.
-        const depthMid = sH.snow_depth?.[s + 12] ?? null;
-        const depthM   = depthMid !== null ? depthMid
-          : (sH.snow_depth ? sH.snow_depth.slice(s,e).filter(v=>v!==null).reduce((a,b,_,arr)=>a+b/arr.length,0) : 0);
+        // Prefer precomputed daily MAX snow_depth injected by fetch_forecast.py
+        // (mirrors the fetch_openmeteo.py → compute_metrics.py pipeline exactly).
+        // Falls back to hourly midday reading for legacy cached payloads that predate this fix.
+        const dailySummitDepth = resortData.summit?.daily?.snow_depth ?? null;
+        const depthM = (dailySummitDepth?.[i] != null)
+          ? dailySummitDepth[i]
+          : (sH.snow_depth?.[s + 12] != null
+            ? sH.snow_depth[s + 12]
+            : (sH.snow_depth ? sH.snow_depth.slice(s,e).filter(v=>v!==null).reduce((a,b,_,arr)=>a+b/arr.length,0) : 0));
         const probMax  = rawDailyBase?.precipitation_probability_max?.[i]
           ?? (tH.precipitation_probability
               ? Math.max(...tH.precipitation_probability.slice(s,e).filter(v=>v!==null), 0) || null
