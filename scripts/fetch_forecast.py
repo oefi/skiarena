@@ -9,6 +9,7 @@ import requests, json, sys, time, os
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
+from datetime import datetime, timezone
 
 OUT_FILE = Path(__file__).parent.parent / "data" / "processed" / "forecast_data.json"
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -76,6 +77,7 @@ def main():
             "hourly_vars": HOURLY_VARS,
             "daily_vars": DAILY_VARS,
             "elevations": "summit + base per resort",
+            "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
         "resorts": {}
     }
@@ -103,6 +105,28 @@ def main():
                     "hourly_units": data.get("hourly_units", {}),
                     "daily_units":  data.get("daily_units",  {}),
                 }
+
+                # Aggregate hourly snow_depth → daily MAX, mirroring fetch_openmeteo.py.
+                # The forecast API has no daily snow_depth aggregate; hourly is the only source.
+                # MAX is ski-conservative: captures peak depth for the day without the
+                # undercount of a midday or mean reading on melt/accumulation days.
+                # daily.sunshine_duration is in seconds (unit "s") — same as archive API.
+                h_times = data.get("hourly", {}).get("time", [])
+                h_depth = data.get("hourly", {}).get("snow_depth", [])
+                d_times = data.get("daily",  {}).get("time", [])
+                if h_times and h_depth and d_times:
+                    depth_by_date: dict[str, float] = {}
+                    for ts, v in zip(h_times, h_depth):
+                        if v is not None:
+                            day = ts[:10]
+                            if day not in depth_by_date or v > depth_by_date[day]:
+                                depth_by_date[day] = v
+                    resort_payload[label]["daily"]["snow_depth"] = [
+                        depth_by_date.get(d) for d in d_times
+                    ]
+                    resort_payload[label]["daily_units"]["snow_depth"] = (
+                        data.get("hourly_units", {}).get("snow_depth", "m")
+                    )
                 time.sleep(0.5)
             forecast_payload["resorts"][name] = resort_payload
 
