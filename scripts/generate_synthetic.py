@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Synthetic data generator — produces realistic ERA5-style daily weather data
-for the Zwei Länder Skiarena, Nov–Apr seasons 2019/20 through 2025/26.
+for the Zwei Länder Skiarena, Nov–May 1 seasons 2019/20 through 2025/26.
 
 Grounded in published climatological norms for each resort.
 Replace with real Open-Meteo output once you run fetch_openmeteo.py.
@@ -22,11 +22,16 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Date range ────────────────────────────────────────────────────────────────
 
 def ski_dates():
-    """All Nov 1 – Apr 30 dates for seasons 2019/20 through 2025/26 inclusive."""
+    """All Nov 1 – May 1 dates for seasons 2019/20 through 2025/26 inclusive.
+    May 1 is included to match the Strict Winter Mandate in clean_normalize.py,
+    which retains records through May 1 (and discards May 2 onward).
+    Previous bound was Apr 30, silently leaving a one-day gap in the synthetic
+    fallback that clean_normalize would simply skip over — harmless but inconsistent.
+    """
     dates = []
     for start_year in range(2019, 2026):  # season start years
         d = date(start_year, 11, 1)
-        end = date(start_year + 1, 4, 30)
+        end = date(start_year + 1, 5, 1)  # through May 1 (mandate-aligned)
         while d <= end:
             dates.append(d)
             d += timedelta(days=1)

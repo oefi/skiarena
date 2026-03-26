@@ -135,7 +135,7 @@ def temperature_score_seasonal(t_max, date_str):
         month, day = 1, 1
 
     if month >= 11 or month <= 2:
-        opt_lo, opt_hi, too_warm = -12, -2, 15   # deep winter
+        opt_lo, opt_hi, too_warm = -12, -2, 15   # deep winter (Nov 1 – end of Feb, incl. Feb 29 in leap years)
     elif month == 3 and day <= 20:
         opt_lo, opt_hi, too_warm = -6,   2, 18   # transition
     else:

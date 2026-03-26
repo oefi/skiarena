@@ -28,6 +28,12 @@ HOURLY_VARS = [
     "soil_temperature_0cm",
     "snow_depth",               # needed for forecast Bluebird Score (25% weight)
     "precipitation_probability", # essential for trip planning confidence
+    # DST NOTE: all hourly timestamps are in Europe/Berlin local time (CET/CEST).
+    # On the DST spring-forward day (~last Sunday of March) Open-Meteo returns only
+    # 23 hourly entries — the 02:xx hour does not exist in local time.
+    # JS consumers MUST use the stored utc_offset_seconds to reconstruct absolute
+    # times: treat timestamps as local and apply the offset, or use Unix epoch.
+    # Do NOT assume 24 entries per day in March/April hourly arrays.
 ]
 
 # Daily aggregates — used directly in tactical board cards, avoids JS re-derivation.
@@ -104,6 +110,14 @@ def main():
                     "daily":  data.get("daily",  {}),
                     "hourly_units": data.get("hourly_units", {}),
                     "daily_units":  data.get("daily_units",  {}),
+                    # Preserve UTC offset info from the API response so JS chart code
+                    # can correctly handle DST transitions (spring-forward = 23-hour day
+                    # in late March; fall-back = 25-hour day in late October).
+                    # utc_offset_seconds reflects the offset at fetch time; during DST
+                    # transitions within the 16-day window the actual offset may shift
+                    # (CET=+3600 → CEST=+7200). JS must add this to timestamp math.
+                    "utc_offset_seconds":   data.get("utc_offset_seconds"),
+                    "timezone_abbreviation": data.get("timezone_abbreviation"),
                 }
 
                 # Aggregate hourly snow_depth → daily MAX, mirroring fetch_openmeteo.py.

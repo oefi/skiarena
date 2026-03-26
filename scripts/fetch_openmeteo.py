@@ -33,7 +33,7 @@ from collections import defaultdict
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 
 OUTPUT_DIR    = Path(__file__).parent.parent / "data" / "raw"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -278,6 +278,13 @@ def fetch_merged(
     # A melt day's hourly depths decline through the afternoon; the mean would
     # overstate usable snow. A snowfall day accumulates through the night; the
     # max captures what's there when the first chair opens the next morning.
+    #
+    # DST NOTE: timestamps are in Europe/Berlin local time (timezone param above).
+    # ts[:10] correctly extracts the Alpine local date for bucketing. On the
+    # DST spring-forward day (~last Sunday of March) only 23 hourly values exist
+    # for that date — the 02:xx hour is skipped by the OS. This is benign here
+    # because we take MAX across available readings; one fewer reading does not
+    # materially change the daily peak depth.
     era5_dates   = era5_data["daily"].get("time", [])
     hourly_times = depth_data["hourly"].get("time", [])
     hourly_depth = depth_data["hourly"].get("snow_depth", [])
@@ -355,7 +362,13 @@ def _fetch_with_lag_retry(
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def default_end_date() -> str:
-    return (date.today() - timedelta(days=ERA5_LAG_DAYS)).strftime("%Y-%m-%d")
+    # Use UTC explicitly. GitHub Actions runners are UTC; date.today() would also
+    # return UTC there, but is ambiguous on local machines near midnight.
+    # ERA5 archive timestamps are UTC-anchored, so UTC is the correct reference.
+    # Alpine local time (CET/CEST) is UTC+1/+2 — using UTC avoids a 1–2 hour
+    # window around midnight where date.today() returns yesterday's Alpine date,
+    # which would cause the lag window to be calculated from the wrong base.
+    return (datetime.now(timezone.utc).date() - timedelta(days=ERA5_LAG_DAYS)).strftime("%Y-%m-%d")
 
 
 def _next_day(date_str: str) -> str:

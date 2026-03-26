@@ -6,6 +6,7 @@ Falls back to synthetic curves only if the enriched file is missing.
 import cairosvg, math, json
 from pathlib import Path
 from collections import defaultdict
+from calendar import isleap
 
 OUT          = Path(__file__).parent.parent / "og-image.png"
 ENRICHED     = Path(__file__).parent.parent / "data" / "processed" / "enriched_data.json"
@@ -58,8 +59,12 @@ def _load_real_heatmap():
             season_start = _date(sy, 11, 1)
             current     = _date(y, m, day)
             off = (current - season_start).days
-            # Map 182-day season to 18 slots; we only show Dec–Apr (days 30–181)
-            if off < 30 or off > 181:
+            # Map season to 18 slots; show Dec–Apr only (skip Nov = days 0–29).
+            # May 1 offset = 181 in normal years, 182 in leap years (Feb has 29 days).
+            # The hardcoded 181 silently excluded May 1 data in every leap-year season
+            # (2019/20, 2023/24, 2027/28 …). Fixed: compute bound from calendar.
+            _max_off = 182 if isleap(sy + 1) else 181
+            if off < 30 or off > _max_off:
                 continue
             slot = min(17, (off - 30) * 18 // 152)
             bucket_scores[season_label][slot].append(score)
