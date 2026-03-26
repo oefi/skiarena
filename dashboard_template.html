@@ -7,12 +7,12 @@
 <title>Zwei Länder Skiarena · Ski Conditions</title>
 
 <meta name="author" content="Zwei Länder Skiarena Dashboard">
-<link rel="canonical" href="https://oefi.github.io/zlskiarena/">
+<link rel="canonical" href="https://oefi.github.io/skiarena/">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://oefi.github.io/zlskiarena/">
+<meta property="og:url" content="https://oefi.github.io/skiarena/">
 <meta property="og:title" content="Zwei Länder Skiarena · Ski Conditions">
 <meta property="og:description" content="Historical ski weather for 5 resorts across Austria & South Tyrol. Every powder day, every sunny terrace, every storm.">
-<meta property="og:image" content="https://oefi.github.io/zlskiarena/og-image.png">
+<meta property="og:image" content="https://oefi.github.io/skiarena/og-image.png">
 
 <!-- Silences the 404 Favicon Error with a zero-dependency SVG inline data URI -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎿</text></svg>">
@@ -561,8 +561,10 @@
 
   // Strip any records dated beyond today (guards against pipeline runs that fetch ahead).
   const localNow = new Date();
-  const yyyy = localNow.getFullYear(), mm = String(localNow.getMonth() + 1).padStart(2, '0'), dd = String(localNow.getDate()).padStart(2, '0');
-  const localTodayStr = `${yyyy}-${mm}-${dd}`;
+  // Use Alpine local date (Europe/Vienna) as the cutoff — not browser local.
+  // A UK viewer at 23:30 UTC would otherwise compute March 28 as "today" and
+  // silently discard valid March 29 records that are already in the dataset.
+  const localTodayStr = localNow.toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
 
   let latestDataDate = "Unknown";
   if (SKI_DATA && SKI_DATA.records) {
@@ -582,7 +584,10 @@
   let _lastSyncPeriod = null;
   setInterval(() => {
     const now = new Date();
-    const h = now.getHours(), mins = now.getMinutes(), secs = now.getSeconds();
+    // Sync schedule runs at 00:00, 06:00, 12:00, 18:00 UTC (GitHub Actions cron).
+    // Use UTC hours so the countdown is accurate regardless of viewer's timezone.
+    // Using local hours would show the wrong remaining time for CET/CEST viewers.
+    const h = now.getUTCHours(), mins = now.getUTCMinutes(), secs = now.getUTCSeconds();
     const currentPeriod = Math.floor(h / 6); // 0,1,2,3
     const nextSyncH = (currentPeriod + 1) * 6;
     const totalSecLeft = (nextSyncH * 3600) - (h * 3600 + mins * 60 + secs);
@@ -753,8 +758,14 @@
         </div>`;
 
       // Current summit snow depth — midday hour 12 of day 0 (most representative ski-time reading).
+      // Scan the summit hourly timestamp array to find the start of day 0, then add 12.
+      // This is DST-safe: on the spring-forward day the array still starts at 00:xx local,
+      // so day-0 midday is always dayStart+12 regardless of how many hours the day has.
       const summitHourly = (resortData.summit || resortData).hourly || resortData.hourly || resortData;
-      const depthNow = summitHourly.snow_depth?.[12] ?? summitHourly.snow_depth?.[0] ?? null;
+      const _sHtimes = summitHourly.time || [];
+      const _day0Start = _sHtimes.length > 0 ? 0 : 0; // always 0: first entry IS day 0
+      const _depth12idx = _day0Start + 12;
+      const depthNow = summitHourly.snow_depth?.[_depth12idx] ?? summitHourly.snow_depth?.[0] ?? null;
       const depthCm  = depthNow !== null ? Math.round(depthNow * 100) : null;
       const depthLabel = depthCm !== null
         ? (depthCm >= 150 ? '❄ Excellent' : depthCm >= 80 ? '✓ Good' : depthCm >= 30 ? '~ OK' : '⚠ Thin')
@@ -791,7 +802,7 @@
       const tmrDateStr = summitDaily?.time?.[tIdx] ?? baseDaily?.time?.[tIdx] ?? null;
 
       const tmrDayLabel = tmrDateStr
-        ? new Date(tmrDateStr + 'T12:00:00+01:00').toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'short'})
+        ? parseCET(tmrDateStr + 'T12:00').toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'short'})
         : 'Tomorrow';
 
       const isWindy  = tmrGust !== null && tmrGust > 65;
@@ -952,10 +963,17 @@
       // Europe/Vienna DST: last Sun Mar → last Sun Oct
       const d = new Date(isoNoTz + 'Z'); // parse as UTC first to get the date
       const y = d.getUTCFullYear();
-      // Last Sunday in March = DST start; Last Sunday in October = DST end
+      // Last Sunday in March = DST start; Last Sunday in October = DST end.
+      // DST begins at 02:00 CET = 01:00 UTC on that Sunday (clocks spring to 03:00 CEST).
+      // DST ends   at 03:00 CEST = 01:00 UTC on that Sunday (clocks fall to 02:00 CET).
+      // Using midnight UTC as the threshold is 1 hour early: the 00:00 UTC slot
+      // (= 01:00 CET, still pre-DST) would incorrectly receive the CEST +02:00 offset.
+      // Fix: add 3600000 ms (1 hour) so the threshold is the actual transition moment.
       const lastSunMar = new Date(Date.UTC(y, 2, 31)); lastSunMar.setUTCDate(31 - lastSunMar.getUTCDay());
       const lastSunOct = new Date(Date.UTC(y, 9, 31)); lastSunOct.setUTCDate(31 - lastSunOct.getUTCDay());
-      const isDST = d >= lastSunMar && d < lastSunOct;
+      const dstStart = new Date(lastSunMar.getTime() + 3600000); // 01:00 UTC = exact spring-forward
+      const dstEnd   = new Date(lastSunOct.getTime() + 3600000); // 01:00 UTC = exact fall-back
+      const isDST = d >= dstStart && d < dstEnd;
       return new Date(isoNoTz + (isDST ? '+02:00' : '+01:00'));
     };
 
@@ -972,12 +990,25 @@
       // Guard on tH.temperature_2m: base tier drives numDays and the temp chart.
       // sH also has temperature_2m (in HOURLY_VARS) — used for sTMax tooltip only.
       if (!tH.temperature_2m) return;
-      const numDays = Math.floor(tH.temperature_2m.length / 24);
+      // Build day-boundary index array from the timestamp array itself.
+      // Open-Meteo returns local-time hourly strings ("YYYY-MM-DDTHH:MM" with no TZ suffix).
+      // On the DST spring-forward day (last Sunday of March, Europe/Berlin) the local-time
+      // array contains only 23 entries for that date — the 02:xx hour does not exist.
+      // Multiplying i*24 to find day boundaries therefore drifts by -1 for every day
+      // AFTER the spring-forward day within the 16-day window (≈13 of 16 days wrong
+      // when the window spans the transition). Building dayStarts by scanning timestamps
+      // is immune to any DST-induced hour-count variation.
+      const _times = sH.time || tH.time || [];
+      const dayStarts = [];
+      for (let k = 0; k < _times.length; k++) {
+        if (k === 0 || _times[k].slice(0, 10) !== _times[k - 1].slice(0, 10)) dayStarts.push(k);
+      }
+      const numDays = dayStarts.length || Math.floor(tH.temperature_2m.length / 24);
       if (numDays === 0) return;
 
       const daily = [];
       for (let i = 0; i < numDays; i++) {
-        const start = i * 24, end = start + 24;
+        const start = dayStarts[i] ?? (i * 24), end = dayStarts[i + 1] ?? (start + 24);
         const t = tH.temperature_2m.slice(start, end).filter(v => v !== null);
         const sn = sH.snowfall ? sH.snowfall.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
         const rn = tH.rain ? tH.rain.slice(start, end).reduce((a,b)=>a+(b||0),0) : 0;
@@ -1302,7 +1333,7 @@
       // so rawDailyBase stays null and the hourly fallback inside chipScores kicks in.
       const rawDailyBase = resortData.base?.daily || null;
       const chipScores = daily.map((d, i) => {
-        const s  = i * 24, e = s + 24;
+        const s  = dayStarts[i] ?? (i * 24), e = dayStarts[i + 1] ?? (s + 24);
         // Prefer precomputed daily MAX snow_depth injected by fetch_forecast.py
         // (mirrors the fetch_openmeteo.py → compute_metrics.py pipeline exactly).
         // Falls back to hourly midday reading for legacy cached payloads that predate this fix.
@@ -1700,9 +1731,9 @@
       return; 
     }
     sb.innerHTML = `✓ Live Data`;
-    const d = new Date(latestDataDate + 'T12:00:00');
-    const fmt = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    const msAgo  = Date.now() - new Date(latestDataDate + 'T12:00:00').getTime();
+    const d = new Date(latestDataDate + 'T12:00:00Z');
+    const fmt = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Vienna' });
+    const msAgo  = Date.now() - new Date(latestDataDate + 'T12:00:00Z').getTime();
     const hrsAgo  = Math.floor(msAgo / 3600000);
     const agoStr  = hrsAgo < 1 ? 'just now' : hrsAgo < 24 ? `${hrsAgo}h ago` : `${Math.floor(hrsAgo/24)}d ago`;
     ts.innerHTML = `Data through <b style="color:var(--text-main);">${fmt}</b> <span style="opacity:0.55;">(${agoStr})</span> · <span style="opacity:0.7;">Open-Meteo ERA5</span>`;
@@ -1997,12 +2028,26 @@
     renderTable(dp.value);
 
     const hc = document.getElementById('heatmap-container');
-    const SEASON_DAYS = 182;  // Nov 1 – Apr 30
-    // Month boundaries (offset from Nov 1)
-    const MONTH_OFFSETS = [
+    const SEASON_DAYS = 182;  // Nov 1 – May 1 (offset 182 in leap years, 181 in normal years; 182 fits both)
+    // Month boundaries (offset in days from Nov 1).
+    // Mar and Apr shift by +1 in leap years because Feb has 29 days.
+    // The static array below is correct for non-leap years; getMonthOffsets(year)
+    // returns the correct offsets for any given season-start year.
+    const MONTH_OFFSETS_BASE = [
       {off:0,  label:'Nov'}, {off:30, label:'Dec'}, {off:61, label:'Jan'},
       {off:92, label:'Feb'}, {off:120,label:'Mar'}, {off:151,label:'Apr'},
     ];
+    const _isLeapYear = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const getMonthOffsets = (seasonStartYear) => {
+      const leap = _isLeapYear(seasonStartYear + 1); // Feb of the season belongs to startYear+1
+      return MONTH_OFFSETS_BASE.map(m =>
+        (m.label === 'Mar' || m.label === 'Apr') && leap
+          ? { off: m.off + 1, label: m.label }
+          : m
+      );
+    };
+    // Convenience alias for single-season contexts (still exported for header row)
+    const MONTH_OFFSETS = MONTH_OFFSETS_BASE;
 
     const getSeasonYears = (resortData) => {
       const years = new Set(resortData.map(r => {
@@ -2031,7 +2076,14 @@
     };
 
     // Is day-offset a shoulder period?
-    const isShoulder = off => off < 30 || off >= 166; // Nov = 0–29; Apr 15+ = 166–182
+    // Apr 15 = offset 165 in normal years, offset 166 in leap years (leap Feb shifts it +1).
+    // The constant 166 was wrong in normal years (Apr 16 became the first shoulder day).
+    // Fix: compute the shoulder threshold dynamically from the season year.
+    const shoulderAprStart = (seasonYear) => _isLeapYear(seasonYear + 1) ? 166 : 165;
+    const isShoulder = (off, seasonYear) => {
+      const aprThresh = seasonYear != null ? shoulderAprStart(seasonYear) : 165;
+      return off < 30 || off >= aprThresh; // Nov (0–29) and Apr 15+ are shoulders
+    };
 
     // Is date a peak holiday?
     // Compute Easter Sunday for a given year using the Anonymous Gregorian algorithm
@@ -2117,7 +2169,7 @@
       // Compute historical average per day (exclude current season, shoulder excluded from avg)
       const avgScores = new Array(SEASON_DAYS + 1).fill(null);
       for (let d = 0; d <= SEASON_DAYS; d++) {
-        if (isShoulder(d)) continue;
+        if (isShoulder(d, latestSeasonYear)) continue;
         const vals = seasonData
           .filter(s => s.year !== latestSeasonYear && s.scores[d] !== null)
           .map(s => s.scores[d].score);
@@ -2145,7 +2197,9 @@
         const W = el.offsetWidth;
         if (!W) return;
         el.innerHTML = '';
-        MONTH_OFFSETS.forEach(({off, label}) => {
+        // Use leap-year-aware offsets anchored to the latest season so Mar/Apr
+        // labels align correctly — they shift +1 day in seasons where Feb has 29 days.
+        getMonthOffsets(latestSeasonYear).forEach(({off, label}) => {
           const pct = off / SEASON_DAYS * 100;
           const span = document.createElement('span');
           span.textContent = label;
@@ -2201,17 +2255,18 @@
             const x2 = Math.floor((d+1) / SEASON_DAYS * W) * 2;
             const entry = scores[d];
             let [r,g,b] = scoreToRGB(entry ? entry.score : null);
-            const shoulder = isShoulder(d);
+            const shoulder = isShoulder(d, isAvg ? latestSeasonYear : sd.year);
             if (shoulder) { r=Math.round(r*0.5+200*0.5); g=Math.round(g*0.5+210*0.5); b=Math.round(b*0.5+220*0.5); }
             if (entry === null && !shoulder) { r=225; g=230; b=238; }
             ctx.fillStyle = `rgb(${r},${g},${b})`;
             ctx.fillRect(x1, 0, Math.max(1, x2-x1), H);
           }
 
-          // Month separator lines
+          // Month separator lines — use per-season leap-aware offsets so the Mar/Apr
+          // gridline is 1 day further right in seasons with a leap Feb.
           ctx.strokeStyle = 'rgba(255,255,255,0.55)';
           ctx.lineWidth = 1;
-          MONTH_OFFSETS.forEach(({off}) => {
+          getMonthOffsets(isAvg ? latestSeasonYear : sd.year).forEach(({off}) => {
             if (off === 0) return;
             const x = Math.floor(off / SEASON_DAYS * W) * 2;
             ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
@@ -2258,7 +2313,7 @@
           const scores = isAvg ? avgScores : sd?.scores;
           const entry = scores ? scores[dayOff] : null;
           const sc = entry ? entry.score : null;
-          const shoulder = isShoulder(dayOff);
+          const shoulder = isShoulder(dayOff, isAvg ? latestSeasonYear : sd.year);
           const peak = isPeakOff(dayOff, isAvg ? latestSeasonYear : sd.year);
           const seasonStartMs = Date.UTC(isAvg ? latestSeasonYear : sd.year, 10, 1);
           const dateStr = new Date(seasonStartMs + dayOff * 86400000).toISOString().slice(0,10);
