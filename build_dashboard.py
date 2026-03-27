@@ -21,15 +21,21 @@ def main():
 
     # Round-trip through json to guarantee valid, properly escaped JSON —
     # guards against any corrupt byte or accidental </script> in string fields.
-    data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8"))).replace("</", "<\\/")
-    # data_str = json.dumps(json.loads(DATA.read_text(encoding="utf-8")))
+    # U+2028/U+2029 are valid JSON but JS treats them as line terminators inside
+    # <script> blocks — breaks string literals → "missing ) after argument list".
+    data_str = (json.dumps(json.loads(DATA.read_text(encoding="utf-8")))
+                .replace("</", "<\\/")
+                .replace("\u2028", "\\u2028")
+                .replace("\u2029", "\\u2029"))
     html = template.replace("__SKI_DATA_PLACEHOLDER__", data_str)
 
     # Inject Forecast
     if "__FORECAST_DATA_PLACEHOLDER__" in html:
         if FORECAST.exists():
-            fc_str = json.dumps(json.loads(FORECAST.read_text(encoding="utf-8"))).replace("</", "<\\/")
-            html = html.replace("__FORECAST_DATA_PLACEHOLDER__", fc_str)
+            fc_str = (json.dumps(json.loads(FORECAST.read_text(encoding="utf-8")))
+                      .replace("</", "<\\/")
+                      .replace("\u2028", "\\u2028")
+                      .replace("\u2029", "\\u2029"))            html = html.replace("__FORECAST_DATA_PLACEHOLDER__", fc_str)
             print("  ✓ Injected high-res forecast data")
         else:
             print("  ⚠ No forecast data found, injecting empty object.")
