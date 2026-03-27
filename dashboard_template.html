@@ -975,6 +975,7 @@
     const ctxFc = cvsFc ? cvsFc.getContext('2d') : null;
     let fcHoverIdx = null;
 
+    window.repaintForecastCanvas = () => {
       if (!ctxFc || !window.GLOBAL_RESORT || !FORECAST_DATA || !FORECAST_DATA.resorts || !FORECAST_DATA.resorts[window.GLOBAL_RESORT]) return;
       ctxFc.clearRect(0,0,cvsFc.width,cvsFc.height);
 
